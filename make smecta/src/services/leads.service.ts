@@ -1,4 +1,4 @@
-import { apiBlob, apiJson } from './api-client';
+import { apiJson } from './api-client';
 
 export interface GuideLeadPayload {
   fullName: string;
@@ -6,14 +6,13 @@ export interface GuideLeadPayload {
   guideId: string;
   guideLanguage: 'en' | 'fr' | 'ar';
   targetCountry?: string;
-  guideSlug: string;
   locale: string;
   turnstileToken: string;
 }
 
 /** Captures a lead through the BFF and returns a short-lived gated URL. */
 export async function submitGuideLead(payload: GuideLeadPayload): Promise<string> {
-  const lead = await apiJson<{ success: true; grantToken: string }>('/api/v1/leads', {
+  const lead = await apiJson<{ success: true; downloadUrl: string }>('/api/v1/leads', {
     method: 'POST',
     body: JSON.stringify({
       fullName: payload.fullName,
@@ -25,9 +24,6 @@ export async function submitGuideLead(payload: GuideLeadPayload): Promise<string
       turnstileToken: payload.turnstileToken,
     }),
   });
-  const grant = await apiBlob('/api/v1/download-grant', {
-    method: 'POST',
-    body: JSON.stringify({ grantToken: lead.grantToken, guideSlug: payload.guideSlug }),
-  });
-  return URL.createObjectURL(grant);
+  if (!lead.downloadUrl.startsWith('/api/v1/download/')) throw new Error('invalid_download_url');
+  return lead.downloadUrl;
 }

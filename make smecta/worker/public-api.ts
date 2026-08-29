@@ -4,6 +4,7 @@ import { HttpError, json, readJson, requireIdempotencyKey, requireMethod } from 
 import { createBlindIndex } from './security/blind-index';
 import { encryptPii } from './security/encryption';
 import { verifyTurnstile } from './security/turnstile';
+import { seedAdminCatalog } from './catalog-seed';
 import {
   contactInputSchema,
   leadInputSchema,
@@ -25,6 +26,23 @@ interface GuideAsset {
 }
 interface Subscriber { id: string }
 
+interface PublicGuideRow {
+  id: string; slug: string; category: string; file_type: string; page_count: number;
+  cover_path: string | null; published: number; sort_order: number;
+  content_updated_at: string; translations: string;
+  r2_key_en: string | null; r2_key_fr: string | null; r2_key_ar: string | null;
+}
+
+interface PublicOpportunityRow {
+  id: string; slug: string; country: string; categories: string; image_path: string | null;
+  apply_url: string | null; opens_at: string | null; deadline: string | null;
+  featured: number; published: number; translations: string;
+}
+
+function catalogJson(value: string): unknown {
+  try { return JSON.parse(value) as unknown; } catch { throw new HttpError(503, 'invalid_stored_data'); }
+}
+
 async function pii(value: string | undefined, env: Env): Promise<string | null> {
   return value ? encryptPii(value, env.PII_ENCRYPTION_KEY_V1) : null;
 }
@@ -35,12 +53,29 @@ function enqueue(ctx: ExecutionContextLike, env: Env, eventId: string): void {
 
 export async function listGuideAvailability(request: Request, env: Env): Promise<Response> {
   requireMethod(request, ['GET']);
+  await seedAdminCatalog(env);
   const { results } = await env.DB.prepare(
-    `SELECT id, r2_key_en, r2_key_fr, r2_key_ar FROM guide_assets ORDER BY id LIMIT 100`,
-  ).all<Pick<GuideAsset, 'id' | 'r2_key_en' | 'r2_key_fr' | 'r2_key_ar'>>();
+    `SELECT g.id, g.slug, g.category, g.file_type, g.page_count, g.cover_path,
+     g.published, g.sort_order, g.content_updated_at, g.translations,
+     COALESCE(g.r2_key_en, a.r2_key_en) AS r2_key_en,
+     COALESCE(g.r2_key_fr, a.r2_key_fr) AS r2_key_fr,
+     COALESCE(g.r2_key_ar, a.r2_key_ar) AS r2_key_ar
+     FROM guides g LEFT JOIN guide_assets a ON a.slug = g.slug
+     WHERE g.published = 1 ORDER BY g.sort_order ASC LIMIT 100`,
+  ).all<PublicGuideRow>();
   return json({
     items: results.map((row) => ({
       id: row.id,
+      slug: row.slug,
+      category: row.category,
+      filePath: null,
+      fileType: row.file_type,
+      pageCount: row.page_count,
+      coverPath: row.cover_path,
+      published: row.published === 1,
+      sortOrder: row.sort_order,
+      contentUpdatedAt: row.content_updated_at,
+      translations: catalogJson(row.translations),
       availableLanguages: {
         en: Boolean(row.r2_key_en),
         fr: Boolean(row.r2_key_fr),
@@ -48,6 +83,29 @@ export async function listGuideAvailability(request: Request, env: Env): Promise
       },
     })),
   });
+}
+
+export async function listPublishedOpportunities(request: Request, env: Env): Promise<Response> {
+  requireMethod(request, ['GET']);
+  await seedAdminCatalog(env);
+  const { results } = await env.DB.prepare(
+    `SELECT id, slug, country, categories, image_path, apply_url, opens_at, deadline,
+     featured, published, translations FROM opportunities
+     WHERE published = 1 ORDER BY deadline IS NULL ASC, deadline ASC LIMIT 100`,
+  ).all<PublicOpportunityRow>();
+  return json({ items: results.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    country: row.country,
+    categories: catalogJson(row.categories),
+    imagePath: row.image_path,
+    applyUrl: row.apply_url,
+    opensAt: row.opens_at,
+    deadline: row.deadline,
+    featured: row.featured === 1,
+    published: row.published === 1,
+    translations: catalogJson(row.translations),
+  })) });
 }
 
 async function storedResponse<T>(env: Env, key: string, action: string, now: number): Promise<T | null> {
@@ -111,7 +169,10 @@ export async function createGuideLead(request: Request, env: Env, ctx: Execution
   const grantToken = randomToken();
   const nameCiphertext = await encryptPii(input.fullName, env.PII_ENCRYPTION_KEY_V1);
   const emailCiphertext = await encryptPii(input.email, env.PII_ENCRYPTION_KEY_V1);
-  const response = { success: true as const, grantToken };
+  const response = {
+    success: true as const,
+    downloadUrl: `/api/v1/download/${encodeURIComponent(grantToken)}`,
+  };
   const result = await idempotentBatch(env, idempotencyKey, 'guide_lead', response, [
     env.DB.prepare(
       `INSERT INTO guide_download_leads
@@ -142,7 +203,7 @@ export async function createGuideLead(request: Request, env: Env, ctx: Execution
     ).bind(eventId, leadId, now, createdAt),
   ], now);
   if (result.created) enqueue(ctx, env, eventId);
-  return json(result.value, 201);
+  return json(result.value);
 }
 
 export async function createContact(request: Request, env: Env, ctx: ExecutionContextLike): Promise<Response> {

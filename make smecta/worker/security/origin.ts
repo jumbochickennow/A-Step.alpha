@@ -25,7 +25,9 @@ function configuredOrigins(request: Request, env: OriginEnv): Set<string> {
     }
   }
   const requestUrl = new URL(request.url);
-  if (['localhost', '127.0.0.1', '[::1]'].includes(requestUrl.hostname)) origins.add(requestUrl.origin);
+  const localRequest = requestUrl.protocol === 'http:'
+    && ['localhost', '127.0.0.1', '[::1]'].includes(requestUrl.hostname);
+  if (requestUrl.protocol === 'https:' || localRequest) origins.add(requestUrl.origin);
   return origins;
 }
 
@@ -46,10 +48,15 @@ export function verifyApiOrigin(request: Request, env: OriginEnv): OriginContext
   const rawReferer = request.headers.get('Referer');
   const origin = headerOrigin(rawOrigin);
   const referer = headerOrigin(rawReferer);
-  if ((rawOrigin && !origin) || (rawReferer && !referer)) throw new HttpError(403, 'origin_denied');
-  if (!origin && !referer) throw new HttpError(403, 'origin_denied');
+  const fetchSite = request.headers.get('Sec-Fetch-Site')?.trim().toLowerCase();
+  const sameSiteRequest = fetchSite === 'same-origin' || fetchSite === 'same-site';
+  if ((rawOrigin && !origin) || (rawReferer && !referer)) throw new HttpError(403, 'origin_forbidden');
+  if (!origin && !referer) {
+    if (sameSiteRequest) return { origin: new URL(request.url).origin };
+    throw new HttpError(403, 'origin_forbidden');
+  }
   if ((origin && !allowed.has(origin)) || (referer && !allowed.has(referer))) {
-    throw new HttpError(403, 'origin_denied');
+    throw new HttpError(403, 'origin_forbidden');
   }
   return { origin: origin ?? referer! };
 }

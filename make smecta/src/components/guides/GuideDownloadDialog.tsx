@@ -144,7 +144,6 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
         guideId: guide.id,
         guideLanguage: result.data.guideLanguage,
         targetCountry: result.data.targetCountry,
-        guideSlug: guide.slug,
         locale,
         turnstileToken,
       });

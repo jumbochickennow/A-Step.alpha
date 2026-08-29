@@ -1,10 +1,10 @@
 import type { Guide, GuideLanguage, Opportunity } from '../types/content';
 import { apiJson } from './api-client';
 
-export async function signInAdmin(): Promise<void> {
+export async function signInAdmin(passkey: string): Promise<void> {
   await apiJson('/api/v1/auth/sign-in', {
     method: 'POST',
-    body: '{}',
+    body: JSON.stringify({ passkey }),
   });
 }
 

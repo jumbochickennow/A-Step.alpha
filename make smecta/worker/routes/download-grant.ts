@@ -1,7 +1,7 @@
 import { sha256 } from '../crypto';
 import type { Env } from '../env';
-import { HttpError, readJson, requireMethod } from '../http';
-import { downloadGrantInputSchema } from '../validation/public';
+import { HttpError, requireMethod } from '../http';
+import { downloadTokenSchema } from '../validation/public';
 
 interface GrantRow {
   id: string;
@@ -21,20 +21,21 @@ function safeObjectKey(value: string): boolean {
 }
 
 export async function downloadGrant(request: Request, env: Env): Promise<Response> {
-  requireMethod(request, ['POST']);
-  const parsed = downloadGrantInputSchema.safeParse(await readJson(request, 2048));
+  requireMethod(request, ['GET']);
+  const pathname = new URL(request.url).pathname;
+  const parsed = downloadTokenSchema.safeParse(pathname.slice('/api/v1/download/'.length));
   if (!parsed.success) throw new HttpError(400, 'validation_failed');
 
   const now = Math.floor(Date.now() / 1000);
-  const tokenHash = await sha256(parsed.data.grantToken);
+  const tokenHash = await sha256(parsed.data);
   const grant = await env.DB.prepare(
     `SELECT dg.id, dg.guide_slug, dg.guide_language,
        ga.r2_key_en, ga.r2_key_fr, ga.r2_key_ar
      FROM download_grants dg
      JOIN guide_assets ga ON ga.id = dg.guide_id
-     WHERE dg.token = ?1 AND dg.guide_slug = ?2 AND dg.expires_at > ?3 AND dg.consumed = 0
+     WHERE dg.token = ?1 AND dg.expires_at > ?2 AND dg.consumed = 0
      LIMIT 1`,
-  ).bind(tokenHash, parsed.data.guideSlug, now).first<GrantRow>();
+  ).bind(tokenHash, now).first<GrantRow>();
   if (!grant) throw new HttpError(404, 'not_found');
   const requestedKey = grant.guide_language === 'fr'
     ? grant.r2_key_fr
@@ -59,5 +60,6 @@ export async function downloadGrant(request: Request, env: Env): Promise<Respons
   headers.set('Content-Length', String(object.size));
   headers.set('ETag', object.httpEtag);
   headers.set('Cache-Control', 'private, no-transform, max-age=3600');
+  headers.set('Referrer-Policy', 'no-referrer');
   return new Response(object.body, { status: 200, headers });
 }

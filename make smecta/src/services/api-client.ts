@@ -3,8 +3,9 @@ export class ApiError extends Error {
     public readonly status: number,
     public readonly code: string,
     public readonly requestId?: string,
+    message = code,
   ) {
-    super(code);
+    super(message);
     this.name = 'ApiError';
   }
 }
@@ -22,10 +23,11 @@ export async function apiJson<T>(path: string, init: RequestInit = {}): Promise<
     credentials: 'same-origin',
     cache: 'no-store',
   });
-  const data = await response.json().catch(() => ({})) as { error?: string | { code?: string }; requestId?: string } & T;
+  const data = await response.json().catch(() => ({})) as { error?: string | { code?: string; message?: string }; requestId?: string } & T;
   if (!response.ok) {
     const code = typeof data.error === 'object' ? data.error?.code : undefined;
-    throw new ApiError(response.status, code ?? 'request_failed', data.requestId);
+    const message = typeof data.error === 'object' ? data.error?.message : undefined;
+    throw new ApiError(response.status, code ?? 'request_failed', data.requestId, message);
   }
   return data;
 }

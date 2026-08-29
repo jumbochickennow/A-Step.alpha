@@ -28,10 +28,7 @@ export const newsletterInputSchema = z.object({
   turnstileToken,
 }).strict();
 
-export const downloadGrantInputSchema = z.object({
-  grantToken: z.string().trim().min(32).max(256).regex(/^[A-Za-z0-9_-]+$/),
-  guideSlug: z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/),
-}).strict();
+export const downloadTokenSchema = z.string().trim().min(32).max(256).regex(/^[A-Za-z0-9_-]+$/);
 
 export const unsubscribeInputSchema = z.object({
   token: z.string().trim().min(32).max(256).regex(/^[A-Za-z0-9_-]+$/),

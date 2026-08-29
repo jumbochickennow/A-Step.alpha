@@ -8,14 +8,13 @@ const REQUIRED_RUNTIME_VALUES = [
   'PII_ENCRYPTION_KEY_V1',
   'BLIND_INDEX_SECRET',
   'SESSION_SECRET',
+  'ADMIN_PASSWORD',
   'WEBHOOK_HMAC_SECRET',
   'TURNSTILE_SECRET_KEY',
   'TURNSTILE_ALLOWED_HOSTNAMES',
   'ALLOWED_ORIGINS',
   'OUTBOUND_WEBHOOK_URL',
   'OUTBOUND_WEBHOOK_ALLOWED_HOSTS',
-  'CF_ACCESS_TEAM_DOMAIN',
-  'CF_ACCESS_POLICY_AUD',
 ] as const satisfies readonly (keyof Env)[];
 
 function invalid(name?: keyof Env): never {
@@ -75,13 +74,13 @@ export function assertRuntimeEnv(env: Env): void {
   secret('BLIND_INDEX_SECRET', env.BLIND_INDEX_SECRET);
   secret('SESSION_SECRET', env.SESSION_SECRET);
   secret('WEBHOOK_HMAC_SECRET', env.WEBHOOK_HMAC_SECRET);
+  const adminPassword = env.ADMIN_PASSWORD ?? '';
+  if (adminPassword.length < 16 || adminPassword.length > 256
+    || adminPassword.trim() !== adminPassword
+    || /^(?:change-?me|placeholder|undefined|null)$/i.test(adminPassword)
+    || adminPassword === env.SESSION_SECRET) invalid('ADMIN_PASSWORD');
 
   required('TURNSTILE_SECRET_KEY', env.TURNSTILE_SECRET_KEY, 16, 512);
-  required('CF_ACCESS_POLICY_AUD', env.CF_ACCESS_POLICY_AUD, 16, 256);
-
-  const access = secureUrl('CF_ACCESS_TEAM_DOMAIN', env.CF_ACCESS_TEAM_DOMAIN);
-  if (!access.hostname.endsWith('.cloudflareaccess.com') || access.pathname !== '/') invalid('CF_ACCESS_TEAM_DOMAIN');
-
   const allowedHosts = required('TURNSTILE_ALLOWED_HOSTNAMES', env.TURNSTILE_ALLOWED_HOSTNAMES, 1, 2048).split(',');
   if (allowedHosts.some((host) => !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$|^(?:localhost|127\.0\.0\.1|\[::1\])$/i.test(host.trim()))) invalid('TURNSTILE_ALLOWED_HOSTNAMES');
 

@@ -343,6 +343,8 @@
     "loginBody": "Continue through Cloudflare Access with your authorized administrator identity.",
     "email": "Admin email",
     "password": "Password",
+    "passkey": "Admin Passkey",
+    "passkeyPlaceholder": "Enter your admin secret key",
     "signIn": "Sign in",
     "signingIn": "Signing in…",
     "notConfigured": "Local data synchronization is active. Content changes are stored securely on A-Step cloud infrastructure.",

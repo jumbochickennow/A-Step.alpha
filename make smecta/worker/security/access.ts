@@ -19,6 +19,7 @@ type AccessEnv = Pick<Env, 'CF_ACCESS_TEAM_DOMAIN' | 'CF_ACCESS_POLICY_AUD'>;
 
 const encoder = new TextEncoder();
 const jwksCache = new Map<string, { keys: Map<string, CryptoKey>; expiresAt: number }>();
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 function parsePart<T>(part: string): T {
   try {
@@ -70,9 +71,38 @@ async function verificationKey(domain: string, kid: string): Promise<CryptoKey> 
   return key;
 }
 
-export async function verifyCloudflareAccess(request: Request, env: AccessEnv): Promise<AccessClaims> {
-  if (!env.CF_ACCESS_POLICY_AUD) throw new HttpError(500, 'access_not_configured');
-  const token = request.headers.get('Cf-Access-Jwt-Assertion');
+function cookieValue(request: Request, name: string): string | null {
+  for (const item of (request.headers.get('Cookie') ?? '').split(';')) {
+    const separator = item.indexOf('=');
+    if (separator < 0 || item.slice(0, separator).trim() !== name) continue;
+    return item.slice(separator + 1).trim();
+  }
+  return null;
+}
+
+export function hasCloudflareAccessToken(request: Request): boolean {
+  return Boolean(request.headers.get('Cf-Access-Jwt-Assertion') ?? cookieValue(request, 'CF_Authorization'));
+}
+
+function isDevelopmentConfig(env: AccessEnv): boolean {
+  return !env.CF_ACCESS_POLICY_AUD?.trim()
+    || !env.CF_ACCESS_TEAM_DOMAIN?.trim()
+    || /^(?:development|dev|placeholder|change-?me)$/i.test(env.CF_ACCESS_POLICY_AUD.trim());
+}
+
+export async function verifyCloudflareAccess(
+  request: Request,
+  env: AccessEnv,
+  allowLocalDevelopment = false,
+): Promise<AccessClaims> {
+  const requestUrl = new URL(request.url);
+  if (isDevelopmentConfig(env)) {
+    if (allowLocalDevelopment && LOCAL_HOSTS.has(requestUrl.hostname)) {
+      return { sub: 'local-development-admin', email: 'local-admin@localhost.local', type: 'app' };
+    }
+    throw new HttpError(503, 'access_not_configured');
+  }
+  const token = request.headers.get('Cf-Access-Jwt-Assertion') ?? cookieValue(request, 'CF_Authorization');
   if (!token || token.length > 16_384) throw new HttpError(401, 'unauthorized');
   const parts = token.split('.');
   if (parts.length !== 3) throw new HttpError(401, 'unauthorized');

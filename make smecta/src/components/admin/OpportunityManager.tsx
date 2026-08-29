@@ -32,16 +32,16 @@ export function OpportunityManager() {
         <h2 className="section-title">{t('admin.opportunities')}</h2>
         <div className="flex items-center gap-3">
           <span className="rounded-full border border-border bg-surface-2 px-3 py-1 text-xs font-semibold text-ink-muted">{sorted.length}/{OPPORTUNITY_SLOT_CAP} Cards</span>
-          <Button onClick={() => setEditing(null)} disabled={atCap} title={atCap ? 'Opportunity slots are full (C1–C10)' : undefined}>{t('admin.addOpportunity')}</Button>
+          <Button onClick={() => setEditing(null)} disabled={atCap} title={atCap ? 'Opportunity slots are full (O1–O10)' : undefined}>{t('admin.addOpportunity')}</Button>
         </div>
       </div>
-      {atCap ? <p className="mt-2 text-xs text-[var(--danger)]">All 10 opportunity slots (C1–C10) are occupied. Delete a card to free a slot.</p> : null}
+      {atCap ? <p className="mt-2 text-xs text-[var(--danger)]">All 10 opportunity slots (O1–O10) are occupied. Delete a card to free a slot.</p> : null}
       {error ? <p className="mt-6 text-[var(--danger)]">{t('admin.loadError')}</p> : null}
       <div className="mt-6 space-y-3">
         {visible.map((item, index) => (
           <div key={item.id} className="card flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-coral/10 text-xs font-extrabold text-brand-coral">C{(safePage - 1) * PAGE_SIZE + index + 1}</span>
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-coral/10 text-xs font-extrabold text-brand-coral">O{(safePage - 1) * PAGE_SIZE + index + 1}</span>
               <div className="min-w-0">
                 <h3 className="truncate font-semibold">{item.translations.en.title || item.slug}</h3>
                 <p className="mt-1 text-sm text-ink-muted">{categoryLabel(item.country, t)} · {item.deadline ?? t('common.comingSoon')}</p>

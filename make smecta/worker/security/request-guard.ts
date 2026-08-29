@@ -15,8 +15,10 @@ export function enforceRequestEnvelope(request: Request): void {
   if (!MUTATING_METHODS.has(request.method)) return;
   const pathname = new URL(request.url).pathname;
   const pdfUpload = isAdminGuidePdfUpload(request);
+  const passkeySignIn = pathname === '/api/v1/auth/sign-in';
   const maxBytes = pdfUpload ? ADMIN_PDF_BODY_LIMIT
-    : pathname.startsWith('/api/v1/admin/') ? ADMIN_BODY_LIMIT : PUBLIC_BODY_LIMIT;
+    : passkeySignIn ? 2048
+      : pathname.startsWith('/api/v1/admin/') ? ADMIN_BODY_LIMIT : PUBLIC_BODY_LIMIT;
   const declared = request.headers.get('Content-Length');
   if (declared) {
     const bytes = Number(declared);

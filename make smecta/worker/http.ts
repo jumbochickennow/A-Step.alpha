@@ -19,7 +19,12 @@ export function json(data: unknown, status = 200, extraHeaders?: HeadersInit): R
   return new Response(JSON.stringify(data), { status, headers });
 }
 
-function publicErrorMessage(status: number): string {
+function publicErrorMessage(status: number, code?: string): string {
+  if (code === 'invalid_sign_in_request') return 'Admin passkey is required.';
+  if (code === 'invalid_passkey') return 'Invalid admin passkey.';
+  if (code === 'admin_password_not_configured') return 'Admin passkey authentication is not configured.';
+  if (code === 'origin_forbidden') return 'Request origin is not allowed.';
+  if (code === 'db_error') return 'Admin authentication store is unavailable.';
   if (status === 400) return 'Bad request';
   if (status === 401) return 'Unauthorized';
   if (status === 403) return 'Forbidden';
@@ -34,10 +39,18 @@ function publicErrorMessage(status: number): string {
 
 export function errorResponse(error: unknown, requestId: string): Response {
   const status = error instanceof HttpError ? error.status : 500;
-  if (!(error instanceof HttpError)) {
+  if (error instanceof HttpError) {
+    console.warn('API request rejected', { requestId, status, code: error.code });
+  } else {
     console.error('Unhandled API error', { requestId, type: error instanceof Error ? error.name : 'unknown' });
   }
-  return json({ error: publicErrorMessage(status), requestId }, status);
+  return json({
+    error: {
+      code: error instanceof HttpError ? error.code : 'internal_error',
+      message: publicErrorMessage(status, error instanceof HttpError ? error.code : undefined),
+    },
+    requestId,
+  }, status);
 }
 
 export function attachRequestId(response: Response, requestId: string): Response {

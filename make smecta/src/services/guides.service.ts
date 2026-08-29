@@ -5,10 +5,9 @@ import { apiJson } from './api-client';
 
 const seededGuides = seedContent.guides as Guide[];
 
-/** Canonical catalog: bundled seed dataset plus fallback entries not already covered. */
+/** Bundled emergency fallback used only when the edge catalog is unavailable. */
 function catalog(): Guide[] {
-  const slugs = new Set(seededGuides.map((guide) => guide.slug));
-  return [...seededGuides, ...fallbackGuides.filter((guide) => !slugs.has(guide.slug))];
+  return seededGuides.length > 0 ? seededGuides : fallbackGuides;
 }
 
 /** Canonical read-only catalog; administrative writes go through the BFF. */
@@ -17,19 +16,18 @@ export function allGuides(): Guide[] {
 }
 
 export async function listGuides(locale: Locale): Promise<LocalizedGuide[]> {
-  let availability = new Map<string, Record<Locale, boolean>>();
+  let guides = allGuides();
   try {
-    const response = await apiJson<{ items: Array<{ id: string; availableLanguages: Record<Locale, boolean> }> }>('/api/v1/guides');
-    availability = new Map(response.items.map((item) => [item.id, item.availableLanguages]));
+    guides = (await apiJson<{ items: Guide[] }>('/api/v1/guides')).items;
   } catch {
     // The bundled catalog remains usable while the edge API is unavailable.
   }
-  return allGuides()
+  return guides
     .filter((guide) => guide.published)
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map(({ translations, ...guide }) => ({
       ...guide,
-      availableLanguages: availability.get(guide.id) ?? { en: true, fr: false, ar: false },
+      availableLanguages: guide.availableLanguages ?? { en: true, fr: false, ar: false },
       ...translations[locale],
     }));
 }

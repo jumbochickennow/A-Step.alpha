@@ -1,8 +1,15 @@
 import type { Env, ExecutionContextLike } from './env';
-import { authenticateAccessAdmin, sessionStatus, signIn, signOut } from './auth/auth-api';
+import {
+  authenticateAccessAdmin,
+  readAdminSession,
+  sessionStatus,
+  signIn,
+  signOut,
+  type AdminIdentity,
+} from './auth/auth-api';
 import { adminApi } from './admin-api';
 import { attachRequestId, errorResponse, HttpError, json } from './http';
-import { verifyCloudflareAccess } from './security/access';
+import { hasCloudflareAccessToken, verifyCloudflareAccess } from './security/access';
 import { downloadGrant } from './routes/download-grant';
 import { enforceUploadBoundary } from './security/upload-defense';
 import { attachRateLimitHeaders, checkRateLimit, rateLimitResponse } from './security/rate-limit';
@@ -16,30 +23,47 @@ import {
   createGuideLead,
   createNewsletterSubscription,
   listGuideAvailability,
+  listPublishedOpportunities,
   unsubscribeNewsletter,
 } from './public-api';
+
+async function authenticateAdminRequest(request: Request, env: Env): Promise<AdminIdentity> {
+  const session = await readAdminSession(request, env);
+  if (session) return session;
+  return authenticateAccessAdmin(env, await verifyCloudflareAccess(request, env));
+}
 
 async function routeApi(request: Request, env: Env, ctx: ExecutionContextLike): Promise<Response> {
   const { pathname } = new URL(request.url);
   if (pathname === '/api/v1/contact') return createContact(request, env, ctx);
   if (pathname === '/api/v1/guides') return listGuideAvailability(request, env);
+  if (pathname === '/api/v1/opportunities') return listPublishedOpportunities(request, env);
   if (pathname === '/api/v1/leads') return createGuideLead(request, env, ctx);
   if (pathname === '/api/v1/newsletter') return createNewsletterSubscription(request, env, ctx);
   if (pathname === '/api/v1/newsletter/unsubscribe') return unsubscribeNewsletter(request, env);
-  if (pathname === '/api/v1/download-grant') return downloadGrant(request, env);
+  if (pathname.startsWith('/api/v1/download/')) return downloadGrant(request, env);
+  if (pathname === '/api/v1/auth/sign-in') {
+    let identity: AdminIdentity | null = null;
+    if (hasCloudflareAccessToken(request)) {
+      try {
+        identity = await authenticateAccessAdmin(env, await verifyCloudflareAccess(request, env));
+      } catch (error) {
+        if (!(error instanceof HttpError)) throw error;
+      }
+    }
+    return signIn(request, env, identity);
+  }
   if (pathname.startsWith('/api/v1/admin/') || pathname.startsWith('/api/v1/auth/')) {
-    const identity = await authenticateAccessAdmin(env, await verifyCloudflareAccess(request, env));
-    if (pathname.startsWith('/api/v1/admin/')) return adminApi(request, env, identity);
-    if (pathname === '/api/v1/auth/sign-in') return signIn(request, identity);
-    if (pathname === '/api/v1/auth/session') return sessionStatus(request, identity);
     if (pathname === '/api/v1/auth/sign-out') return signOut(request);
+    const identity = await authenticateAdminRequest(request, env);
+    if (pathname.startsWith('/api/v1/admin/')) return adminApi(request, env, identity);
+    if (pathname === '/api/v1/auth/session') return sessionStatus(request, identity);
   }
   throw new HttpError(404, 'not_found');
 }
 
 function isAdminPage(pathname: string): boolean {
-  return pathname === '/astep-control-vault'
-    || pathname.startsWith('/astep-control-vault/')
+  return (pathname.startsWith('/astep-control-vault/') && pathname !== '/astep-control-vault/')
     || pathname === '/admin'
     || pathname.startsWith('/admin/');
 }
@@ -69,7 +93,7 @@ export default {
         return applySecurityHeaders(attachRequestId(applyCorsHeaders(response, originContext), requestId));
       }
       if (isAdminPage(url.pathname)) {
-        await authenticateAccessAdmin(env, await verifyCloudflareAccess(request, env));
+        await authenticateAdminRequest(request, env);
       }
       return applySecurityHeaders(attachRequestId(await env.ASSETS.fetch(request), requestId));
     } catch (error) {

@@ -32,16 +32,16 @@ export function GuideManager() {
         <h2 className="section-title">{t('admin.guides')}</h2>
         <div className="flex items-center gap-3">
           <span className="rounded-full border border-border bg-surface-2 px-3 py-1 text-xs font-semibold text-ink-muted">{sorted.length}/{GUIDE_SLOT_CAP} Guides</span>
-          <Button onClick={() => setEditing(null)} disabled={atCap} title={atCap ? 'Guide slots are full (Q1–Q20)' : undefined}>{t('admin.addGuide')}</Button>
+          <Button onClick={() => setEditing(null)} disabled={atCap} title={atCap ? 'Guide slots are full (G1–G20)' : undefined}>{t('admin.addGuide')}</Button>
         </div>
       </div>
-      {atCap ? <p className="mt-2 text-xs text-[var(--danger)]">All 20 guide slots (Q1–Q20) are occupied. Delete a guide to free a slot.</p> : null}
+      {atCap ? <p className="mt-2 text-xs text-[var(--danger)]">All 20 guide slots (G1–G20) are occupied. Delete a guide to free a slot.</p> : null}
       {error ? <p className="mt-6 text-[var(--danger)]">{t('admin.loadError')}</p> : null}
       <div className="mt-6 space-y-3">
         {visible.map((guide, index) => (
           <div key={guide.id} className="card flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-blue/10 text-xs font-extrabold text-brand-blue">Q{(safePage - 1) * PAGE_SIZE + index + 1}</span>
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-blue/10 text-xs font-extrabold text-brand-blue">G{(safePage - 1) * PAGE_SIZE + index + 1}</span>
               <div className="min-w-0">
                 <h3 className="truncate font-semibold">{guide.translations.en.title || guide.slug}</h3>
                 <p className="mt-1 text-sm text-ink-muted">{categoryLabel(guide.category, t)} · {guide.published ? t('admin.published') : t('admin.draft')}</p>

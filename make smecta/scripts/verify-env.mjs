@@ -39,10 +39,18 @@ export function verifyEnvironment(env) {
     const bytes = decodeSecret(required(env, name, 43, 64));
     if (new Set(bytes).size < 12 || entropy(bytes) < 3.5) throw new Error(`${name} does not meet entropy requirements`);
   }
+  const adminPassword = env.ADMIN_PASSWORD ?? '';
+  if (adminPassword.length < 16 || adminPassword.length > 256 || adminPassword.trim() !== adminPassword) {
+    throw new Error('ADMIN_PASSWORD is missing or malformed');
+  }
   required(env, 'TURNSTILE_SECRET_KEY', 16, 512);
-  required(env, 'CF_ACCESS_POLICY_AUD', 16, 256);
-  const access = secureUrl(env, 'CF_ACCESS_TEAM_DOMAIN');
-  if (!access.hostname.endsWith('.cloudflareaccess.com') || access.pathname !== '/') throw new Error('CF_ACCESS_TEAM_DOMAIN is invalid');
+  const accessAudience = env.CF_ACCESS_POLICY_AUD?.trim() ?? '';
+  const accessDomain = env.CF_ACCESS_TEAM_DOMAIN?.trim() ?? '';
+  if (accessAudience || accessDomain) {
+    required(env, 'CF_ACCESS_POLICY_AUD', 16, 256);
+    const access = secureUrl(env, 'CF_ACCESS_TEAM_DOMAIN');
+    if (!access.hostname.endsWith('.cloudflareaccess.com') || access.pathname !== '/') throw new Error('CF_ACCESS_TEAM_DOMAIN is invalid');
+  }
 
   const hosts = required(env, 'TURNSTILE_ALLOWED_HOSTNAMES', 1, 2048).split(',');
   if (hosts.some((host) => host.includes('*') || !host.trim())) throw new Error('TURNSTILE_ALLOWED_HOSTNAMES is invalid');
@@ -61,6 +69,7 @@ if (process.argv.includes('--self-test')) {
     PII_ENCRYPTION_KEY_V1: key,
     BLIND_INDEX_SECRET: randomBytes(32).toString('hex'),
     SESSION_SECRET: randomBytes(32).toString('base64'),
+    ADMIN_PASSWORD: randomBytes(24).toString('base64url'),
     WEBHOOK_HMAC_SECRET: randomBytes(32).toString('base64url'),
     TURNSTILE_SECRET_KEY: `turnstile_${randomBytes(24).toString('base64url')}`,
     TURNSTILE_ALLOWED_HOSTNAMES: 'a-step.example',

@@ -37,6 +37,19 @@ export async function signHmac(value: string, secret: string): Promise<string> {
   return base64UrlEncode(new Uint8Array(signature));
 }
 
+export async function verifyHmac(value: string, signature: string, secret: string): Promise<boolean> {
+  try {
+    return crypto.subtle.verify(
+      'HMAC',
+      await importHmacKey(secret),
+      base64UrlDecode(signature),
+      encoder.encode(value),
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function sha256(value: string): Promise<string> {
   return base64UrlEncode(new Uint8Array(await crypto.subtle.digest('SHA-256', encoder.encode(value))));
 }

@@ -5,6 +5,7 @@ import { createResourceRef, resolveResourceRef } from './security/resource-ref';
 import type { Env } from './env';
 import { HttpError, json, readJson, requireMethod } from './http';
 import { validatedPdfBody } from './security/pdf-upload';
+import { seedAdminCatalog } from './catalog-seed';
 
 const copySchema = z.object({ title: z.string().trim().min(1).max(180), description: z.string().trim().min(1).max(4000) }).strict();
 const translationsSchema = z.object({ en: copySchema, fr: copySchema, ar: copySchema }).strict();
@@ -110,6 +111,7 @@ async function opportunityFromRow(row: OpportunityRow, env: Env, identity: Admin
 
 async function guides(request: Request, env: Env, identity: AdminIdentity, id?: string): Promise<Response> {
   if (request.method === 'GET' && !id) {
+    await seedAdminCatalog(env);
     const { results } = await env.DB.prepare(
       `SELECT g.id, g.slug, g.category, g.storage_object_path,
        COALESCE(g.r2_key_en, a.r2_key_en) AS r2_key_en,
@@ -118,8 +120,8 @@ async function guides(request: Request, env: Env, identity: AdminIdentity, id?: 
        g.file_type, g.page_count, g.cover_path, g.published, g.sort_order,
        g.content_updated_at, g.translations
        FROM guides g LEFT JOIN guide_assets a ON a.slug = g.slug
-       WHERE g.user_id = ?1 ORDER BY g.sort_order ASC LIMIT 100`,
-    ).bind(identity.id).all<GuideRow>();
+       ORDER BY g.sort_order ASC LIMIT 100`,
+    ).all<GuideRow>();
     return json({ items: await Promise.all(results.map((row) => guideFromRow(row, env, identity))) });
   }
   if (id && !resourceRefSchema.safeParse(id).success) throw new HttpError(404, 'not_found');
@@ -156,18 +158,18 @@ async function guides(request: Request, env: Env, identity: AdminIdentity, id?: 
        r2_key_en = ?4, r2_key_fr = ?5, r2_key_ar = ?6, file_type = ?7,
        page_count = ?8, cover_path = ?9, published = ?10, sort_order = ?11,
        content_updated_at = ?12, translations = ?13, updated_at = ?14
-       WHERE id = ?15 AND user_id = ?16`,
+       WHERE id = ?15`,
     ).bind(
       input.slug, input.category, input.r2KeyEn ?? input.filePath, input.r2KeyEn,
       input.r2KeyFr, input.r2KeyAr, input.fileType, input.pageCount, input.coverPath,
       input.published ? 1 : 0, input.sortOrder, input.contentUpdatedAt,
-      JSON.stringify(input.translations), new Date().toISOString(), databaseId, identity.id,
+      JSON.stringify(input.translations), new Date().toISOString(), databaseId,
     ));
     return json({ success: true });
   }
   if (request.method === 'DELETE' && id) {
     const databaseId = await resolveResourceRef(id, 'guide', identity.id, env.SESSION_SECRET);
-    await mutate(env.DB.prepare('DELETE FROM guides WHERE id = ?1 AND user_id = ?2').bind(databaseId, identity.id));
+    await mutate(env.DB.prepare('DELETE FROM guides WHERE id = ?1').bind(databaseId));
     return json({ success: true });
   }
   throw new HttpError(405, 'method_not_allowed');
@@ -186,8 +188,8 @@ async function uploadGuidePdf(
   if (!language.success) throw new HttpError(404, 'not_found');
   const databaseId = await resolveResourceRef(id, 'guide', identity.id, env.SESSION_SECRET);
   const guide = await env.DB.prepare(
-    'SELECT slug FROM guides WHERE id = ?1 AND user_id = ?2 LIMIT 1',
-  ).bind(databaseId, identity.id).first<{ slug: string }>();
+    'SELECT slug FROM guides WHERE id = ?1 LIMIT 1',
+  ).bind(databaseId).first<{ slug: string }>();
   if (!guide) throw new HttpError(404, 'not_found');
 
   const objectKey = `a-step-guides/${guide.slug}-${language.data}.pdf`;
@@ -205,8 +207,8 @@ async function uploadGuidePdf(
     env.DB.prepare(
       `UPDATE guides SET ${column} = ?1,
        storage_object_path = CASE WHEN ?2 = 'en' THEN ?1 ELSE storage_object_path END,
-       updated_at = ?3 WHERE id = ?4 AND user_id = ?5`,
-    ).bind(objectKey, language.data, now, databaseId, identity.id),
+       updated_at = ?3 WHERE id = ?4`,
+    ).bind(objectKey, language.data, now, databaseId),
     env.DB.prepare(
       `INSERT INTO guide_assets
         (id, slug, object_key, r2_key_en, r2_key_fr, r2_key_ar, created_at)
@@ -214,7 +216,8 @@ async function uploadGuidePdf(
          CASE WHEN ?4 = 'en' THEN ?3 ELSE NULL END,
          CASE WHEN ?4 = 'fr' THEN ?3 ELSE NULL END,
          CASE WHEN ?4 = 'ar' THEN ?3 ELSE NULL END, ?5)
-       ON CONFLICT(slug) DO UPDATE SET
+       ON CONFLICT(id) DO UPDATE SET
+         slug = excluded.slug,
          ${column} = ?3,
          object_key = CASE WHEN ?4 = 'en' THEN ?3 ELSE guide_assets.object_key END`,
     ).bind(databaseId, guide.slug, objectKey, language.data, now),
@@ -225,11 +228,12 @@ async function uploadGuidePdf(
 
 async function opportunities(request: Request, env: Env, identity: AdminIdentity, id?: string): Promise<Response> {
   if (request.method === 'GET' && !id) {
+    await seedAdminCatalog(env);
     const { results } = await env.DB.prepare(
       `SELECT id, slug, country, categories, image_path, apply_url, opens_at, deadline,
        featured, published, translations FROM opportunities
-       WHERE user_id = ?1 ORDER BY deadline IS NULL ASC, deadline ASC LIMIT 100`,
-    ).bind(identity.id).all<OpportunityRow>();
+       ORDER BY deadline IS NULL ASC, deadline ASC LIMIT 100`,
+    ).all<OpportunityRow>();
     return json({ items: await Promise.all(results.map((row) => opportunityFromRow(row, env, identity))) });
   }
   if (id && !resourceRefSchema.safeParse(id).success) throw new HttpError(404, 'not_found');
@@ -262,17 +266,17 @@ async function opportunities(request: Request, env: Env, identity: AdminIdentity
     await mutate(env.DB.prepare(
       `UPDATE opportunities SET slug = ?1, country = ?2, categories = ?3, image_path = ?4,
        apply_url = ?5, opens_at = ?6, deadline = ?7, featured = ?8, published = ?9,
-       translations = ?10, updated_at = ?11 WHERE id = ?12 AND user_id = ?13`,
+       translations = ?10, updated_at = ?11 WHERE id = ?12`,
     ).bind(
       input.slug, input.country, JSON.stringify(input.categories), input.imagePath, input.applyUrl,
       input.opensAt, input.deadline, input.featured ? 1 : 0, input.published ? 1 : 0,
-      JSON.stringify(input.translations), new Date().toISOString(), databaseId, identity.id,
+      JSON.stringify(input.translations), new Date().toISOString(), databaseId,
     ));
     return json({ success: true });
   }
   if (request.method === 'DELETE' && id) {
     const databaseId = await resolveResourceRef(id, 'opportunity', identity.id, env.SESSION_SECRET);
-    await mutate(env.DB.prepare('DELETE FROM opportunities WHERE id = ?1 AND user_id = ?2').bind(databaseId, identity.id));
+    await mutate(env.DB.prepare('DELETE FROM opportunities WHERE id = ?1').bind(databaseId));
     return json({ success: true });
   }
   throw new HttpError(405, 'method_not_allowed');
