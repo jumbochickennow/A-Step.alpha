@@ -45,6 +45,12 @@ export function useBodyScrollLock(active: boolean): void {
   }, [active]);
 }
 
+function ScrollLockedOverlay() {
+  // This component mounts inside Radix Presence, so it only locks while open.
+  useBodyScrollLock(true);
+  return <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-200 data-[state=closed]:pointer-events-none" />;
+}
+
 /**
  * Standard Escape-key dismissal for overlays driven by local component state
  * (complements Radix Dialog's built-in Escape handling).
@@ -65,11 +71,8 @@ export function useEscapeToClose(active: boolean, onClose: () => void): void {
 export const DialogContent = forwardRef<ElementRef<typeof DialogPrimitive.Content>, ComponentPropsWithoutRef<typeof DialogPrimitive.Content>>(
   ({ className, children, ...props }, ref) => {
     const { t } = useTranslation();
-    // Radix portals mount Content only while the dialog is open, so mounting
-    // itself is the lock signal; cleanup releases it on close/unmount.
-    useBodyScrollLock(true);
     return <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-200" />
+      <ScrollLockedOverlay />
       <DialogPrimitive.Content
         ref={ref}
         className={cn('fixed start-1/2 top-1/2 z-50 max-h-[90dvh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-xl border border-border bg-surface-1 p-6 shadow-modal rtl:translate-x-1/2 md:p-8', className)}

@@ -3,6 +3,13 @@ import { createBrowserRouter } from 'react-router-dom';
 import { SiteLayout } from './components/layout/SiteLayout';
 import { PageLoadingFallback } from './components/common/States';
 
+if (typeof document !== 'undefined') {
+  document.body.classList.remove('overflow-locked');
+  document.body.style.overflow = '';
+  document.body.style.paddingRight = '';
+  document.documentElement.style.overflow = '';
+}
+
 const Home = lazy(() => import('./pages/Home').then((module) => ({ default: module.Home })));
 const Guides = lazy(() => import('./pages/Guides').then((module) => ({ default: module.Guides })));
 const Opportunities = lazy(() => import('./pages/Opportunities').then((module) => ({ default: module.Opportunities })));
