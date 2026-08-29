@@ -2,14 +2,21 @@ import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { CATEGORIES, categoryLabel } from '../../lib/constants';
-import { saveAdminGuide } from '../../services/admin.service';
-import type { Guide, Locale } from '../../types/content';
+import { saveAdminGuide, uploadAdminGuidePdf } from '../../services/admin.service';
+import type { Guide, GuideLanguage, Locale } from '../../types/content';
 import { Button } from '../common/Button';
 import { TranslationFields } from './TranslationFields';
 
 const emptyTranslations = {
   en: { title: '', description: '' }, fr: { title: '', description: '' }, ar: { title: '', description: '' },
 };
+
+const PDF_SLOTS: Array<{ language: GuideLanguage; field: 'r2KeyEn' | 'r2KeyFr' | 'r2KeyAr'; label: string }> = [
+  { language: 'en', field: 'r2KeyEn', label: 'admin.pdfEnglish' },
+  { language: 'fr', field: 'r2KeyFr', label: 'admin.pdfFrench' },
+  { language: 'ar', field: 'r2KeyAr', label: 'admin.pdfArabic' },
+];
+const MAX_PDF_BYTES = 10 * 1024 * 1024;
 
 export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCancel: () => void; onSaved: () => void }) {
   const { t } = useTranslation();
@@ -19,6 +26,9 @@ export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCan
     slug: guide?.slug ?? '',
     category: guide?.category ?? 'France',
     filePath: guide?.filePath ?? null,
+    r2KeyEn: guide?.r2KeyEn ?? guide?.filePath ?? null,
+    r2KeyFr: guide?.r2KeyFr ?? null,
+    r2KeyAr: guide?.r2KeyAr ?? null,
     fileType: guide?.fileType ?? 'PDF',
     pageCount: guide?.pageCount ?? 41,
     coverPath: guide?.coverPath ?? null,
@@ -28,7 +38,34 @@ export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCan
     translations: guide?.translations ?? emptyTranslations,
   });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState<GuideLanguage | null>(null);
+  const [files, setFiles] = useState<Partial<Record<GuideLanguage, File>>>({});
   const [error, setError] = useState(false);
+
+  const selectPdf = (language: GuideLanguage, file?: File) => {
+    if (file && ((!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') || file.size > MAX_PDF_BYTES)) {
+      setError(true);
+      return;
+    }
+    setError(false);
+    setFiles((current) => ({ ...current, [language]: file }));
+  };
+
+  const uploadPdf = async (language: GuideLanguage, field: 'r2KeyEn' | 'r2KeyFr' | 'r2KeyAr') => {
+    const file = files[language];
+    if (!value.id || !file) return;
+    setUploading(language); setError(false);
+    try {
+      const objectKey = await uploadAdminGuidePdf(value.id, language, file);
+      setValue((current) => ({
+        ...current,
+        [field]: objectKey,
+        filePath: language === 'en' ? objectKey : current.filePath,
+      }));
+      setFiles((current) => ({ ...current, [language]: undefined }));
+      toast.success(t('admin.pdfUploaded'));
+    } catch { setError(true); } finally { setUploading(null); }
+  };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -50,16 +87,33 @@ export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCan
         <label className="text-sm font-semibold">{t('admin.sortOrder')}<input type="number" className="field mt-2" value={value.sortOrder} onChange={(e) => setValue({ ...value, sortOrder: Number(e.target.value) })} /></label>
         <label className="text-sm font-semibold">{t('admin.updatedDate')}<input type="date" className="field mt-2" value={value.contentUpdatedAt} onChange={(e) => setValue({ ...value, contentUpdatedAt: e.target.value })} required /></label>
         <label className="text-sm font-semibold">{t('admin.pageCount')}<input type="number" min="1" className="field mt-2" value={value.pageCount} onChange={(e) => setValue({ ...value, pageCount: Number(e.target.value) })} required /></label>
-        <label className="text-sm font-semibold md:col-span-2">{t('admin.pdf')}<input type="text" className="field mt-2" value={value.filePath ?? ''} onChange={(e) => setValue({ ...value, filePath: e.target.value || null })} placeholder="example.pdf" /></label>
-        <div className="flex flex-wrap items-center gap-3 text-sm md:col-span-2">
-          {value.filePath ? (
-            <span className="inline-flex items-center gap-2 rounded-full border border-[rgb(52_211_153/0.35)] bg-[rgb(52_211_153/0.12)] px-3 py-1 font-semibold text-[var(--success)]">
-              ✓ Deployed PDF: {value.filePath}
-            </span>
-          ) : (
-            <span className="text-ink-muted">Runtime uploads are disabled; deploy scanned PDFs to the private guide bucket.</span>
-          )}
+        <div className="grid gap-4 md:col-span-2 md:grid-cols-3">
+          {PDF_SLOTS.map(({ language, field, label }) => {
+            const deployed = value[field];
+            return (
+              <section key={language} className="rounded-xl border border-border bg-surface-2 p-4">
+                <h3 className="text-sm font-semibold">{t(label)}</h3>
+                <p className="mt-1 min-h-10 break-all text-xs text-ink-muted">{deployed ?? t('admin.pdfNotUploaded')}</p>
+                <input
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  className="mt-3 block w-full text-xs text-ink-muted file:me-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:font-semibold file:text-white"
+                  onChange={(event) => selectPdf(language, event.target.files?.[0])}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  className="mt-3 w-full"
+                  disabled={!value.id || !files[language] || uploading !== null}
+                  onClick={() => void uploadPdf(language, field)}
+                >
+                  {uploading === language ? t('admin.uploadingPdf') : t(deployed ? 'admin.replacePdf' : 'admin.uploadPdf')}
+                </Button>
+              </section>
+            );
+          })}
         </div>
+        {!value.id ? <p className="text-xs text-ink-muted md:col-span-2">{t('admin.saveBeforeUpload')}</p> : null}
       </div>
       <label className="mt-5 flex items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={value.published} onChange={(e) => setValue({ ...value, published: e.target.checked })} className="size-4 accent-[var(--blue)]" />{t('admin.published')}</label>
       <div className="mt-6"><TranslationFields value={value.translations} active={active} onActiveChange={setActive} onChange={(translations) => setValue({ ...value, translations })} /></div>

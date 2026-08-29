@@ -15,12 +15,14 @@ import {
   createContact,
   createGuideLead,
   createNewsletterSubscription,
+  listGuideAvailability,
   unsubscribeNewsletter,
 } from './public-api';
 
 async function routeApi(request: Request, env: Env, ctx: ExecutionContextLike): Promise<Response> {
   const { pathname } = new URL(request.url);
   if (pathname === '/api/v1/contact') return createContact(request, env, ctx);
+  if (pathname === '/api/v1/guides') return listGuideAvailability(request, env);
   if (pathname === '/api/v1/leads') return createGuideLead(request, env, ctx);
   if (pathname === '/api/v1/newsletter') return createNewsletterSubscription(request, env, ctx);
   if (pathname === '/api/v1/newsletter/unsubscribe') return unsubscribeNewsletter(request, env);

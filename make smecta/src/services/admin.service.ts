@@ -1,4 +1,4 @@
-import type { Guide, Opportunity } from '../types/content';
+import type { Guide, GuideLanguage, Opportunity } from '../types/content';
 import { apiJson } from './api-client';
 
 export async function signInAdmin(): Promise<void> {
@@ -28,8 +28,7 @@ export async function listAdminGuides(): Promise<Guide[]> {
   return (await apiJson<{ items: Guide[] }>('/api/v1/admin/guides')).items;
 }
 
-export async function saveAdminGuide(guide: Omit<Guide, 'id'> & { id?: string }, pdf?: File | null): Promise<string> {
-  if (pdf) throw new Error('runtime_uploads_disabled');
+export async function saveAdminGuide(guide: Omit<Guide, 'id'> & { id?: string }): Promise<string> {
   if (guide.id) {
     await apiJson(`/api/v1/admin/guides/${encodeURIComponent(guide.id)}`, {
       method: 'PUT',
@@ -41,6 +40,18 @@ export async function saveAdminGuide(guide: Omit<Guide, 'id'> & { id?: string },
     method: 'POST',
     body: JSON.stringify(guide),
   })).resourceId;
+}
+
+export async function uploadAdminGuidePdf(
+  guideId: string,
+  language: GuideLanguage,
+  pdf: File,
+): Promise<string> {
+  const result = await apiJson<{ success: true; objectKey: string }>(
+    `/api/v1/admin/guides/${encodeURIComponent(guideId)}/pdf/${language}`,
+    { method: 'PUT', headers: { 'Content-Type': 'application/pdf' }, body: pdf },
+  );
+  return result.objectKey;
 }
 
 export async function deleteAdminGuide(id: string): Promise<void> {

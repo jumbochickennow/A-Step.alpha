@@ -1,4 +1,5 @@
 import { HttpError } from '../http';
+import { isAdminGuidePdfUpload } from './request-guard';
 
 export const MAX_API_BODY_BYTES = 10 * 1024 * 1024;
 
@@ -25,6 +26,7 @@ export function enforceUploadBoundary(request: Request): void {
   if (encoding && encoding !== 'identity') throw new HttpError(415, 'unsupported_content_encoding');
 
   const contentType = request.headers.get('Content-Type')?.split(';', 1)[0].trim().toLowerCase();
+  if (isAdminGuidePdfUpload(request) && contentType === 'application/pdf') return;
   const uploadShaped = contentType?.startsWith('multipart/')
     || (contentType ? UPLOAD_MEDIA_TYPES.has(contentType) : false)
     || request.headers.has('Content-Disposition');

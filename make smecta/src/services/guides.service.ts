@@ -1,6 +1,7 @@
 import seedContent from '../data/content.json';
 import { fallbackGuides } from '../data/fallback';
 import type { Guide, Locale, LocalizedGuide } from '../types/content';
+import { apiJson } from './api-client';
 
 const seededGuides = seedContent.guides as Guide[];
 
@@ -16,10 +17,21 @@ export function allGuides(): Guide[] {
 }
 
 export async function listGuides(locale: Locale): Promise<LocalizedGuide[]> {
+  let availability = new Map<string, Record<Locale, boolean>>();
+  try {
+    const response = await apiJson<{ items: Array<{ id: string; availableLanguages: Record<Locale, boolean> }> }>('/api/v1/guides');
+    availability = new Map(response.items.map((item) => [item.id, item.availableLanguages]));
+  } catch {
+    // The bundled catalog remains usable while the edge API is unavailable.
+  }
   return allGuides()
     .filter((guide) => guide.published)
     .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map(({ translations, ...guide }) => ({ ...guide, ...translations[locale] }));
+    .map(({ translations, ...guide }) => ({
+      ...guide,
+      availableLanguages: availability.get(guide.id) ?? { en: true, fr: false, ar: false },
+      ...translations[locale],
+    }));
 }
 
 /** Strongly typed query filters for guide catalog lookups. */

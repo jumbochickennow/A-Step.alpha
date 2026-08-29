@@ -4,6 +4,7 @@ import { decryptPii } from './security/encryption';
 import { createResourceRef, resolveResourceRef } from './security/resource-ref';
 import type { Env } from './env';
 import { HttpError, json, readJson, requireMethod } from './http';
+import { validatedPdfBody } from './security/pdf-upload';
 
 const copySchema = z.object({ title: z.string().trim().min(1).max(180), description: z.string().trim().min(1).max(4000) }).strict();
 const translationsSchema = z.object({ en: copySchema, fr: copySchema, ar: copySchema }).strict();
@@ -17,6 +18,9 @@ const guideSchema = z.object({
   slug: z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/),
   category: z.string().trim().min(1).max(80),
   filePath: nullableGuidePath,
+  r2KeyEn: nullableGuidePath,
+  r2KeyFr: nullableGuidePath,
+  r2KeyAr: nullableGuidePath,
   fileType: z.literal('PDF'),
   pageCount: z.number().int().min(1).max(2000),
   coverPath: z.string().max(512).regex(/^\/assets\/[a-z0-9/_-]+\.(?:png|jpe?g|webp|avif)$/).nullable(),
@@ -42,6 +46,7 @@ const opportunitySchema = z.object({
 
 interface GuideRow {
   id: string; slug: string; category: string; storage_object_path: string | null; file_type: string;
+  r2_key_en: string | null; r2_key_fr: string | null; r2_key_ar: string | null;
   page_count: number; cover_path: string | null; published: number; sort_order: number;
   content_updated_at: string; translations: string;
 }
@@ -73,6 +78,10 @@ async function guideFromRow(row: GuideRow, env: Env, identity: AdminIdentity) {
     slug: row.slug,
     category: row.category,
     filePath: row.storage_object_path,
+    r2KeyEn: row.r2_key_en,
+    r2KeyFr: row.r2_key_fr,
+    r2KeyAr: row.r2_key_ar,
+    availableLanguages: { en: Boolean(row.r2_key_en), fr: Boolean(row.r2_key_fr), ar: Boolean(row.r2_key_ar) },
     fileType: row.file_type,
     pageCount: row.page_count,
     coverPath: row.cover_path,
@@ -102,9 +111,14 @@ async function opportunityFromRow(row: OpportunityRow, env: Env, identity: Admin
 async function guides(request: Request, env: Env, identity: AdminIdentity, id?: string): Promise<Response> {
   if (request.method === 'GET' && !id) {
     const { results } = await env.DB.prepare(
-      `SELECT id, slug, category, storage_object_path, file_type, page_count, cover_path,
-       published, sort_order, content_updated_at, translations
-       FROM guides WHERE user_id = ?1 ORDER BY sort_order ASC LIMIT 100`,
+      `SELECT g.id, g.slug, g.category, g.storage_object_path,
+       COALESCE(g.r2_key_en, a.r2_key_en) AS r2_key_en,
+       COALESCE(g.r2_key_fr, a.r2_key_fr) AS r2_key_fr,
+       COALESCE(g.r2_key_ar, a.r2_key_ar) AS r2_key_ar,
+       g.file_type, g.page_count, g.cover_path, g.published, g.sort_order,
+       g.content_updated_at, g.translations
+       FROM guides g LEFT JOIN guide_assets a ON a.slug = g.slug
+       WHERE g.user_id = ?1 ORDER BY g.sort_order ASC LIMIT 100`,
     ).bind(identity.id).all<GuideRow>();
     return json({ items: await Promise.all(results.map((row) => guideFromRow(row, env, identity))) });
   }
@@ -117,13 +131,15 @@ async function guides(request: Request, env: Env, identity: AdminIdentity, id?: 
     const now = new Date().toISOString();
     await mutate(env.DB.prepare(
       `INSERT INTO guides
-        (id, user_id, slug, category, storage_object_path, file_type, page_count, cover_path,
-         published, sort_order, content_updated_at, translations, created_at, updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?13)`,
+        (id, user_id, slug, category, storage_object_path, r2_key_en, r2_key_fr, r2_key_ar,
+         file_type, page_count, cover_path, published, sort_order, content_updated_at,
+         translations, created_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?16)`,
     ).bind(
-      databaseId, identity.id, input.slug, input.category, input.filePath, input.fileType,
-      input.pageCount, input.coverPath, input.published ? 1 : 0, input.sortOrder,
-      input.contentUpdatedAt, JSON.stringify(input.translations), now,
+      databaseId, identity.id, input.slug, input.category, input.r2KeyEn ?? input.filePath,
+      input.r2KeyEn, input.r2KeyFr, input.r2KeyAr, input.fileType, input.pageCount,
+      input.coverPath, input.published ? 1 : 0, input.sortOrder, input.contentUpdatedAt,
+      JSON.stringify(input.translations), now,
     ));
     return json({
       success: true,
@@ -136,12 +152,14 @@ async function guides(request: Request, env: Env, identity: AdminIdentity, id?: 
     const input = parsed.data;
     const databaseId = await resolveResourceRef(id, 'guide', identity.id, env.SESSION_SECRET);
     await mutate(env.DB.prepare(
-      `UPDATE guides SET slug = ?1, category = ?2, storage_object_path = ?3, file_type = ?4,
-       page_count = ?5, cover_path = ?6, published = ?7, sort_order = ?8,
-       content_updated_at = ?9, translations = ?10, updated_at = ?11
-       WHERE id = ?12 AND user_id = ?13`,
+      `UPDATE guides SET slug = ?1, category = ?2, storage_object_path = ?3,
+       r2_key_en = ?4, r2_key_fr = ?5, r2_key_ar = ?6, file_type = ?7,
+       page_count = ?8, cover_path = ?9, published = ?10, sort_order = ?11,
+       content_updated_at = ?12, translations = ?13, updated_at = ?14
+       WHERE id = ?15 AND user_id = ?16`,
     ).bind(
-      input.slug, input.category, input.filePath, input.fileType, input.pageCount, input.coverPath,
+      input.slug, input.category, input.r2KeyEn ?? input.filePath, input.r2KeyEn,
+      input.r2KeyFr, input.r2KeyAr, input.fileType, input.pageCount, input.coverPath,
       input.published ? 1 : 0, input.sortOrder, input.contentUpdatedAt,
       JSON.stringify(input.translations), new Date().toISOString(), databaseId, identity.id,
     ));
@@ -153,6 +171,56 @@ async function guides(request: Request, env: Env, identity: AdminIdentity, id?: 
     return json({ success: true });
   }
   throw new HttpError(405, 'method_not_allowed');
+}
+
+async function uploadGuidePdf(
+  request: Request,
+  env: Env,
+  identity: AdminIdentity,
+  id: string,
+  languageValue: string,
+): Promise<Response> {
+  requireMethod(request, ['PUT']);
+  if (!resourceRefSchema.safeParse(id).success) throw new HttpError(404, 'not_found');
+  const language = z.enum(['en', 'fr', 'ar']).safeParse(languageValue);
+  if (!language.success) throw new HttpError(404, 'not_found');
+  const databaseId = await resolveResourceRef(id, 'guide', identity.id, env.SESSION_SECRET);
+  const guide = await env.DB.prepare(
+    'SELECT slug FROM guides WHERE id = ?1 AND user_id = ?2 LIMIT 1',
+  ).bind(databaseId, identity.id).first<{ slug: string }>();
+  if (!guide) throw new HttpError(404, 'not_found');
+
+  const objectKey = `a-step-guides/${guide.slug}-${language.data}.pdf`;
+  await env.GUIDES_BUCKET.put(objectKey, validatedPdfBody(request), {
+    httpMetadata: {
+      contentType: 'application/pdf',
+      contentDisposition: `attachment; filename="${guide.slug}-${language.data}.pdf"`,
+    },
+    customMetadata: { guideId: databaseId, language: language.data },
+  });
+
+  const column = { en: 'r2_key_en', fr: 'r2_key_fr', ar: 'r2_key_ar' }[language.data];
+  const now = new Date().toISOString();
+  const [updated] = await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE guides SET ${column} = ?1,
+       storage_object_path = CASE WHEN ?2 = 'en' THEN ?1 ELSE storage_object_path END,
+       updated_at = ?3 WHERE id = ?4 AND user_id = ?5`,
+    ).bind(objectKey, language.data, now, databaseId, identity.id),
+    env.DB.prepare(
+      `INSERT INTO guide_assets
+        (id, slug, object_key, r2_key_en, r2_key_fr, r2_key_ar, created_at)
+       VALUES (?1, ?2, ?3,
+         CASE WHEN ?4 = 'en' THEN ?3 ELSE NULL END,
+         CASE WHEN ?4 = 'fr' THEN ?3 ELSE NULL END,
+         CASE WHEN ?4 = 'ar' THEN ?3 ELSE NULL END, ?5)
+       ON CONFLICT(slug) DO UPDATE SET
+         ${column} = ?3,
+         object_key = CASE WHEN ?4 = 'en' THEN ?3 ELSE guide_assets.object_key END`,
+    ).bind(databaseId, guide.slug, objectKey, language.data, now),
+  ]);
+  if (updated.meta.changes !== 1) throw new HttpError(404, 'not_found');
+  return json({ success: true, objectKey });
 }
 
 async function opportunities(request: Request, env: Env, identity: AdminIdentity, id?: string): Promise<Response> {
@@ -213,16 +281,18 @@ async function opportunities(request: Request, env: Env, identity: AdminIdentity
 async function adminRecords(env: Env, identity: AdminIdentity, table: string): Promise<Response> {
   if (table === 'guide_download_leads') {
     const { results } = await env.DB.prepare(
-      `SELECT id, name_ciphertext, email_ciphertext, phone_ciphertext, guide_slug, locale, created_at
+      `SELECT id, full_name_ciphertext, email_ciphertext, guide_slug, guide_language,
+       target_country, locale, created_at
        FROM guide_download_leads ORDER BY created_at DESC LIMIT 100`,
     ).all<Record<string, string | null>>();
     const items = await Promise.all(results.map(async (row) => ({
       id: await createResourceRef(row.id!, 'lead', identity.id, env.SESSION_SECRET),
       submittedAt: row.created_at,
-      name: await decryptPii(row.name_ciphertext!, env.PII_ENCRYPTION_KEY_V1),
+      name: await decryptPii(row.full_name_ciphertext!, env.PII_ENCRYPTION_KEY_V1),
       email: await decryptPii(row.email_ciphertext!, env.PII_ENCRYPTION_KEY_V1),
-      phone: row.phone_ciphertext ? await decryptPii(row.phone_ciphertext, env.PII_ENCRYPTION_KEY_V1) : null,
       guideSlug: row.guide_slug,
+      guideLanguage: row.guide_language,
+      targetCountry: row.target_country,
       locale: row.locale,
     })));
     return json({ items });
@@ -295,6 +365,9 @@ async function charts(env: Env): Promise<Response> {
 
 export async function adminApi(request: Request, env: Env, identity: AdminIdentity): Promise<Response> {
   const path = new URL(request.url).pathname.slice('/api/v1/admin/'.length).split('/').filter(Boolean);
+  if (path[0] === 'guides' && path[2] === 'pdf' && path.length === 4) {
+    return uploadGuidePdf(request, env, identity, path[1], path[3]);
+  }
   if (path[0] === 'guides' && path.length <= 2) return guides(request, env, identity, path[1]);
   if (path[0] === 'opportunities' && path.length <= 2) return opportunities(request, env, identity, path[1]);
   if (path[0] === 'records' && path.length === 2) {

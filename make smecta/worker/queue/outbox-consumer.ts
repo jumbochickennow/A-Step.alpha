@@ -81,16 +81,18 @@ export async function verifyWebhookSignature(
 async function eventPayload(env: Env, event: ClaimedEvent): Promise<Record<string, unknown>> {
   if (event.event_type === 'guide_lead.created') {
     const row = await env.DB.prepare(
-      `SELECT id, name_ciphertext, email_ciphertext, phone_ciphertext, guide_slug, locale, created_at
+      `SELECT id, full_name_ciphertext, email_ciphertext, guide_slug, guide_language,
+       target_country, locale, created_at
        FROM guide_download_leads WHERE id = ?1 LIMIT 1`,
     ).bind(event.aggregate_id).first<Record<string, string | null>>();
     if (!row) throw new Error('outbox_record_missing');
     return {
       id: row.id,
-      name: await decryptPii(row.name_ciphertext!, env.PII_ENCRYPTION_KEY_V1),
+      name: await decryptPii(row.full_name_ciphertext!, env.PII_ENCRYPTION_KEY_V1),
       email: await decryptPii(row.email_ciphertext!, env.PII_ENCRYPTION_KEY_V1),
-      phone: row.phone_ciphertext ? await decryptPii(row.phone_ciphertext, env.PII_ENCRYPTION_KEY_V1) : null,
       guideSlug: row.guide_slug,
+      guideLanguage: row.guide_language,
+      targetCountry: row.target_country,
       locale: row.locale,
       createdAt: row.created_at,
     };

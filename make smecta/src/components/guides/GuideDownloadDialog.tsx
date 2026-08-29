@@ -5,14 +5,13 @@ import { Link } from 'react-router-dom';
 import { localizedPath, useLocale } from '../../hooks/useLocale';
 import { COUNTRIES, categoryLabel } from '../../lib/constants';
 import {
-  sanitizePhone,
   suggestEmail,
   validateGuideDownloadForm,
   type GuideDownloadFormInputs,
 } from '../../lib/validation';
 import { track } from '../../services/analytics';
 import { submitGuideLead } from '../../services/leads.service';
-import type { LocalizedGuide } from '../../types/content';
+import type { GuideLanguage, LocalizedGuide } from '../../types/content';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../common/Button';
 import { TurnstileWidget, isTurnstileEnabled } from '../common/TurnstileWidget';
@@ -21,19 +20,19 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger, u
 const EMPTY_FORM: GuideDownloadFormInputs = {
   fullName: '',
   email: '',
-  phone: '',
+  guideLanguage: 'en',
   targetCountry: '',
-  studyLevel: '',
 };
 /** Submission order used to focus the first invalid control. */
 const FIELD_ORDER: (keyof GuideDownloadFormInputs)[] = [
   'fullName',
   'email',
-  'phone',
-  'targetCountry',
-  'studyLevel',
 ];
-const STUDY_LEVEL_KEYS = ['forms.levelSchool', 'forms.levelBachelor', 'forms.levelMaster', 'forms.levelPhd'] as const;
+const GUIDE_LANGUAGES: Array<{ value: GuideLanguage; labelKey: string }> = [
+  { value: 'en', labelKey: 'guides.modal.languageEnglish' },
+  { value: 'fr', labelKey: 'guides.modal.languageFrench' },
+  { value: 'ar', labelKey: 'guides.modal.languageArabic' },
+];
 /** Minimum delay between accepted submissions (blocks rapid multi-clicks). */
 const SUBMIT_COOLDOWN_MS = 5000;
 /** Simulated latency for silently rejected bot submissions. */
@@ -63,6 +62,7 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
   const [turnstileError, setTurnstileError] = useState(false);
   const turnstileEnabled = isTurnstileEnabled();
   const { toast } = useToast();
+  const availableLanguages = guide.availableLanguages ?? { en: true, fr: false, ar: false };
 
   // DialogContent owns the body lock; Escape dismisses this controlled dialog.
   useEscapeToClose(open, () => setOpen(false));
@@ -90,10 +90,10 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
     setSuggestion(suggestEmail(values.email));
   };
 
-  const triggerBrowserDownload = (downloadUrl: string) => {
+  const triggerBrowserDownload = (downloadUrl: string, guideLanguage: GuideLanguage) => {
     const link = document.createElement('a');
     link.href = downloadUrl;
-    link.setAttribute('download', `${guide.slug}-${locale}.pdf`);
+    link.setAttribute('download', `${guide.slug}-${guideLanguage}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -121,16 +121,7 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
       return;
     }
 
-    // Validate required fullName/email/phone (plus optional fields) through
-    // the centralized layer; `result.data` carries sanitized values, with
-    // the phone normalized to an E.164-safe format.
-    const result = validateGuideDownloadForm(
-      {
-        ...values,
-        phone: sanitizePhone(values.phone),
-      },
-      t,
-    );
+    const result = validateGuideDownloadForm(values, t);
     setErrors(result.errors);
     if (!result.isValid) {
       const firstInvalid = FIELD_ORDER.find((field) => result.errors[field]);
@@ -148,16 +139,17 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
     setIsSubmitting(true);
     try {
       const downloadUrl = await submitGuideLead({
-        name: result.data.fullName,
+        fullName: result.data.fullName,
         email: result.data.email,
-        phone: result.data.phone,
-        targetGuideId: guide.id,
+        guideId: guide.id,
+        guideLanguage: result.data.guideLanguage,
+        targetCountry: result.data.targetCountry,
         guideSlug: guide.slug,
         locale,
         turnstileToken,
       });
       track('guide_download_success', { guide: guide.slug });
-      triggerBrowserDownload(downloadUrl);
+      triggerBrowserDownload(downloadUrl, result.data.guideLanguage);
       toast.success(t('forms.downloadStarted'));
       setOpen(false);
       resetForm();
@@ -237,25 +229,23 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
             />
             <p id={`email-error-${guide.id}`} className={`mt-1 min-h-4 text-xs ${errors.email ? 'text-red-500' : 'text-brand-blue-text'}`}>{errors.email ?? (suggestion ? t('forms.didYouMean', { email: suggestion }) : '')}</p>
           </div>
-          <div>
-            <label htmlFor={`phone-${guide.id}`} className="mb-2 block text-sm font-semibold">{t('guides.modal.phone')}</label>
-            <input
-              id={`phone-${guide.id}`}
-              type="tel"
-              dir={locale === 'ar' ? 'ltr' : undefined}
-              placeholder={t('guides.modal.phonePlaceholder')}
-              className={`field text-start ${errors.phone ? 'border-[var(--danger)]' : ''}`}
-              autoComplete="tel"
-              maxLength={20}
-              value={values.phone}
-              onChange={update('phone')}
-              onBlur={revalidateOnBlur}
-              aria-invalid={Boolean(errors.phone)}
-              aria-describedby={errors.phone ? `phone-error-${guide.id}` : undefined}
-            />
-            <p id={`phone-error-${guide.id}`} className="mt-1 min-h-4 text-xs text-red-500">{errors.phone ?? ''}</p>
-          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor={`guideLanguage-${guide.id}`} className="mb-2 block text-sm font-semibold">{t('guides.modal.guideLanguage')}</label>
+              <select
+                id={`guideLanguage-${guide.id}`}
+                className="field"
+                value={values.guideLanguage}
+                onChange={update('guideLanguage')}
+                required
+              >
+                {GUIDE_LANGUAGES.map(({ value, labelKey }) => (
+                  <option key={value} value={value} disabled={!availableLanguages[value]}>
+                    {t(labelKey)}{availableLanguages[value] ? '' : ` (${t('guides.modal.unavailable')})`}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label htmlFor={`targetCountry-${guide.id}`} className="mb-2 block text-sm font-semibold">{t('guides.modal.country')}</label>
               <select
@@ -273,24 +263,6 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
                 ))}
               </select>
               <p id={`targetCountry-error-${guide.id}`} className="mt-1 min-h-4 text-xs text-red-500">{errors.targetCountry ?? ''}</p>
-            </div>
-            <div>
-              <label htmlFor={`studyLevel-${guide.id}`} className="mb-2 block text-sm font-semibold">{t('guides.modal.studyLevel')}</label>
-              <select
-                id={`studyLevel-${guide.id}`}
-                className="field"
-                value={values.studyLevel ?? ''}
-                onChange={update('studyLevel')}
-                onBlur={revalidateOnBlur}
-                aria-invalid={Boolean(errors.studyLevel)}
-                aria-describedby={errors.studyLevel ? `studyLevel-error-${guide.id}` : undefined}
-              >
-                <option value="">—</option>
-                {STUDY_LEVEL_KEYS.map((key) => (
-                  <option key={key} value={t(key)}>{t(key)}</option>
-                ))}
-              </select>
-              <p id={`studyLevel-error-${guide.id}`} className="mt-1 min-h-4 text-xs text-red-500">{errors.studyLevel ?? ''}</p>
             </div>
           </div>
           <p className="text-sm leading-relaxed text-ink-muted">
@@ -315,7 +287,7 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
               <p className="mt-1 min-h-4 text-xs text-red-500">{turnstileError ? t('forms.turnstileRequired') : ''}</p>
             </div>
           ) : null}
-          <Button type="submit" disabled={isSubmitting} className="w-full">
+          <Button type="submit" disabled={isSubmitting} className="w-full rounded-xl bg-blue-600 py-3.5 font-semibold text-white shadow-md transition hover:bg-blue-700">
             {isSubmitting ? (
               <>
                 <Loader2 size={16} className="animate-spin" aria-hidden="true" />

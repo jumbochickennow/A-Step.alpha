@@ -1,4 +1,5 @@
 export type Locale = 'en' | 'fr' | 'ar';
+export type GuideLanguage = Locale;
 
 export interface LocalizedCopy {
   title: string;
@@ -106,6 +107,10 @@ export interface Guide {
   slug: string;
   category: string;
   filePath: string | null;
+  r2KeyEn?: string | null;
+  r2KeyFr?: string | null;
+  r2KeyAr?: string | null;
+  availableLanguages?: Record<GuideLanguage, boolean>;
   fileType: string;
   pageCount: number;
   coverPath: string | null;

@@ -13,10 +13,11 @@ export const contactInputSchema = z.object({
 }).strict();
 
 export const leadInputSchema = z.object({
-  name: z.string().trim().min(2).max(70),
+  fullName: z.string().trim().min(2).max(70),
   email,
-  phone: z.string().trim().min(7).max(20).regex(/^\+?[0-9 ()-]{7,20}$/),
-  targetGuideId: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/),
+  guideId: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/),
+  guideLanguage: z.enum(['en', 'fr', 'ar']),
+  targetCountry: z.string().trim().min(1).max(80).optional(),
   locale,
   turnstileToken,
 }).strict();

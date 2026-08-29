@@ -150,9 +150,8 @@ export interface ContactFormInputs {
 export interface GuideDownloadFormInputs {
   fullName: string;
   email: string;
-  phone: string;
+  guideLanguage: 'en' | 'fr' | 'ar';
   targetCountry?: string;
-  studyLevel?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -260,20 +259,15 @@ export function validateGuideDownloadForm(
   const emailResult = validateEmailField(inputs.email, t);
   if (emailResult.error) errors.email = emailResult.error;
 
-  const phoneResult = validatePhoneField(inputs.phone, t);
-  if (phoneResult.error) errors.phone = phoneResult.error;
-
   const targetCountry = inputs.targetCountry ? sanitizeText(inputs.targetCountry, 80) : undefined;
-  const studyLevel = inputs.studyLevel ? sanitizeText(inputs.studyLevel, 80) : undefined;
 
   return {
     isValid: Object.keys(errors).length === 0,
     data: {
       fullName: fullNameResult.value,
       email: emailResult.value,
-      phone: phoneResult.value,
+      guideLanguage: inputs.guideLanguage,
       targetCountry: targetCountry || undefined,
-      studyLevel: studyLevel || undefined,
     },
     errors,
   };

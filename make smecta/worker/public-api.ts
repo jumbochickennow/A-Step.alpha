@@ -15,7 +15,14 @@ const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60;
 const GRANT_TTL_SECONDS = 5 * 60;
 
 interface StoredResponse { response: string | null }
-interface GuideAsset { slug: string; object_key: string }
+interface GuideAsset {
+  id: string;
+  slug: string;
+  object_key: string;
+  r2_key_en: string | null;
+  r2_key_fr: string | null;
+  r2_key_ar: string | null;
+}
 interface Subscriber { id: string }
 
 async function pii(value: string | undefined, env: Env): Promise<string | null> {
@@ -24,6 +31,23 @@ async function pii(value: string | undefined, env: Env): Promise<string | null> 
 
 function enqueue(ctx: ExecutionContextLike, env: Env, eventId: string): void {
   ctx.waitUntil(env.EVENT_QUEUE.send({ outboxId: eventId }));
+}
+
+export async function listGuideAvailability(request: Request, env: Env): Promise<Response> {
+  requireMethod(request, ['GET']);
+  const { results } = await env.DB.prepare(
+    `SELECT id, r2_key_en, r2_key_fr, r2_key_ar FROM guide_assets ORDER BY id LIMIT 100`,
+  ).all<Pick<GuideAsset, 'id' | 'r2_key_en' | 'r2_key_fr' | 'r2_key_ar'>>();
+  return json({
+    items: results.map((row) => ({
+      id: row.id,
+      availableLanguages: {
+        en: Boolean(row.r2_key_en),
+        fr: Boolean(row.r2_key_fr),
+        ar: Boolean(row.r2_key_ar),
+      },
+    })),
+  });
 }
 
 async function storedResponse<T>(env: Env, key: string, action: string, now: number): Promise<T | null> {
@@ -70,9 +94,14 @@ export async function createGuideLead(request: Request, env: Env, ctx: Execution
   await verifyTurnstile(request, env, input.turnstileToken, 'lead_download');
 
   const asset = await env.DB.prepare(
-    'SELECT slug, object_key FROM guide_assets WHERE id = ?1 LIMIT 1',
-  ).bind(input.targetGuideId).first<GuideAsset>();
+    `SELECT id, slug, object_key, r2_key_en, r2_key_fr, r2_key_ar
+     FROM guide_assets WHERE id = ?1 LIMIT 1`,
+  ).bind(input.guideId).first<GuideAsset>();
   if (!asset) throw new HttpError(404, 'guide_not_found');
+  const requestedKey = input.guideLanguage === 'fr'
+    ? asset.r2_key_fr
+    : input.guideLanguage === 'ar' ? asset.r2_key_ar : asset.r2_key_en;
+  const objectKey = requestedKey ?? asset.r2_key_en ?? asset.object_key;
 
   const now = Math.floor(Date.now() / 1000);
   const createdAt = new Date(now * 1000).toISOString();
@@ -80,27 +109,32 @@ export async function createGuideLead(request: Request, env: Env, ctx: Execution
   const grantId = crypto.randomUUID();
   const eventId = crypto.randomUUID();
   const grantToken = randomToken();
+  const nameCiphertext = await encryptPii(input.fullName, env.PII_ENCRYPTION_KEY_V1);
+  const emailCiphertext = await encryptPii(input.email, env.PII_ENCRYPTION_KEY_V1);
   const response = { success: true as const, grantToken };
   const result = await idempotentBatch(env, idempotencyKey, 'guide_lead', response, [
     env.DB.prepare(
       `INSERT INTO guide_download_leads
-        (id, name_ciphertext, email_ciphertext, email_blind_index, phone_ciphertext, guide_slug, locale, created_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`,
+        (id, name_ciphertext, full_name_ciphertext, email_ciphertext, email_blind_index,
+         phone_ciphertext, guide_id, guide_slug, guide_language, target_country, locale, created_at)
+       VALUES (?1, ?2, ?2, ?3, ?4, NULL, ?5, ?6, ?7, ?8, ?9, ?10)`,
     ).bind(
       leadId,
-      await pii(input.name, env),
-      await pii(input.email, env),
+      nameCiphertext,
+      emailCiphertext,
       await createBlindIndex(input.email, env.BLIND_INDEX_SECRET),
-      await pii(input.phone, env),
+      asset.id,
       asset.slug,
+      input.guideLanguage,
+      input.targetCountry ?? null,
       input.locale,
       createdAt,
     ),
     env.DB.prepare(
       `INSERT INTO download_grants
-        (id, lead_id, token, guide_slug, object_key, expires_at, consumed)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0)`,
-    ).bind(grantId, leadId, await sha256(grantToken), asset.slug, asset.object_key, now + GRANT_TTL_SECONDS),
+        (id, lead_id, token, guide_id, guide_slug, guide_language, object_key, expires_at, consumed)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0)`,
+    ).bind(grantId, leadId, await sha256(grantToken), asset.id, asset.slug, input.guideLanguage, objectKey, now + GRANT_TTL_SECONDS),
     env.DB.prepare(
       `INSERT INTO outbox_events
         (id, event_type, aggregate_id, status, attempts, available_at, created_at, updated_at)
