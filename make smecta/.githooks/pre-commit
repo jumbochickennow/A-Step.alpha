@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+
+hook_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+cd "$(dirname -- "$hook_dir")"
+
+node scripts/scan-staged-secrets.mjs
+node scripts/check-public-assets.mjs

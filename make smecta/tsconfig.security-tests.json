@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "target": "ES2022",
+    "lib": ["ES2022", "WebWorker"],
+    "types": ["node"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.security-tests.tsbuildinfo"
+  },
+  "include": ["scripts/phase3-security-assertions.ts", "worker", "worker-configuration.d.ts"]
+}

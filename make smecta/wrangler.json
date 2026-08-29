@@ -1,0 +1,73 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "a-step-immigration-space",
+	"compatibility_date": "2026-08-29",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"main": "worker/index.ts",
+	"assets": {
+		"binding": "ASSETS",
+		"directory": "./dist",
+		"html_handling": "auto-trailing-slash",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": [
+			"/api/v1/*"
+		]
+	},
+	"secrets": {
+		"required": [
+			"TURNSTILE_SECRET_KEY",
+			"TURNSTILE_ALLOWED_HOSTNAMES",
+			"ALLOWED_ORIGINS",
+			"PII_ENCRYPTION_KEY_V1",
+			"BLIND_INDEX_SECRET",
+			"SESSION_SECRET",
+			"WEBHOOK_HMAC_SECRET",
+			"OUTBOUND_WEBHOOK_URL",
+			"OUTBOUND_WEBHOOK_ALLOWED_HOSTS",
+			"CF_ACCESS_TEAM_DOMAIN",
+			"CF_ACCESS_POLICY_AUD"
+		]
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "astep-production-db",
+			"database_id": "b9f6f42a-2b44-4429-9865-a4cfc7a2febd",
+			"migrations_dir": "migrations"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "GUIDES_BUCKET",
+			"bucket_name": "a-step-guides"
+		}
+	],
+	"queues": {
+		"producers": [
+			{
+				"binding": "EVENT_QUEUE",
+				"queue": "a-step-outbox"
+			}
+		],
+		"consumers": [
+			{
+				"queue": "a-step-outbox",
+				"max_batch_size": 10,
+				"max_batch_timeout": 5,
+				"max_retries": 5,
+				"dead_letter_queue": "a-step-outbox-dlq",
+				"max_concurrency": 2
+			}
+		]
+	},
+	"triggers": {
+		"crons": [
+			"*/1 * * * *"
+		]
+	},
+	"observability": {
+		"enabled": true
+	}
+}

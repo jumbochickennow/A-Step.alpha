@@ -1,0 +1,37 @@
+import { z } from 'zod';
+
+const locale = z.string().trim().pipe(z.enum(['en', 'fr', 'ar']));
+const email = z.string().trim().email().max(254).transform((value) => value.toLowerCase());
+const turnstileToken = z.string().trim().min(1).max(2048);
+
+export const contactInputSchema = z.object({
+  name: z.string().trim().min(2).max(70),
+  email,
+  message: z.string().trim().min(10).max(2000),
+  locale,
+  turnstileToken,
+}).strict();
+
+export const leadInputSchema = z.object({
+  name: z.string().trim().min(2).max(70),
+  email,
+  phone: z.string().trim().min(7).max(20).regex(/^\+?[0-9 ()-]{7,20}$/),
+  targetGuideId: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/),
+  locale,
+  turnstileToken,
+}).strict();
+
+export const newsletterInputSchema = z.object({
+  email,
+  locale,
+  turnstileToken,
+}).strict();
+
+export const downloadGrantInputSchema = z.object({
+  grantToken: z.string().trim().min(32).max(256).regex(/^[A-Za-z0-9_-]+$/),
+  guideSlug: z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/),
+}).strict();
+
+export const unsubscribeInputSchema = z.object({
+  token: z.string().trim().min(32).max(256).regex(/^[A-Za-z0-9_-]+$/),
+}).strict();

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://astep.example/</loc></url>
+  <url><loc>https://astep.example/guides</loc></url>
+  <url><loc>https://astep.example/opportunities</loc></url>
+  <url><loc>https://astep.example/about</loc></url>
+  <url><loc>https://astep.example/contact</loc></url>
+  <url><loc>https://astep.example/privacy</loc></url>
+  <url><loc>https://astep.example/terms</loc></url>
+  <url><loc>https://astep.example/fr/</loc></url>
+  <url><loc>https://astep.example/fr/guides</loc></url>
+  <url><loc>https://astep.example/fr/opportunities</loc></url>
+  <url><loc>https://astep.example/fr/about</loc></url>
+  <url><loc>https://astep.example/fr/contact</loc></url>
+  <url><loc>https://astep.example/fr/privacy</loc></url>
+  <url><loc>https://astep.example/fr/terms</loc></url>
+  <url><loc>https://astep.example/ar/</loc></url>
+  <url><loc>https://astep.example/ar/guides</loc></url>
+  <url><loc>https://astep.example/ar/opportunities</loc></url>
+  <url><loc>https://astep.example/ar/about</loc></url>
+  <url><loc>https://astep.example/ar/contact</loc></url>
+  <url><loc>https://astep.example/ar/privacy</loc></url>
+  <url><loc>https://astep.example/ar/terms</loc></url>
+</urlset>

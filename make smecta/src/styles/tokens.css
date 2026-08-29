@@ -1,0 +1,38 @@
+:root {
+  --bg: #131822;
+  --surface-1: #1a2130;
+  --surface-2: #222b3c;
+  --border: #2c3648;
+  --border-strong: #3d4a61;
+  --text: #ffffff;
+  --text-muted: #a8b2c4;
+  --text-subtle: #7a8699;
+  --blue: #0e7be5;
+  --blue-text: #4da3f5;
+  --blue-dim: rgb(14 123 229 / 12%);
+  --coral: #ff5e59;
+  --coral-btn: #cc3a35;
+  --coral-dim: rgb(255 94 89 / 12%);
+  --success: #34d399;
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --r-full: 9999px;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 28%), 0 4px 16px rgb(0 0 0 / 24%);
+  --shadow-hover: 0 2px 4px rgb(0 0 0 / 32%), 0 12px 32px rgb(0 0 0 / 34%);
+  --shadow-modal: 0 24px 64px rgb(0 0 0 / 55%);
+  --font-brand: "A-Step Latin", "A-Step Latin Fallback", Inter, system-ui, sans-serif;
+  /* Cairo variable face used across RTL locales (see [dir='rtl'] rules in globals.css). */
+  --font-cairo: "A-Step Arabic", "A-Step Arabic Fallback", "Cairo", Tahoma, sans-serif;
+  /* Focus ring + elevation tokens for the interactive design system. */
+  --focus-ring: var(--blue-text);
+  --shadow-elevated: 0 12px 32px rgb(0 0 0 / 32%), 0 4px 12px rgb(0 0 0 / 24%);
+}
+
+[lang='ar'],
+[dir='rtl'] {
+  --font-brand: "A-Step Arabic", "A-Step Arabic Fallback", Cairo, Tahoma, sans-serif;
+}

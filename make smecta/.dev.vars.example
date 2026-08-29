@@ -1,0 +1,14 @@
+# Cloudflare Access and application policy configuration.
+CF_ACCESS_TEAM_DOMAIN=https://TEAM.cloudflareaccess.com
+CF_ACCESS_POLICY_AUD=
+OUTBOUND_WEBHOOK_URL=https://approved.example/webhooks/a-step
+OUTBOUND_WEBHOOK_ALLOWED_HOSTS=approved.example
+TURNSTILE_ALLOWED_HOSTNAMES=localhost,127.0.0.1
+ALLOWED_ORIGINS=http://localhost:5173
+
+# Store secret values with `wrangler secret put`; never commit real values.
+TURNSTILE_SECRET_KEY=
+PII_ENCRYPTION_KEY_V1=
+BLIND_INDEX_SECRET=
+SESSION_SECRET=
+WEBHOOK_HMAC_SECRET=

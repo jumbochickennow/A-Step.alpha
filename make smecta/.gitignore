@@ -1,0 +1,29 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.wrangler/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+id_rsa*
+id_ed25519*
+*.private-key
+.DS_Store
+*.log
+*.tsbuildinfo
+
+# Source reference files supplied with the brief; optimized web copies live in public/.
+/A-Step website prompt_Final*.pdf
+/Astep-MainIcon.png
+/Frog.png
+/Group 180.png
+/Untitled - 29 June 2026 at 12.44.13 (57).png
+/photo_*.jpg
+/visual-preview.html
