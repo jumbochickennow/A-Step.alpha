@@ -40,6 +40,7 @@ export function Contact() {
   const [honeypot, setHoneypot] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
   const [turnstileError, setTurnstileError] = useState(false);
+  const [challengeVersion, setChallengeVersion] = useState(0);
   const turnstileEnabled = isTurnstileEnabled();
 
   const update =
@@ -106,6 +107,8 @@ export function Contact() {
       await sendContactMessage({
         name: result.data.fullName,
         email: result.data.email,
+        phone: result.data.phone,
+        serviceInterest: result.data.serviceInterest,
         message: result.data.message,
         locale,
         turnstileToken,
@@ -119,6 +122,8 @@ export function Contact() {
     } catch {
       setStatus('error');
     } finally {
+      setTurnstileToken('');
+      if (turnstileEnabled) setChallengeVersion((version) => version + 1);
       setIsSubmitting(false);
     }
   };
@@ -260,13 +265,17 @@ export function Contact() {
             {turnstileEnabled ? (
               <div className="mt-5">
                 <TurnstileWidget
+                  key={challengeVersion}
                   action="contact"
                   onVerify={(token) => {
                     setTurnstileToken(token);
                     setTurnstileError(false);
                   }}
                   onExpire={() => setTurnstileToken('')}
-                  onError={() => setTurnstileToken('')}
+                  onError={() => {
+                    setTurnstileToken('');
+                    setTurnstileError(true);
+                  }}
                 />
                 <p className="mt-1 min-h-4 text-xs text-red-500">{turnstileError ? t('forms.turnstileRequired') : ''}</p>
               </div>

@@ -1,6 +1,13 @@
 import { decodeSecretKey } from '../crypto';
 import type { Env } from '../env';
 import { HttpError } from '../http';
+import {
+  outboundBody,
+  outboundDestination,
+  outboundHeaders,
+  requireSuccessfulDelivery,
+  type OutboundEventType,
+} from '../integrations/outbound-delivery';
 import { decryptPii } from '../security/encryption';
 
 const encoder = new TextEncoder();
@@ -8,7 +15,7 @@ const WEBHOOK_TOLERANCE_SECONDS = 5 * 60;
 
 interface ClaimedEvent {
   id: string;
-  event_type: 'guide_lead.created' | 'contact.created' | 'newsletter.subscribed';
+  event_type: OutboundEventType;
   aggregate_id: string;
   attempts: number;
 }
@@ -16,7 +23,6 @@ interface ClaimedEvent {
 interface QueueMessageLike {
   body: { outboxId?: string };
   ack(): void;
-  retry(options?: { delaySeconds?: number }): void;
 }
 
 export interface QueueBatchLike { messages: QueueMessageLike[] }
@@ -99,7 +105,8 @@ async function eventPayload(env: Env, event: ClaimedEvent): Promise<Record<strin
   }
   if (event.event_type === 'contact.created') {
     const row = await env.DB.prepare(
-      `SELECT id, name_ciphertext, email_ciphertext, message_ciphertext, locale, created_at
+      `SELECT id, name_ciphertext, email_ciphertext, phone_ciphertext,
+       service_interest_ciphertext, message_ciphertext, locale, created_at
        FROM contact_submissions WHERE id = ?1 LIMIT 1`,
     ).bind(event.aggregate_id).first<Record<string, string | null>>();
     if (!row) throw new Error('outbox_record_missing');
@@ -107,6 +114,9 @@ async function eventPayload(env: Env, event: ClaimedEvent): Promise<Record<strin
       id: row.id,
       name: await decryptPii(row.name_ciphertext!, env.PII_ENCRYPTION_KEY_V1),
       email: await decryptPii(row.email_ciphertext!, env.PII_ENCRYPTION_KEY_V1),
+      phone: row.phone_ciphertext ? await decryptPii(row.phone_ciphertext, env.PII_ENCRYPTION_KEY_V1) : null,
+      serviceInterest: row.service_interest_ciphertext
+        ? await decryptPii(row.service_interest_ciphertext, env.PII_ENCRYPTION_KEY_V1) : null,
       message: await decryptPii(row.message_ciphertext!, env.PII_ENCRYPTION_KEY_V1),
       locale: row.locale,
       createdAt: row.created_at,
@@ -128,17 +138,8 @@ async function eventPayload(env: Env, event: ClaimedEvent): Promise<Record<strin
   throw new Error('unsupported_outbox_event');
 }
 
-function webhookUrl(env: Env): URL {
-  const url = new URL(env.OUTBOUND_WEBHOOK_URL);
-  const allowed = new Set(env.OUTBOUND_WEBHOOK_ALLOWED_HOSTS.split(',')
-    .map((host) => host.trim().toLowerCase()).filter(Boolean));
-  if (url.protocol !== 'https:' || url.username || url.password || url.port || !allowed.has(url.hostname.toLowerCase())) {
-    throw new Error('webhook_destination_denied');
-  }
-  return url;
-}
-
-function retryDelaySeconds(attempts: number): number {
+function retryDelaySeconds(attempts: number, lastError?: string): number {
+  if (lastError === 'webhook_http_429') return 10 * 60;
   return Math.min(300, 5 * (2 ** Math.max(0, attempts - 1)));
 }
 
@@ -152,24 +153,22 @@ async function claimEvent(env: Env, outboxId: string): Promise<ClaimedEvent | nu
   ).bind(now, new Date(now * 1000).toISOString(), outboxId).first<ClaimedEvent>();
 }
 
-async function relay(env: Env, outboxId: string): Promise<void> {
+export async function deliverOutboxEvent(env: Env, outboxId: string): Promise<void> {
   const event = await claimEvent(env, outboxId);
   if (!event) return;
   try {
-    const body = JSON.stringify({ id: event.id, type: event.event_type, data: await eventPayload(env, event) });
+    const url = outboundDestination(env);
+    const body = outboundBody(url, event, await eventPayload(env, event));
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const signature = await signWebhookPayload(body, timestamp, env.WEBHOOK_HMAC_SECRET);
-    const response = await fetch(webhookUrl(env), {
+    const headers = outboundHeaders(url, event.id, `t=${timestamp},v1=${signature}`);
+    const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-A-Step-Event-Id': event.id,
-        'X-Astep-Signature': `t=${timestamp},v1=${signature}`,
-      },
+      headers,
       body,
       signal: AbortSignal.timeout(5000),
     });
-    if (!response.ok) throw new Error(`webhook_http_${response.status}`);
+    await requireSuccessfulDelivery(url, response);
     const completedAt = new Date().toISOString();
     await env.DB.prepare(
       `UPDATE outbox_events SET status = 'delivered', delivered_at = ?1, locked_at = NULL,
@@ -181,7 +180,7 @@ async function relay(env: Env, outboxId: string): Promise<void> {
     await env.DB.prepare(
       `UPDATE outbox_events SET status = 'failed', available_at = ?1, locked_at = NULL,
        last_error = ?2, updated_at = ?3 WHERE id = ?4 AND status = 'processing'`,
-    ).bind(now + retryDelaySeconds(event.attempts), message, new Date(now * 1000).toISOString(), event.id).run();
+    ).bind(now + retryDelaySeconds(event.attempts, message), message, new Date(now * 1000).toISOString(), event.id).run();
     throw new DeliveryError(message, event.attempts);
   }
 }
@@ -198,7 +197,7 @@ export async function drainOutbox(env: Env): Promise<void> {
   const { results } = await env.DB.prepare(
     `SELECT id FROM outbox_events
      WHERE status IN ('pending', 'failed') AND available_at <= ?1 AND attempts < 100
-     ORDER BY created_at ASC LIMIT 50`,
+     ORDER BY created_at ASC LIMIT 1`,
   ).bind(now).all<{ id: string }>();
   await Promise.all(results.map((event) => env.EVENT_QUEUE.send({ outboxId: event.id })));
 }
@@ -208,11 +207,12 @@ export async function consumeOutbox(batch: QueueBatchLike, env: Env): Promise<vo
     const id = message.body?.outboxId;
     if (!validUuid(id)) { message.ack(); return; }
     try {
-      await relay(env, id);
+      await deliverOutboxEvent(env, id);
       message.ack();
-    } catch (error) {
-      const attempts = error instanceof DeliveryError ? error.attempts : 1;
-      message.retry({ delaySeconds: retryDelaySeconds(attempts) });
+    } catch {
+      // Delivery state and backoff are durable in D1. Acknowledge the Queue
+      // message; the minute cron will re-enqueue one eligible event at a time.
+      message.ack();
     }
   }));
 }

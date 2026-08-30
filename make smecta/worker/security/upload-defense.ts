@@ -1,7 +1,8 @@
 import { HttpError } from '../http';
-import { isAdminGuidePdfUpload } from './request-guard';
+import { isAdminGuidePdfUpload, isAdminOpportunityImageUpload } from './request-guard';
+import { MAX_UPLOAD_BYTES } from './upload-limits';
 
-export const MAX_API_BODY_BYTES = 10 * 1024 * 1024;
+export const MAX_API_BODY_BYTES = MAX_UPLOAD_BYTES;
 
 const UPLOAD_MEDIA_TYPES = new Set([
   'application/octet-stream',
@@ -9,7 +10,11 @@ const UPLOAD_MEDIA_TYPES = new Set([
   'application/zip',
   'application/x-7z-compressed',
   'application/x-msdownload',
+  'image/avif',
+  'image/jpeg',
+  'image/png',
   'image/svg+xml',
+  'image/webp',
   'text/html',
 ]);
 
@@ -27,6 +32,8 @@ export function enforceUploadBoundary(request: Request): void {
 
   const contentType = request.headers.get('Content-Type')?.split(';', 1)[0].trim().toLowerCase();
   if (isAdminGuidePdfUpload(request) && contentType === 'application/pdf') return;
+  if (isAdminOpportunityImageUpload(request)
+    && ['image/avif', 'image/jpeg', 'image/png', 'image/webp'].includes(contentType ?? '')) return;
   const uploadShaped = contentType?.startsWith('multipart/')
     || (contentType ? UPLOAD_MEDIA_TYPES.has(contentType) : false)
     || request.headers.has('Content-Disposition');

@@ -1,4 +1,4 @@
-import { randomToken, sha256 } from './crypto';
+import { base64UrlDecode, base64UrlEncode, randomToken, sha256, signHmac, verifyHmac } from './crypto';
 import type { Env, ExecutionContextLike } from './env';
 import { HttpError, json, readJson, requireIdempotencyKey, requireMethod } from './http';
 import { createBlindIndex } from './security/blind-index';
@@ -14,6 +14,7 @@ import {
 
 const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60;
 const GRANT_TTL_SECONDS = 5 * 60;
+const CONTACT_CONFIRMATION_TTL_SECONDS = 24 * 60 * 60;
 
 interface StoredResponse { response: string | null }
 interface GuideAsset {
@@ -206,7 +207,7 @@ export async function createGuideLead(request: Request, env: Env, ctx: Execution
   return json(result.value);
 }
 
-export async function createContact(request: Request, env: Env, ctx: ExecutionContextLike): Promise<Response> {
+export async function createContact(request: Request, env: Env, _ctx: ExecutionContextLike): Promise<Response> {
   requireMethod(request, ['POST']);
   const idempotencyKey = requireIdempotencyKey(request);
   const parsed = contactInputSchema.safeParse(await readJson(request, 8192));
@@ -218,17 +219,25 @@ export async function createContact(request: Request, env: Env, ctx: ExecutionCo
   const createdAt = new Date(now * 1000).toISOString();
   const contactId = crypto.randomUUID();
   const eventId = crypto.randomUUID();
-  const response = { success: true as const };
+  const confirmationPayload = base64UrlEncode(new TextEncoder().encode(JSON.stringify({
+    eventId,
+    exp: now + CONTACT_CONFIRMATION_TTL_SECONDS,
+  })));
+  const confirmationToken = `${confirmationPayload}.${await signHmac(confirmationPayload, env.WEBHOOK_HMAC_SECRET)}`;
+  const response = { success: true as const, delivery: 'browser' as const, confirmationToken };
   const result = await idempotentBatch(env, idempotencyKey, 'contact', response, [
     env.DB.prepare(
       `INSERT INTO contact_submissions
-        (id, name_ciphertext, email_ciphertext, email_blind_index, message_ciphertext, locale, created_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`,
+        (id, name_ciphertext, email_ciphertext, email_blind_index, phone_ciphertext,
+         service_interest_ciphertext, message_ciphertext, locale, created_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`,
     ).bind(
       contactId,
       await pii(input.name, env),
       await pii(input.email, env),
       await createBlindIndex(input.email, env.BLIND_INDEX_SECRET),
+      await pii(input.phone, env),
+      await pii(input.serviceInterest, env),
       await pii(input.message, env),
       input.locale,
       createdAt,
@@ -237,10 +246,41 @@ export async function createContact(request: Request, env: Env, ctx: ExecutionCo
       `INSERT INTO outbox_events
         (id, event_type, aggregate_id, status, attempts, available_at, created_at, updated_at)
        VALUES (?1, 'contact.created', ?2, 'pending', 0, ?3, ?4, ?4)`,
-    ).bind(eventId, contactId, now, createdAt),
+    ).bind(eventId, contactId, now + 5 * 60, createdAt),
   ], now);
-  if (result.created) enqueue(ctx, env, eventId);
   return json(result.value, 202);
+}
+
+export async function confirmContactDelivery(request: Request, env: Env): Promise<Response> {
+  requireMethod(request, ['POST']);
+  const body = await readJson(request, 4096);
+  if (!body || typeof body !== 'object' || Array.isArray(body)
+    || Object.keys(body).length !== 1 || !('confirmationToken' in body)
+    || typeof body.confirmationToken !== 'string' || body.confirmationToken.length > 2048) {
+    throw new HttpError(400, 'invalid_delivery_confirmation');
+  }
+  const [payload, signature, extra] = body.confirmationToken.split('.');
+  if (!payload || !signature || extra || !await verifyHmac(payload, signature, env.WEBHOOK_HMAC_SECRET)) {
+    throw new HttpError(400, 'invalid_delivery_confirmation');
+  }
+  let confirmation: { eventId?: unknown; exp?: unknown };
+  try {
+    confirmation = JSON.parse(new TextDecoder().decode(base64UrlDecode(payload))) as typeof confirmation;
+  } catch {
+    throw new HttpError(400, 'invalid_delivery_confirmation');
+  }
+  const now = Math.floor(Date.now() / 1000);
+  if (typeof confirmation.eventId !== 'string' || !/^[0-9a-f-]{36}$/i.test(confirmation.eventId)
+    || typeof confirmation.exp !== 'number' || confirmation.exp <= now) {
+    throw new HttpError(400, 'invalid_delivery_confirmation');
+  }
+  const deliveredAt = new Date(now * 1000).toISOString();
+  await env.DB.prepare(
+    `UPDATE outbox_events SET status = 'delivered', delivered_at = ?1, locked_at = NULL,
+     last_error = NULL, updated_at = ?1
+     WHERE id = ?2 AND event_type = 'contact.created' AND status != 'delivered'`,
+  ).bind(deliveredAt, confirmation.eventId).run();
+  return json({ success: true });
 }
 
 export async function createNewsletterSubscription(request: Request, env: Env, ctx: ExecutionContextLike): Promise<Response> {

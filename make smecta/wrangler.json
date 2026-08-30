@@ -12,7 +12,7 @@
 		"html_handling": "auto-trailing-slash",
 		"not_found_handling": "single-page-application",
 		"run_worker_first": [
-			"/api/v1/*"
+			"/*"
 		]
 	},
 	"secrets": {
@@ -26,9 +26,7 @@
 			"ADMIN_PASSWORD",
 			"WEBHOOK_HMAC_SECRET",
 			"OUTBOUND_WEBHOOK_URL",
-			"OUTBOUND_WEBHOOK_ALLOWED_HOSTS",
-			"CF_ACCESS_TEAM_DOMAIN",
-			"CF_ACCESS_POLICY_AUD"
+			"OUTBOUND_WEBHOOK_ALLOWED_HOSTS"
 		]
 	},
 	"d1_databases": [
@@ -43,6 +41,10 @@
 		{
 			"binding": "GUIDES_BUCKET",
 			"bucket_name": "a-step-guides"
+		},
+		{
+			"binding": "OPPORTUNITY_IMAGES_BUCKET",
+			"bucket_name": "a-step-opportunity-images"
 		}
 	],
 	"queues": {
@@ -55,11 +57,11 @@
 		"consumers": [
 			{
 				"queue": "a-step-outbox",
-				"max_batch_size": 10,
+				"max_batch_size": 1,
 				"max_batch_timeout": 5,
 				"max_retries": 5,
 				"dead_letter_queue": "a-step-outbox-dlq",
-				"max_concurrency": 2
+				"max_concurrency": 1
 			}
 		]
 	},

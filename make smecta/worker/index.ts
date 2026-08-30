@@ -1,6 +1,5 @@
 import type { Env, ExecutionContextLike } from './env';
 import {
-  authenticateAccessAdmin,
   readAdminSession,
   sessionStatus,
   signIn,
@@ -9,8 +8,8 @@ import {
 } from './auth/auth-api';
 import { adminApi } from './admin-api';
 import { attachRequestId, errorResponse, HttpError, json } from './http';
-import { hasCloudflareAccessToken, verifyCloudflareAccess } from './security/access';
 import { downloadGrant } from './routes/download-grant';
+import { opportunityImage } from './routes/opportunity-image';
 import { enforceUploadBoundary } from './security/upload-defense';
 import { attachRateLimitHeaders, checkRateLimit, rateLimitResponse } from './security/rate-limit';
 import { enforceRequestEnvelope } from './security/request-guard';
@@ -20,6 +19,7 @@ import { assertRuntimeEnv } from './security/env-validator';
 import { consumeOutbox, drainOutbox, type QueueBatchLike } from './queue/outbox-consumer';
 import {
   createContact,
+  confirmContactDelivery,
   createGuideLead,
   createNewsletterSubscription,
   listGuideAvailability,
@@ -30,12 +30,14 @@ import {
 async function authenticateAdminRequest(request: Request, env: Env): Promise<AdminIdentity> {
   const session = await readAdminSession(request, env);
   if (session) return session;
-  return authenticateAccessAdmin(env, await verifyCloudflareAccess(request, env));
+  throw new HttpError(401, 'unauthorized');
 }
 
 async function routeApi(request: Request, env: Env, ctx: ExecutionContextLike): Promise<Response> {
   const { pathname } = new URL(request.url);
   if (pathname === '/api/v1/contact') return createContact(request, env, ctx);
+  if (pathname === '/api/v1/contact/delivery-confirmation') return confirmContactDelivery(request, env);
+  if (pathname.startsWith('/api/v1/opportunity-images/')) return opportunityImage(request, env);
   if (pathname === '/api/v1/guides') return listGuideAvailability(request, env);
   if (pathname === '/api/v1/opportunities') return listPublishedOpportunities(request, env);
   if (pathname === '/api/v1/leads') return createGuideLead(request, env, ctx);
@@ -43,15 +45,7 @@ async function routeApi(request: Request, env: Env, ctx: ExecutionContextLike): 
   if (pathname === '/api/v1/newsletter/unsubscribe') return unsubscribeNewsletter(request, env);
   if (pathname.startsWith('/api/v1/download/')) return downloadGrant(request, env);
   if (pathname === '/api/v1/auth/sign-in') {
-    let identity: AdminIdentity | null = null;
-    if (hasCloudflareAccessToken(request)) {
-      try {
-        identity = await authenticateAccessAdmin(env, await verifyCloudflareAccess(request, env));
-      } catch (error) {
-        if (!(error instanceof HttpError)) throw error;
-      }
-    }
-    return signIn(request, env, identity);
+    return signIn(request, env);
   }
   if (pathname.startsWith('/api/v1/admin/') || pathname.startsWith('/api/v1/auth/')) {
     if (pathname === '/api/v1/auth/sign-out') return signOut(request);
@@ -95,7 +89,12 @@ export default {
       if (isAdminPage(url.pathname)) {
         await authenticateAdminRequest(request, env);
       }
-      return applySecurityHeaders(attachRequestId(await env.ASSETS.fetch(request), requestId));
+      const asset = await env.ASSETS.fetch(request);
+      const response = new Response(asset.body, asset);
+      if (response.headers.get('Content-Type')?.includes('text/html')) {
+        response.headers.set('Cache-Control', 'no-store');
+      }
+      return applySecurityHeaders(attachRequestId(response, requestId));
     } catch (error) {
       const shielded = applyCorsHeaders(errorResponse(error, requestId), originContext);
       return applySecurityHeaders(attachRequestId(shielded, requestId));

@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 
-const excluded = /(?:^|\/)(?:package-lock\.json|npm-shrinkwrap\.json|pnpm-lock\.yaml|yarn\.lock|scan-staged-secrets\.mjs|check-public-assets\.mjs|verify-env\.mjs)$/;
+const excluded = /(?:^|\/)(?:package-lock\.json|npm-shrinkwrap\.json|pnpm-lock\.yaml|yarn\.lock|worker-configuration\.d\.ts|scan-staged-secrets\.mjs|check-public-assets\.mjs|verify-env\.mjs)$/;
 const tokenPatterns = [
   ['private key', /-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----/],
   ['AWS access key', /\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/],
@@ -25,7 +25,7 @@ export function scanText(text) {
   const findings = [];
   const lines = text.split(/\r?\n/);
   lines.forEach((line, index) => {
-    if (/\*\*\*REMOVED-|process\.env|randomBytes\(|getRandomValues\(/.test(line)) return;
+    if (/\*\*\*REMOVED-|secret-scan: allow-test-fixture|process\.env|randomBytes\(|getRandomValues\(/.test(line)) return;
     for (const [name, pattern] of tokenPatterns) {
       if (pattern.test(line)) findings.push({ line: index + 1, type: name });
     }

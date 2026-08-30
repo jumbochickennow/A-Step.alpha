@@ -5,6 +5,7 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const KEY_SALT = encoder.encode('a-step:resource-ref:key-derivation:v1');
 const KEY_CONTEXT = encoder.encode('a-step:resource-ref:v1');
+const RECORD_ID = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|[A-Za-z0-9_-]{1,64})$/i;
 
 export type ResourceType = 'guide' | 'opportunity' | 'lead' | 'contact' | 'newsletter';
 
@@ -52,7 +53,10 @@ export async function resolveResourceRef(
       base64UrlDecode(encodedCiphertext),
     );
     const [type, ownerId, recordId, unexpected] = decoder.decode(plaintext).split('\u0000');
-    if (unexpected || type !== expectedType || ownerId !== userId || recordId.length !== 36 || !/^[0-9a-f-]{36}$/i.test(recordId)) {
+    // D1 contains both UUIDs for new records and short, immutable IDs (q1/o1…)
+    // imported with the original catalog. The encrypted reference still binds
+    // the record type and authenticated admin before this identifier is used.
+    if (unexpected || type !== expectedType || ownerId !== userId || !RECORD_ID.test(recordId)) {
       throw new Error('invalid_resource_ref');
     }
     return recordId;

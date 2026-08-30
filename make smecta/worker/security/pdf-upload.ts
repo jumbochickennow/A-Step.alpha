@@ -1,6 +1,7 @@
 import { HttpError } from '../http';
+import { MAX_UPLOAD_BYTES } from './upload-limits';
 
-export const MAX_PDF_BYTES = 10 * 1024 * 1024;
+export const MAX_PDF_BYTES = MAX_UPLOAD_BYTES;
 const PDF_MAGIC = [0x25, 0x50, 0x44, 0x46, 0x2d];
 const ACTIVE_MARKERS = [
   '/javascript', '/js', '/launch', '/openaction', '/aa', '/embeddedfile', '/richmedia',

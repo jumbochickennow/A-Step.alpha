@@ -54,6 +54,13 @@ export async function uploadAdminGuidePdf(
   return result.objectKey;
 }
 
+export async function uploadAdminOpportunityImage(opportunityId: string, image: File): Promise<string> {
+  return (await apiJson<{ success: true; imagePath: string }>(
+    `/api/v1/admin/opportunities/${encodeURIComponent(opportunityId)}/image`,
+    { method: 'PUT', headers: { 'Content-Type': image.type }, body: image },
+  )).imagePath;
+}
+
 export async function deleteAdminGuide(id: string): Promise<void> {
   await apiJson(`/api/v1/admin/guides/${encodeURIComponent(id)}`, { method: 'DELETE', body: '{}' });
 }
@@ -66,7 +73,6 @@ export async function saveAdminOpportunity(
   opportunity: Omit<Opportunity, 'id'> & { id?: string },
   image?: File | null,
 ): Promise<string> {
-  if (image) throw new Error('runtime_uploads_disabled');
   const normalized = {
     ...opportunity,
     applyUrl: opportunity.applyUrl || null,
@@ -78,12 +84,15 @@ export async function saveAdminOpportunity(
       method: 'PUT',
       body: JSON.stringify(normalized),
     });
+    if (image) await uploadAdminOpportunityImage(opportunity.id, image);
     return opportunity.id;
   }
-  return (await apiJson<{ success: true; resourceId: string }>('/api/v1/admin/opportunities', {
+  const resourceId = (await apiJson<{ success: true; resourceId: string }>('/api/v1/admin/opportunities', {
     method: 'POST',
     body: JSON.stringify(normalized),
   })).resourceId;
+  if (image) await uploadAdminOpportunityImage(resourceId, image);
+  return resourceId;
 }
 
 export async function deleteAdminOpportunity(id: string): Promise<void> {

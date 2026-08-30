@@ -22,7 +22,7 @@ export function Home() {
     '@type': 'Organization',
     name: 'A-Step Immigration Space',
     url: import.meta.env.VITE_SITE_URL || 'https://astep.example',
-    email: 'belabbesbadibac@gmail.com',
+    email: 'belabbesbadiastep@gmail.com',
   };
 
   return (

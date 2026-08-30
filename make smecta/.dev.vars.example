@@ -1,6 +1,3 @@
-# Cloudflare Access and application policy configuration.
-CF_ACCESS_TEAM_DOMAIN=https://TEAM.cloudflareaccess.com
-CF_ACCESS_POLICY_AUD=
 OUTBOUND_WEBHOOK_URL=https://approved.example/webhooks/a-step
 OUTBOUND_WEBHOOK_ALLOWED_HOSTS=approved.example
 TURNSTILE_ALLOWED_HOSTNAMES=localhost,127.0.0.1

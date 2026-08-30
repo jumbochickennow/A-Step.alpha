@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { CATEGORIES, categoryLabel } from '../../lib/constants';
 import { saveAdminGuide, uploadAdminGuidePdf } from '../../services/admin.service';
+import { ApiError } from '../../services/api-client';
 import type { Guide, GuideLanguage, Locale } from '../../types/content';
 import { Button } from '../common/Button';
 import { TranslationFields } from './TranslationFields';
@@ -16,7 +17,7 @@ const PDF_SLOTS: Array<{ language: GuideLanguage; field: 'r2KeyEn' | 'r2KeyFr' |
   { language: 'fr', field: 'r2KeyFr', label: 'admin.pdfFrench' },
   { language: 'ar', field: 'r2KeyAr', label: 'admin.pdfArabic' },
 ];
-const MAX_PDF_BYTES = 10 * 1024 * 1024;
+const MAX_PDF_BYTES = 50 * 1024 * 1024;
 
 export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCancel: () => void; onSaved: () => void }) {
   const { t } = useTranslation();
@@ -40,21 +41,23 @@ export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCan
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<GuideLanguage | null>(null);
   const [files, setFiles] = useState<Partial<Record<GuideLanguage, File>>>({});
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const messageFor = (cause: unknown) => cause instanceof ApiError ? cause.message : t('admin.loadError');
 
   const selectPdf = (language: GuideLanguage, file?: File) => {
     if (file && ((!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') || file.size > MAX_PDF_BYTES)) {
-      setError(true);
+      setError(t('admin.invalidPdf'));
       return;
     }
-    setError(false);
+    setError(null);
     setFiles((current) => ({ ...current, [language]: file }));
   };
 
   const uploadPdf = async (language: GuideLanguage, field: 'r2KeyEn' | 'r2KeyFr' | 'r2KeyAr') => {
     const file = files[language];
     if (!value.id || !file) return;
-    setUploading(language); setError(false);
+    setUploading(language); setError(null);
     try {
       const objectKey = await uploadAdminGuidePdf(value.id, language, file);
       setValue((current) => ({
@@ -64,19 +67,19 @@ export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCan
       }));
       setFiles((current) => ({ ...current, [language]: undefined }));
       toast.success(t('admin.pdfUploaded'));
-    } catch { setError(true); } finally { setUploading(null); }
+    } catch (cause) { setError(messageFor(cause)); } finally { setUploading(null); }
   };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (Object.values(value.translations).some((copy) => !copy.title.trim() || !copy.description.trim())) { setError(true); return; }
+    if (Object.values(value.translations).some((copy) => !copy.title.trim() || !copy.description.trim())) { setError(t('admin.translationRequired')); return; }
     const slug = value.slug.trim();
-    setSaving(true); setError(false);
+    setSaving(true); setError(null);
     try {
       await saveAdminGuide({ ...value, slug });
       toast.success(t('admin.saved'));
       onSaved();
-    } catch { setError(true); } finally { setSaving(false); }
+    } catch (cause) { setError(messageFor(cause)); } finally { setSaving(false); }
   };
 
   return (
@@ -117,7 +120,7 @@ export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCan
       </div>
       <label className="mt-5 flex items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={value.published} onChange={(e) => setValue({ ...value, published: e.target.checked })} className="size-4 accent-[var(--blue)]" />{t('admin.published')}</label>
       <div className="mt-6"><TranslationFields value={value.translations} active={active} onActiveChange={setActive} onChange={(translations) => setValue({ ...value, translations })} /></div>
-      {error ? <p className="mt-4 text-sm text-[var(--danger)]" role="alert">{t('admin.loadError')}</p> : null}
+      {error ? <p className="mt-4 text-sm text-[var(--danger)]" role="alert">{error}</p> : null}
       <div className="mt-6 flex flex-col gap-3 sm:flex-row"><Button type="submit" disabled={saving}>{saving ? t('admin.saving') : t('admin.save')}</Button><Button type="button" variant="ghost" onClick={onCancel}>{t('admin.cancel')}</Button></div>
     </form>
   );

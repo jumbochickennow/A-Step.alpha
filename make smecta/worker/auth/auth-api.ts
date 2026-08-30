@@ -1,15 +1,11 @@
 import { base64UrlDecode, base64UrlEncode, signHmac, verifyHmac } from '../crypto';
 import type { Env } from '../env';
 import { HttpError, json, readJson, requireMethod } from '../http';
-import type { AccessClaims } from '../security/access';
 
 export interface AdminIdentity {
   id: string;
-  email: string;
   role: 'superadmin' | 'admin' | 'owner' | 'editor' | 'analyst';
 }
-
-interface AdminRow extends AdminIdentity {}
 
 interface AdminSession extends AdminIdentity {
   exp: number;
@@ -21,9 +17,9 @@ const SESSION_TTL_SECONDS = 15 * 60;
 const VALID_ROLES = new Set<AdminIdentity['role']>(['superadmin', 'admin', 'owner', 'editor', 'analyst']);
 const MASTER_ADMIN: AdminIdentity = {
   id: 'master-password-admin',
-  email: 'admin@a-step.org',
   role: 'superadmin',
 };
+const MASTER_ADMIN_RECORD_EMAIL = 'admin@a-step.org';
 const encoder = new TextEncoder();
 
 function cookieValue(request: Request, name: string): string | null {
@@ -74,14 +70,14 @@ async function authenticatePasskeyAdmin(env: Env, passkey: string): Promise<Admi
          VALUES (?1, ?2, 'superadmin', 'active', ?3, ?3)
          ON CONFLICT(email) DO UPDATE SET
            role = 'superadmin', status = 'active', updated_at = excluded.updated_at`,
-      ).bind(MASTER_ADMIN.id, MASTER_ADMIN.email, now),
+      ).bind(MASTER_ADMIN.id, MASTER_ADMIN_RECORD_EMAIL, now),
       env.DB.prepare(
         `INSERT INTO admin_users (id, email, role, created_at, last_authenticated_at)
          VALUES (?1, ?2, 'owner', ?3, ?3)
          ON CONFLICT(id) DO UPDATE SET
            email = excluded.email,
            last_authenticated_at = excluded.last_authenticated_at`,
-      ).bind(MASTER_ADMIN.id, MASTER_ADMIN.email, now),
+      ).bind(MASTER_ADMIN.id, MASTER_ADMIN_RECORD_EMAIL, now),
     ]);
   } catch (error) {
     console.error('[Auth] Master admin provisioning failed', {
@@ -102,60 +98,28 @@ export async function readAdminSession(request: Request, env: Pick<Env, 'SESSION
     const now = Math.floor(Date.now() / 1000);
     if (
       typeof session.id !== 'string' || !session.id
-      || typeof session.email !== 'string' || !session.email
       || !VALID_ROLES.has(session.role as AdminIdentity['role'])
       || typeof session.iat !== 'number' || session.iat > now + 60
       || typeof session.exp !== 'number' || session.exp <= now
     ) return null;
-    return { id: session.id, email: session.email, role: session.role as AdminIdentity['role'] };
+    return { id: session.id, role: session.role as AdminIdentity['role'] };
   } catch {
     return null;
   }
 }
 
-export async function authenticateAccessAdmin(env: Env, claims: AccessClaims): Promise<AdminIdentity> {
-  const id = claims.sub?.trim() ?? '';
-  const email = claims.email?.trim().toLowerCase() ?? '';
-  if (
-    id.length < 1 || id.length > 255
-    || email.length < 3 || email.length > 254
-    || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  ) throw new HttpError(401, 'unauthorized');
-
-  const now = new Date().toISOString();
-  try {
-    await env.DB.prepare(
-      `INSERT INTO admin_users (id, email, role, created_at, last_authenticated_at)
-       VALUES (?1, ?2, 'admin', ?3, ?3)
-       ON CONFLICT(id) DO UPDATE SET
-         email = excluded.email,
-         last_authenticated_at = excluded.last_authenticated_at`,
-    ).bind(id, email, now).run();
-    const admin = await env.DB.prepare(
-      'SELECT id, email, role FROM admin_users WHERE id = ?1 LIMIT 1',
-    ).bind(id).first<AdminRow>();
-    if (!admin) throw new Error('admin_audit_missing');
-    return admin;
-  } catch {
-    throw new HttpError(503, 'authentication_store_unavailable');
-  }
-}
-
-export async function signIn(request: Request, env: Env, accessIdentity: AdminIdentity | null): Promise<Response> {
+export async function signIn(request: Request, env: Env): Promise<Response> {
   requireMethod(request, ['POST']);
-  let identity = accessIdentity;
-  if (!identity) {
-    const body = await readJson(request, 2048);
-    if (!body || typeof body !== 'object' || Array.isArray(body)
-      || Object.keys(body).length !== 1 || !('passkey' in body)
-      || typeof body.passkey !== 'string' || body.passkey.length < 1 || body.passkey.length > 256) {
-      throw new HttpError(400, 'invalid_sign_in_request');
-    }
-    identity = await authenticatePasskeyAdmin(env, body.passkey);
+  const body = await readJson(request, 2048);
+  if (!body || typeof body !== 'object' || Array.isArray(body)
+    || Object.keys(body).length !== 1 || !('passkey' in body)
+    || typeof body.passkey !== 'string' || body.passkey.length < 1 || body.passkey.length > 256) {
+    throw new HttpError(400, 'invalid_sign_in_request');
   }
+  const identity = await authenticatePasskeyAdmin(env, body.passkey);
   const secure = new URL(request.url).protocol === 'https:' ? '; Secure' : '';
   return json(
-    { success: true, email: identity.email, role: identity.role },
+    { success: true, role: identity.role },
     200,
     { 'Set-Cookie': `${SESSION_COOKIE}=${await createSession(identity, env.SESSION_SECRET)}; Path=/; HttpOnly${secure}; SameSite=Strict; Max-Age=${SESSION_TTL_SECONDS}` },
   );
@@ -163,14 +127,14 @@ export async function signIn(request: Request, env: Env, accessIdentity: AdminId
 
 export function sessionStatus(request: Request, identity: AdminIdentity): Response {
   requireMethod(request, ['GET']);
-  return json({ success: true, email: identity.email, role: identity.role });
+  return json({ success: true, role: identity.role });
 }
 
 export function signOut(request: Request): Response {
   requireMethod(request, ['POST']);
   const secure = new URL(request.url).protocol === 'https:' ? '; Secure' : '';
   return json(
-    { success: true, logoutUrl: '/cdn-cgi/access/logout' },
+    { success: true, logoutUrl: '/' },
     200,
     { 'Set-Cookie': `${SESSION_COOKIE}=; Path=/; HttpOnly${secure}; SameSite=Strict; Max-Age=0` },
   );

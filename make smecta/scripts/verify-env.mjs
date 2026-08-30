@@ -44,14 +44,6 @@ export function verifyEnvironment(env) {
     throw new Error('ADMIN_PASSWORD is missing or malformed');
   }
   required(env, 'TURNSTILE_SECRET_KEY', 16, 512);
-  const accessAudience = env.CF_ACCESS_POLICY_AUD?.trim() ?? '';
-  const accessDomain = env.CF_ACCESS_TEAM_DOMAIN?.trim() ?? '';
-  if (accessAudience || accessDomain) {
-    required(env, 'CF_ACCESS_POLICY_AUD', 16, 256);
-    const access = secureUrl(env, 'CF_ACCESS_TEAM_DOMAIN');
-    if (!access.hostname.endsWith('.cloudflareaccess.com') || access.pathname !== '/') throw new Error('CF_ACCESS_TEAM_DOMAIN is invalid');
-  }
-
   const hosts = required(env, 'TURNSTILE_ALLOWED_HOSTNAMES', 1, 2048).split(',');
   if (hosts.some((host) => host.includes('*') || !host.trim())) throw new Error('TURNSTILE_ALLOWED_HOSTNAMES is invalid');
   const origins = required(env, 'ALLOWED_ORIGINS', 8, 4096).split(',').map((origin) => secureUrl({ origin: origin.trim() }, 'origin', true));
@@ -74,8 +66,6 @@ if (process.argv.includes('--self-test')) {
     TURNSTILE_SECRET_KEY: `turnstile_${randomBytes(24).toString('base64url')}`,
     TURNSTILE_ALLOWED_HOSTNAMES: 'a-step.example',
     ALLOWED_ORIGINS: 'https://a-step.example',
-    CF_ACCESS_TEAM_DOMAIN: 'https://a-step.cloudflareaccess.com',
-    CF_ACCESS_POLICY_AUD: randomBytes(32).toString('hex'),
     OUTBOUND_WEBHOOK_URL: 'https://hooks.example.com/a-step',
     OUTBOUND_WEBHOOK_ALLOWED_HOSTS: 'hooks.example.com',
   };

@@ -4,6 +4,7 @@ import { decryptPii } from './security/encryption';
 import { createResourceRef, resolveResourceRef } from './security/resource-ref';
 import type { Env } from './env';
 import { HttpError, json, readJson, requireMethod } from './http';
+import { imageExtensionForRequest, validatedImageBody } from './security/image-upload';
 import { validatedPdfBody } from './security/pdf-upload';
 import { seedAdminCatalog } from './catalog-seed';
 
@@ -11,7 +12,9 @@ const copySchema = z.object({ title: z.string().trim().min(1).max(180), descript
 const translationsSchema = z.object({ en: copySchema, fr: copySchema, ar: copySchema }).strict();
 const nullableGuidePath = z.string().trim().max(512).regex(/^[a-z0-9][a-z0-9._/-]*\.pdf$/)
   .refine((value) => !value.includes('..') && !value.includes('//')).nullable();
-const nullableImagePath = z.string().max(512).regex(/^\/assets\/opportunities\/[a-z0-9._-]+\.(?:png|jpe?g|webp|avif)$/).nullable();
+const nullableImagePath = z.string().max(512).regex(
+  /^(?:\/assets\/opportunities\/[a-z0-9._-]+|\/api\/v1\/opportunity-images\/[0-9a-f-]{36})\.(?:png|jpe?g|webp|avif)$/i,
+).nullable();
 const resourceRefSchema = z.string().min(64).max(512).regex(/^r1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
 
 const guideSchema = z.object({
@@ -282,6 +285,49 @@ async function opportunities(request: Request, env: Env, identity: AdminIdentity
   throw new HttpError(405, 'method_not_allowed');
 }
 
+function opportunityObjectKey(imagePath: string | null): string | null {
+  const match = /^\/api\/v1\/opportunity-images\/([0-9a-f-]{36}\.(?:png|jpe?g|webp|avif))$/i.exec(imagePath ?? '');
+  return match ? `opportunity-images/${match[1]}` : null;
+}
+
+async function uploadOpportunityImage(
+  request: Request,
+  env: Env,
+  identity: AdminIdentity,
+  id: string,
+): Promise<Response> {
+  requireMethod(request, ['PUT']);
+  if (!resourceRefSchema.safeParse(id).success) throw new HttpError(404, 'not_found');
+  const databaseId = await resolveResourceRef(id, 'opportunity', identity.id, env.SESSION_SECRET);
+  const current = await env.DB.prepare(
+    'SELECT image_path FROM opportunities WHERE id = ?1 LIMIT 1',
+  ).bind(databaseId).first<{ image_path: string | null }>();
+  if (!current) throw new HttpError(404, 'not_found');
+
+  const extension = imageExtensionForRequest(request);
+  const objectName = `${crypto.randomUUID()}.${extension}`;
+  const objectKey = `opportunity-images/${objectName}`;
+  const imagePath = `/api/v1/opportunity-images/${objectName}`;
+  const contentType = request.headers.get('Content-Type')!.toLowerCase();
+  await env.OPPORTUNITY_IMAGES_BUCKET.put(objectKey, validatedImageBody(request), {
+    httpMetadata: { contentType, cacheControl: 'public, max-age=31536000, immutable' },
+    customMetadata: { opportunityId: databaseId },
+  });
+
+  try {
+    await mutate(env.DB.prepare(
+      'UPDATE opportunities SET image_path = ?1, updated_at = ?2 WHERE id = ?3',
+    ).bind(imagePath, new Date().toISOString(), databaseId));
+  } catch (error) {
+    await env.OPPORTUNITY_IMAGES_BUCKET.delete(objectKey);
+    throw error;
+  }
+
+  const oldObjectKey = opportunityObjectKey(current.image_path);
+  if (oldObjectKey && oldObjectKey !== objectKey) await env.OPPORTUNITY_IMAGES_BUCKET.delete(oldObjectKey);
+  return json({ success: true, imagePath });
+}
+
 async function adminRecords(env: Env, identity: AdminIdentity, table: string): Promise<Response> {
   if (table === 'guide_download_leads') {
     const { results } = await env.DB.prepare(
@@ -303,7 +349,8 @@ async function adminRecords(env: Env, identity: AdminIdentity, table: string): P
   }
   if (table === 'contact_messages') {
     const { results } = await env.DB.prepare(
-      `SELECT id, name_ciphertext, email_ciphertext, message_ciphertext, locale, created_at
+      `SELECT id, name_ciphertext, email_ciphertext, phone_ciphertext,
+       service_interest_ciphertext, message_ciphertext, locale, created_at
        FROM contact_submissions ORDER BY created_at DESC LIMIT 100`,
     ).all<Record<string, string | null>>();
     const items = await Promise.all(results.map(async (row) => ({
@@ -311,6 +358,9 @@ async function adminRecords(env: Env, identity: AdminIdentity, table: string): P
       submittedAt: row.created_at,
       name: await decryptPii(row.name_ciphertext!, env.PII_ENCRYPTION_KEY_V1),
       email: await decryptPii(row.email_ciphertext!, env.PII_ENCRYPTION_KEY_V1),
+      phone: row.phone_ciphertext ? await decryptPii(row.phone_ciphertext, env.PII_ENCRYPTION_KEY_V1) : null,
+      serviceInterest: row.service_interest_ciphertext
+        ? await decryptPii(row.service_interest_ciphertext, env.PII_ENCRYPTION_KEY_V1) : null,
       message: await decryptPii(row.message_ciphertext!, env.PII_ENCRYPTION_KEY_V1),
       locale: row.locale,
     })));
@@ -373,6 +423,9 @@ export async function adminApi(request: Request, env: Env, identity: AdminIdenti
     return uploadGuidePdf(request, env, identity, path[1], path[3]);
   }
   if (path[0] === 'guides' && path.length <= 2) return guides(request, env, identity, path[1]);
+  if (path[0] === 'opportunities' && path[2] === 'image' && path.length === 3) {
+    return uploadOpportunityImage(request, env, identity, path[1]);
+  }
   if (path[0] === 'opportunities' && path.length <= 2) return opportunities(request, env, identity, path[1]);
   if (path[0] === 'records' && path.length === 2) {
     requireMethod(request, ['GET']);

@@ -1,7 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 
 const dist = new URL('../dist/', import.meta.url);
-const forbiddenText = /(?:TURNSTILE_SECRET_KEY|PII_ENCRYPTION_KEY_V1|BLIND_INDEX_SECRET|SESSION_SECRET|WEBHOOK_HMAC_SECRET|CF_ACCESS_POLICY_AUD|\.dev\.vars|sourceMappingURL|import\.meta\.env\.DEV|\b(?:TODO|FIXME|@internal)\b|https?:\/\/(?:localhost|127\.0\.0\.1)(?=[:/]))/;
+const forbiddenText = /(?:TURNSTILE_SECRET_KEY|PII_ENCRYPTION_KEY_V1|BLIND_INDEX_SECRET|SESSION_SECRET|WEBHOOK_HMAC_SECRET|ADMIN_PASSWORD|CF_ACCESS_POLICY_AUD|\.dev\.vars|sourceMappingURL|import\.meta\.env\.DEV|\b(?:TODO|FIXME|@internal)\b|https?:\/\/(?:localhost|127\.0\.0\.1)(?=[:/]))/;
 
 async function walk(directory, prefix = '') {
   const output = [];

@@ -143,7 +143,7 @@ export interface ContactFormInputs {
   fullName: string;
   email: string;
   phone: string;
-  serviceInterest?: string;
+  serviceInterest: string;
   message: string;
 }
 
@@ -229,7 +229,8 @@ export function validateContactForm(
   const phoneResult = validatePhoneField(inputs.phone, t);
   if (phoneResult.error) errors.phone = phoneResult.error;
 
-  const serviceInterest = inputs.serviceInterest ? sanitizeText(inputs.serviceInterest, 120) : undefined;
+  const serviceInterest = sanitizeText(inputs.serviceInterest, 80);
+  if (!serviceInterest) errors.serviceInterest = message('forms.required', t);
 
   const messageResult = validateMessageField(inputs.message, t);
   if (messageResult.error) errors.message = messageResult.error;
@@ -240,7 +241,7 @@ export function validateContactForm(
       fullName: fullNameResult.value,
       email: emailResult.value,
       phone: phoneResult.value,
-      serviceInterest: serviceInterest || undefined,
+      serviceInterest,
       message: messageResult.value,
     },
     errors,

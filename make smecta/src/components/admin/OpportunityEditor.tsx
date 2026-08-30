@@ -2,11 +2,14 @@ import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { saveAdminOpportunity } from '../../services/admin.service';
+import { ApiError } from '../../services/api-client';
 import type { Locale, Opportunity } from '../../types/content';
 import { Button } from '../common/Button';
 import { TranslationFields } from './TranslationFields';
 
 const emptyTranslations = { en: { title: '', description: '' }, fr: { title: '', description: '' }, ar: { title: '', description: '' } };
+const MAX_IMAGE_BYTES = 50 * 1024 * 1024;
+const IMAGE_TYPES = new Set(['image/avif', 'image/jpeg', 'image/png', 'image/webp']);
 
 export function OpportunityEditor({ opportunity, onCancel, onSaved }: { opportunity?: Opportunity; onCancel: () => void; onSaved: () => void }) {
   const { t } = useTranslation();
@@ -18,19 +21,32 @@ export function OpportunityEditor({ opportunity, onCancel, onSaved }: { opportun
     translations: opportunity?.translations ?? emptyTranslations,
   });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(false);
+  const [image, setImage] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const messageFor = (cause: unknown) => cause instanceof ApiError ? cause.message : t('admin.loadError');
+
+  const selectImage = (file?: File) => {
+    if (file && (!IMAGE_TYPES.has(file.type) || file.size > MAX_IMAGE_BYTES)) {
+      setImage(null);
+      setError(t('admin.invalidImage'));
+      return;
+    }
+    setImage(file ?? null);
+    setError(null);
+  };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     const next = { ...value, categories: categories.split(',').map((item) => item.trim()).filter(Boolean) };
-    if (Object.values(next.translations).some((copy) => !copy.title.trim() || !copy.description.trim())) { setError(true); return; }
+    if (Object.values(next.translations).some((copy) => !copy.title.trim() || !copy.description.trim())) { setError(t('admin.translationRequired')); return; }
     const slug = next.slug.trim();
-    setSaving(true); setError(false);
+    setSaving(true); setError(null);
     try {
-      await saveAdminOpportunity({ ...next, slug });
+      await saveAdminOpportunity({ ...next, slug }, image);
       toast.success(t('admin.saved'));
       onSaved();
-    } catch { setError(true); } finally { setSaving(false); }
+    } catch (cause) { setError(messageFor(cause)); } finally { setSaving(false); }
   };
 
   return (
@@ -42,7 +58,18 @@ export function OpportunityEditor({ opportunity, onCancel, onSaved }: { opportun
         <label className="text-sm font-semibold">{t('admin.opensAt')}<input type="date" className="field mt-2" value={value.opensAt ?? ''} onChange={(e) => setValue({ ...value, opensAt: e.target.value })} /></label>
         <label className="text-sm font-semibold">{t('admin.deadline')}<input type="date" className="field mt-2" value={value.deadline ?? ''} onChange={(e) => setValue({ ...value, deadline: e.target.value })} /></label>
         <label className="text-sm font-semibold md:col-span-2">{t('admin.applyUrl')}<input type="url" className="field mt-2" value={value.applyUrl ?? ''} onChange={(e) => setValue({ ...value, applyUrl: e.target.value })} /></label>
-        <label className="text-sm font-semibold md:col-span-2">{t('admin.image')}<input type="text" className="field mt-2" value={value.imagePath ?? ''} onChange={(e) => setValue({ ...value, imagePath: e.target.value || null })} placeholder="/assets/opportunities/example.webp" /></label>
+        <label className="text-sm font-semibold md:col-span-2">
+          {t('admin.image')}
+          <input
+            type="file"
+            accept="image/avif,image/jpeg,image/png,image/webp,.avif,.jpg,.jpeg,.png,.webp"
+            className="mt-2 block w-full text-sm text-ink-muted file:me-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:font-semibold file:text-white"
+            onChange={(event) => selectImage(event.target.files?.[0])}
+          />
+          <span className="mt-2 block text-xs font-normal text-ink-muted">
+            {image ? t('admin.selectedImage', { name: image.name }) : t('admin.imageUploadHelp')}
+          </span>
+        </label>
         <div className="flex flex-wrap items-center gap-4 text-sm md:col-span-2">
           {value.imagePath ? (
             <>
@@ -52,13 +79,13 @@ export function OpportunityEditor({ opportunity, onCancel, onSaved }: { opportun
               </span>
             </>
           ) : (
-            <span className="text-ink-muted">Runtime uploads are disabled; deploy scanned images under /assets/opportunities/.</span>
+            <span className="text-ink-muted">{t('admin.imageNotUploaded')}</span>
           )}
         </div>
       </div>
       <div className="mt-5 flex flex-wrap gap-6"><label className="flex items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={value.published} onChange={(e) => setValue({ ...value, published: e.target.checked })} className="size-4 accent-[var(--blue)]" />{t('admin.published')}</label><label className="flex items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={value.featured} onChange={(e) => setValue({ ...value, featured: e.target.checked })} className="size-4 accent-[var(--blue)]" />{t('admin.featured')}</label></div>
       <div className="mt-6"><TranslationFields value={value.translations} active={active} onActiveChange={setActive} onChange={(translations) => setValue({ ...value, translations })} /></div>
-      {error ? <p className="mt-4 text-sm text-[var(--danger)]" role="alert">{t('admin.loadError')}</p> : null}
+      {error ? <p className="mt-4 text-sm text-[var(--danger)]" role="alert">{error}</p> : null}
       <div className="mt-6 flex flex-col gap-3 sm:flex-row"><Button type="submit" disabled={saving}>{saving ? t('admin.saving') : t('admin.save')}</Button><Button type="button" variant="ghost" onClick={onCancel}>{t('admin.cancel')}</Button></div>
     </form>
   );

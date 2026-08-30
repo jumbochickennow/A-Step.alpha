@@ -1,14 +1,29 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { HttpError, errorResponse } from '../worker/http';
 import { SECURITY_HEADERS, applySecurityHeaders, httpsRedirect } from '../worker/security/headers';
 import { verifyApiOrigin, preflightResponse } from '../worker/security/origin';
 import { resolveRateLimitPolicy } from '../worker/security/rate-limit';
 import { enforceRequestEnvelope } from '../worker/security/request-guard';
+import { enforceUploadBoundary } from '../worker/security/upload-defense';
+import { MAX_UPLOAD_BYTES } from '../worker/security/upload-limits';
+import { validatedPdfBody } from '../worker/security/pdf-upload';
+import { validatedImageBody } from '../worker/security/image-upload';
+import { decryptPii, encryptPii } from '../worker/security/encryption';
 import { verifyTurnstile } from '../worker/security/turnstile';
-import { verifyCloudflareAccess } from '../worker/security/access';
+import { readAdminSession, signIn } from '../worker/auth/auth-api';
+import {
+  outboundBody,
+  outboundDestination,
+  outboundHeaders,
+  requireSuccessfulDelivery,
+} from '../worker/integrations/outbound-delivery';
 import worker from '../worker/index';
+import { createResourceRef, resolveResourceRef } from '../worker/security/resource-ref';
 
 const now = Date.now();
+const workerConfig = JSON.parse(readFileSync('wrangler.json', 'utf8')) as { assets?: { run_worker_first?: string[] } };
+assert.deepEqual(workerConfig.assets?.run_worker_first, ['/*']);
 let replayAccepted = true;
 const statement = {
   bind() { return this; },
@@ -19,8 +34,6 @@ const env = {
   TURNSTILE_SECRET_KEY: 'test-secret',
   TURNSTILE_ALLOWED_HOSTNAMES: 'a-step.example',
   ALLOWED_ORIGINS: 'https://a-step.example',
-  CF_ACCESS_TEAM_DOMAIN: 'https://a-step.cloudflareaccess.com',
-  CF_ACCESS_POLICY_AUD: 'access-audience',
   DB: {
     prepare: () => statement,
   },
@@ -36,43 +49,55 @@ const request = new Request('https://a-step.example/api/v1/contact', {
 });
 
 let siteverify = { success: true, challenge_ts: new Date(now).toISOString(), hostname: 'a-step.example', action: 'contact' };
-const accessKeys = await crypto.subtle.generateKey(
-  { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
-  true,
-  ['sign', 'verify'],
-);
-const accessJwk = { ...await crypto.subtle.exportKey('jwk', accessKeys.publicKey), kid: 'test-access-key' };
 globalThis.fetch = (async (input: RequestInfo | URL) => {
   const url = String(input);
   if (url.includes('turnstile/v0/siteverify')) return Response.json(siteverify);
-  if (url.includes('/cdn-cgi/access/certs')) return Response.json({ keys: [accessJwk] });
   throw new Error('unexpected_mock_request');
 }) as typeof fetch;
 
-const encodedHeader = Buffer.from(JSON.stringify({ alg: 'RS256', kid: accessJwk.kid, typ: 'JWT' })).toString('base64url');
-const encodedClaims = Buffer.from(JSON.stringify({
-  aud: [env.CF_ACCESS_POLICY_AUD],
-  email: 'admin@a-step.example',
-  exp: Math.floor(now / 1000) + 300,
-  iat: Math.floor(now / 1000),
-  iss: env.CF_ACCESS_TEAM_DOMAIN,
-  sub: 'access-user-id',
-  type: 'app',
-})).toString('base64url');
-const accessSignature = Buffer.from(await crypto.subtle.sign(
-  'RSASSA-PKCS1-v1_5',
-  accessKeys.privateKey,
-  new TextEncoder().encode(`${encodedHeader}.${encodedClaims}`),
-)).toString('base64url');
-const accessToken = `${encodedHeader}.${encodedClaims}.${accessSignature}`;
-const accessRequest = new Request(request.url, { headers: { 'Cf-Access-Jwt-Assertion': accessToken } });
-assert.equal((await verifyCloudflareAccess(accessRequest, env)).email, 'admin@a-step.example');
-const tamperedSignature = `${accessSignature.startsWith('A') ? 'B' : 'A'}${accessSignature.slice(1)}`;
-const tamperedToken = `${encodedHeader}.${encodedClaims}.${tamperedSignature}`;
-await assert.rejects(
-  () => verifyCloudflareAccess(new Request(request.url, { headers: { 'Cf-Access-Jwt-Assertion': tamperedToken } }), env),
-  (error) => error instanceof HttpError && error.status === 401,
+const authSecret = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64url');
+const authEnv = {
+  ADMIN_PASSWORD: 'test-password-with-32-characters',
+  SESSION_SECRET: authSecret,
+  DB: {
+    prepare() { return { bind() { return this; } }; },
+    async batch() { return []; },
+  },
+} as never;
+const loginResponse = await signIn(new Request('https://a-step.example/api/v1/auth/sign-in', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ passkey: 'test-password-with-32-characters' }),
+}), authEnv);
+assert.equal(loginResponse.status, 200);
+assert.deepEqual(await loginResponse.clone().json(), { success: true, role: 'superadmin' });
+assert.ok(!JSON.stringify(await loginResponse.clone().json()).includes('email'));
+const sessionCookie = loginResponse.headers.get('Set-Cookie');
+assert.match(sessionCookie ?? '', /HttpOnly; Secure; SameSite=Strict/);
+const sessionIdentity = await readAdminSession(new Request('https://a-step.example/api/v1/auth/session', {
+  headers: { Cookie: sessionCookie!.split(';')[0] },
+}), authEnv);
+assert.deepEqual(sessionIdentity, { id: 'master-password-admin', role: 'superadmin' });
+await assert.rejects(() => signIn(new Request('https://a-step.example/api/v1/auth/sign-in', {
+  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ passkey: 'wrong-password' }),
+}), authEnv), (error) => error instanceof HttpError && error.status === 401);
+await requireSuccessfulDelivery(
+  new URL('https://formsubmit.co/ajax/test@example.com'),
+  Response.json({ success: 'true' }),
 );
+await assert.rejects(() => requireSuccessfulDelivery(
+  new URL('https://formsubmit.co/ajax/test@example.com'),
+  Response.json({ success: 'false' }),
+));
+const formDestination = outboundDestination({
+  OUTBOUND_WEBHOOK_URL: 'https://formsubmit.co/ajax/test@example.com',
+  OUTBOUND_WEBHOOK_ALLOWED_HOSTS: 'formsubmit.co',
+});
+assert.equal(formDestination.pathname, '/test@example.com');
+assert.match(outboundBody(formDestination, {
+  id: crypto.randomUUID(), event_type: 'contact.created', aggregate_id: crypto.randomUUID(),
+}, { name: 'A Step', message: 'Hello world' }), /name=A\+Step/);
+assert.match(outboundHeaders(formDestination, 'event-id', 'signature').get('Content-Type') ?? '', /urlencoded/);
 
 await verifyTurnstile(request, env, 'valid-token', 'contact', now);
 siteverify = { ...siteverify, action: 'newsletter' };
@@ -89,6 +114,7 @@ await assert.rejects(() => verifyTurnstile(request, env, 'replayed-token', 'cont
 assert.equal(SECURITY_HEADERS['Strict-Transport-Security'], 'max-age=63072000; includeSubDomains; preload');
 assert.ok(!SECURITY_HEADERS['Content-Security-Policy'].includes('unsafe-eval'));
 assert.ok(SECURITY_HEADERS['Content-Security-Policy'].includes('https://challenges.cloudflare.com'));
+assert.ok(SECURITY_HEADERS['Content-Security-Policy'].includes('https://formsubmit.co'));
 assert.equal(applySecurityHeaders(new Response()).headers.get('X-Frame-Options'), 'DENY');
 assert.equal(httpsRedirect(new Request('http://a-step.example/path'))?.status, 308);
 assert.equal(httpsRedirect(new Request('http://localhost:5173/path')), null);
@@ -114,6 +140,47 @@ assert.throws(() => enforceRequestEnvelope(new Request(request.url, {
   body: '{}',
 })), (error) => error instanceof HttpError && error.status === 415);
 
+const allowedPdfUpload = new Request('https://a-step.example/api/v1/admin/guides/r1.ref.value/pdf/en', {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/pdf', 'Content-Length': String(MAX_UPLOAD_BYTES) },
+  body: '%PDF-1.7\npassive',
+});
+enforceUploadBoundary(allowedPdfUpload);
+enforceRequestEnvelope(allowedPdfUpload);
+assert.throws(() => enforceUploadBoundary(new Request(allowedPdfUpload.url, {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/pdf', 'Content-Length': String(MAX_UPLOAD_BYTES + 1) },
+  body: 'x',
+})), (error) => error instanceof HttpError && error.status === 413);
+assert.equal(new TextDecoder().decode(await new Response(validatedPdfBody(allowedPdfUpload)).arrayBuffer()), '%PDF-1.7\npassive');
+
+const pngBytes = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+const validImage = new Request('https://a-step.example/api/v1/admin/opportunities/r1.ref.value/image', {
+  method: 'PUT', headers: { 'Content-Type': 'image/png' }, body: pngBytes,
+});
+enforceUploadBoundary(validImage);
+enforceRequestEnvelope(validImage);
+assert.deepEqual(new Uint8Array(await new Response(validatedImageBody(validImage)).arrayBuffer()), pngBytes);
+await assert.rejects(async () => new Response(validatedImageBody(new Request(validImage.url, {
+  method: 'PUT', headers: { 'Content-Type': 'image/png' }, body: Uint8Array.from({ length: 12 }, () => 0),
+}))).arrayBuffer(), (error) => error instanceof HttpError && error.code === 'invalid_image');
+
+const encryptionSecret = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64url');
+const plaintext = 'private-user@example.com';
+const ciphertext = await encryptPii(plaintext, encryptionSecret);
+assert.match(ciphertext, /^v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
+assert.ok(!ciphertext.includes(plaintext));
+assert.equal(await decryptPii(ciphertext, encryptionSecret), plaintext);
+const ciphertextParts = ciphertext.split('.');
+ciphertextParts[2] = `${ciphertextParts[2].startsWith('A') ? 'B' : 'A'}${ciphertextParts[2].slice(1)}`;
+const tamperedCiphertext = ciphertextParts.join('.');
+await assert.rejects(() => decryptPii(tamperedCiphertext, encryptionSecret),
+  (error) => error instanceof HttpError && error.code === 'invalid_ciphertext');
+
+const legacyResourceRef = await createResourceRef('q1', 'guide', 'admin-1', encryptionSecret);
+assert.equal(await resolveResourceRef(legacyResourceRef, 'guide', 'admin-1', encryptionSecret), 'q1');
+await assert.rejects(() => resolveResourceRef(legacyResourceRef, 'guide', 'admin-2', encryptionSecret));
+
 const origin = verifyApiOrigin(request, env);
 assert.equal(origin.origin, 'https://a-step.example');
 assert.throws(() => verifyApiOrigin(new Request(request.url, { headers: { Origin: 'https://evil.example' } }), env),
@@ -135,7 +202,9 @@ const originalConsoleError = console.error;
 console.error = () => undefined;
 const shielded = errorResponse(new Error('database password leaked'), 'request-test');
 console.error = originalConsoleError;
-assert.deepEqual(await shielded.json(), { error: 'Internal server error', requestId: 'request-test' });
+assert.deepEqual(await shielded.json(), {
+  error: { code: 'internal_error', message: 'Internal server error' }, requestId: 'request-test',
+});
 
 const cronWarnings: string[] = [];
 const originalConsoleWarn = console.warn;

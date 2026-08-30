@@ -7,6 +7,8 @@ const turnstileToken = z.string().trim().min(1).max(2048);
 export const contactInputSchema = z.object({
   name: z.string().trim().min(2).max(70),
   email,
+  phone: z.string().trim().min(6).max(30),
+  serviceInterest: z.string().trim().min(1).max(80),
   message: z.string().trim().min(10).max(2000),
   locale,
   turnstileToken,

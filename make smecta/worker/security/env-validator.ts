@@ -98,6 +98,7 @@ export function assertRuntimeEnv(env: Env): void {
     typeof env.EVENT_QUEUE?.send !== 'function' && 'EVENT_QUEUE',
     typeof env.DB?.prepare !== 'function' && 'DB',
     typeof env.GUIDES_BUCKET?.get !== 'function' && 'GUIDES_BUCKET',
+    typeof env.OPPORTUNITY_IMAGES_BUCKET?.get !== 'function' && 'OPPORTUNITY_IMAGES_BUCKET',
   ].filter((name): name is string => Boolean(name));
   if (missingBindings.length) {
     console.error(`[Runtime] Missing required bindings: ${missingBindings.join(', ')}`);

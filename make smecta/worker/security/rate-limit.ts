@@ -21,6 +21,7 @@ export function resolveRateLimitPolicy(request: Request): RateLimitPolicy | null
   if (request.method === 'OPTIONS') return null;
   const pathname = new URL(request.url).pathname;
   if (request.method === 'POST' && pathname === '/api/v1/contact') return { name: 'contact', limit: 5, windowSeconds: 600 };
+  if (request.method === 'POST' && pathname === '/api/v1/contact/delivery-confirmation') return { name: 'contact-confirmation', limit: 10, windowSeconds: 600 };
   if (request.method === 'POST' && pathname === '/api/v1/leads') return { name: 'leads', limit: 5, windowSeconds: 600 };
   if (request.method === 'POST' && pathname === '/api/v1/newsletter') return { name: 'newsletter', limit: 3, windowSeconds: 600 };
   if (request.method === 'POST' && pathname === '/api/v1/auth/sign-in') return { name: 'admin-sign-in', limit: 5, windowSeconds: 600 };
