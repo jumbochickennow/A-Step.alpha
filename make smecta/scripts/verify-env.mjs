@@ -1,7 +1,7 @@
-import { randomBytes } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
-const secretNames = ['PII_ENCRYPTION_KEY_V1', 'BLIND_INDEX_SECRET', 'SESSION_SECRET', 'WEBHOOK_HMAC_SECRET'];
+const secretNames = ['PII_ENCRYPTION_KEY_V1', 'BLIND_INDEX_SECRET', 'RESOURCE_REF_SECRET', 'ADMIN_PASSWORD_PEPPER'];
 
 function decodeSecret(value) {
   if (/^[0-9a-f]{64}$/i.test(value)) return Buffer.from(value, 'hex');
@@ -39,20 +39,26 @@ export function verifyEnvironment(env) {
     const bytes = decodeSecret(required(env, name, 43, 64));
     if (new Set(bytes).size < 12 || entropy(bytes) < 3.5) throw new Error(`${name} does not meet entropy requirements`);
   }
-  const adminPassword = env.ADMIN_PASSWORD ?? '';
-  if (adminPassword.length < 16 || adminPassword.length > 256 || adminPassword.trim() !== adminPassword) {
-    throw new Error('ADMIN_PASSWORD is missing or malformed');
+  const adminPasswordHash = env.ADMIN_PASSWORD_HASH ?? '';
+  if (!/^hmac-sha256\$v1\$[A-Za-z0-9_-]{43}$/.test(adminPasswordHash)) {
+    throw new Error('ADMIN_PASSWORD_HASH is missing or malformed');
   }
   required(env, 'TURNSTILE_SECRET_KEY', 16, 512);
   const hosts = required(env, 'TURNSTILE_ALLOWED_HOSTNAMES', 1, 2048).split(',');
   if (hosts.some((host) => host.includes('*') || !host.trim())) throw new Error('TURNSTILE_ALLOWED_HOSTNAMES is invalid');
   const origins = required(env, 'ALLOWED_ORIGINS', 8, 4096).split(',').map((origin) => secureUrl({ origin: origin.trim() }, 'origin', true));
   if (origins.some((origin) => origin.origin !== origin.href.replace(/\/$/, ''))) throw new Error('ALLOWED_ORIGINS must contain origins only');
-
-  const webhook = secureUrl(env, 'OUTBOUND_WEBHOOK_URL');
-  if (webhook.port || webhook.pathname === '/' || webhook.search || webhook.hash) throw new Error('OUTBOUND_WEBHOOK_URL is invalid');
-  const webhookHosts = new Set(required(env, 'OUTBOUND_WEBHOOK_ALLOWED_HOSTS').split(',').map((host) => host.trim().toLowerCase()));
-  if (!webhookHosts.has(webhook.hostname.toLowerCase())) throw new Error('OUTBOUND_WEBHOOK_URL host is not allowlisted');
+  if (!/^[A-Za-z0-9_-]{20,128}$/.test(required(env, 'GOOGLE_SHEETS_SPREADSHEET_ID', 20, 128))) {
+    throw new Error('GOOGLE_SHEETS_SPREADSHEET_ID is malformed');
+  }
+  if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.iam\.gserviceaccount\.com$/.test(
+    required(env, 'GOOGLE_SHEETS_CLIENT_EMAIL', 20, 320),
+  )) throw new Error('GOOGLE_SHEETS_CLIENT_EMAIL is malformed');
+  const privateKey = env.GOOGLE_SHEETS_PRIVATE_KEY?.replaceAll('\\n', '\n').trim() ?? '';
+  if (privateKey.length < 800 || privateKey.length > 8192
+    || !/^-----BEGIN PRIVATE KEY-----\n[\s\S]+\n-----END PRIVATE KEY-----$/.test(privateKey)) { // secret-scan: allow-test-fixture
+    throw new Error('GOOGLE_SHEETS_PRIVATE_KEY is malformed');
+  }
 }
 
 if (process.argv.includes('--self-test')) {
@@ -60,18 +66,21 @@ if (process.argv.includes('--self-test')) {
   const fixture = {
     PII_ENCRYPTION_KEY_V1: key,
     BLIND_INDEX_SECRET: randomBytes(32).toString('hex'),
-    SESSION_SECRET: randomBytes(32).toString('base64'),
-    ADMIN_PASSWORD: randomBytes(24).toString('base64url'),
-    WEBHOOK_HMAC_SECRET: randomBytes(32).toString('base64url'),
+    RESOURCE_REF_SECRET: randomBytes(32).toString('base64url'),
+    ADMIN_PASSWORD_PEPPER: randomBytes(32).toString('base64url'),
+    ADMIN_PASSWORD_HASH: '',
     TURNSTILE_SECRET_KEY: `turnstile_${randomBytes(24).toString('base64url')}`,
     TURNSTILE_ALLOWED_HOSTNAMES: 'a-step.example',
     ALLOWED_ORIGINS: 'https://a-step.example',
-    OUTBOUND_WEBHOOK_URL: 'https://hooks.example.com/a-step',
-    OUTBOUND_WEBHOOK_ALLOWED_HOSTS: 'hooks.example.com',
+    GOOGLE_SHEETS_SPREADSHEET_ID: 'test-spreadsheet-id-123456789',
+    GOOGLE_SHEETS_CLIENT_EMAIL: 'archive@example-project.iam.gserviceaccount.com',
+    GOOGLE_SHEETS_PRIVATE_KEY: `-----BEGIN PRIVATE KEY-----\n${'A'.repeat(900)}\n-----END PRIVATE KEY-----`, // secret-scan: allow-test-fixture
   };
+  fixture.ADMIN_PASSWORD_HASH = `hmac-sha256$v1$${createHmac('sha256', Buffer.from(fixture.ADMIN_PASSWORD_PEPPER, 'base64url'))
+    .update('a-step:admin-password:v1\0test-password').digest('base64url')}`;
   verifyEnvironment(fixture);
   try {
-    verifyEnvironment({ ...fixture, SESSION_SECRET: Buffer.alloc(32).toString('base64url') });
+    verifyEnvironment({ ...fixture, RESOURCE_REF_SECRET: Buffer.alloc(32).toString('base64url') });
     throw new Error('weak secret self-test was not rejected');
   } catch (error) {
     if (error.message === 'weak secret self-test was not rejected') throw error;

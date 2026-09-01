@@ -4,7 +4,7 @@ const CONTENT_SECURITY_POLICY = [
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
   "img-src 'self' data: blob:",
-  "connect-src 'self' https://challenges.cloudflare.com https://plausible.io https://formsubmit.co",
+  "connect-src 'self' https://challenges.cloudflare.com https://plausible.io",
   'frame-src https://challenges.cloudflare.com',
   "frame-ancestors 'none'",
   "object-src 'none'",

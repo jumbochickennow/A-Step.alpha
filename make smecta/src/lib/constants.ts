@@ -79,6 +79,7 @@ export const localeNames: Record<Locale, string> = {
 const categoryKeys: Record<string, string> = {
   Algeria: 'algeria', France: 'france', Italy: 'italy', Canada: 'canada', China: 'china', Germany: 'germany', Poland: 'poland', Gulf: 'gulf', Europe: 'europe',
   Scholarships: 'scholarships', Universities: 'universities', Visas: 'visas', 'Cabin Crew': 'cabinCrew',
+  applications: 'applications', careers: 'careers', scholarships: 'scholarships', universities: 'universities', visas: 'visas',
 };
 
 export function categoryLabel(category: string, translate: (key: string) => string) {

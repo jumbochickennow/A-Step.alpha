@@ -1,4 +1,4 @@
-export type Env = WorkerEnv;
+export type Env = Cloudflare.Env;
 
 export interface ExecutionContextLike {
   waitUntil(promise: Promise<unknown>): void;

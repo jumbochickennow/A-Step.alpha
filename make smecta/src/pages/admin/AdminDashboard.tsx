@@ -49,7 +49,7 @@ export function AdminDashboard() {
   }, []);
 
   const logout = async () => {
-    try { window.location.assign(await signOutAdmin()); } catch { navigate('/astep-control-vault', { replace: true }); }
+    try { window.location.assign(await signOutAdmin()); } catch { navigate('/admin', { replace: true }); }
   };
 
   const barOptions = {
@@ -181,9 +181,5 @@ export function AdminDashboardRoute() {
   }, []);
 
   if (authorized === null) return null;
-  return authorized ? <AdminDashboard /> : <Navigate to="/astep-control-vault" replace />;
-}
-
-export function AdminRedirect() {
-  return <Navigate to="/astep-control-vault" replace />;
+  return authorized ? <AdminDashboard /> : <Navigate to="/admin" replace />;
 }

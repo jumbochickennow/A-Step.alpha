@@ -51,3 +51,40 @@ export async function apiBlob(path: string, init: RequestInit = {}): Promise<Blo
   }
   return response.blob();
 }
+
+/** XHR is used only for authenticated uploads so the dashboard can report progress. */
+export function apiUpload<T>(
+  path: string,
+  file: File,
+  contentType: string,
+  onProgress?: (percent: number) => void,
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open('PUT', path);
+    request.withCredentials = true;
+    request.timeout = 120_000;
+    request.setRequestHeader('Content-Type', contentType);
+    request.setRequestHeader('Idempotency-Key', crypto.randomUUID());
+    request.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) onProgress?.(Math.min(100, Math.round((event.loaded / event.total) * 100)));
+    });
+    request.addEventListener('load', () => {
+      let parsed: unknown = null;
+      try { parsed = JSON.parse(request.responseText) as unknown; } catch { /* handled below */ }
+      const data = parsed && typeof parsed === 'object'
+        ? parsed as { error?: string | { code?: string; message?: string }; requestId?: string } & T
+        : null;
+      if (request.status < 200 || request.status >= 300 || data === null) {
+        const detail = data && typeof data.error === 'object' ? data.error : undefined;
+        reject(new ApiError(request.status, detail?.code ?? 'upload_failed', data?.requestId, detail?.message));
+        return;
+      }
+      onProgress?.(100);
+      resolve(data);
+    });
+    request.addEventListener('error', () => reject(new ApiError(0, 'network_error')));
+    request.addEventListener('timeout', () => reject(new ApiError(0, 'upload_timeout')));
+    request.send(file);
+  });
+}

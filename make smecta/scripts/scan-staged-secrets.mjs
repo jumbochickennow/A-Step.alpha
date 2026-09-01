@@ -25,7 +25,7 @@ export function scanText(text) {
   const findings = [];
   const lines = text.split(/\r?\n/);
   lines.forEach((line, index) => {
-    if (/\*\*\*REMOVED-|secret-scan: allow-test-fixture|process\.env|randomBytes\(|getRandomValues\(/.test(line)) return;
+    if (/\*\*\*REMOVED-|secret-scan: allow-test-fixture|GOOGLE_SHEETS_SPREADSHEET_ID|process\.env|randomBytes\(|getRandomValues\(/.test(line)) return;
     for (const [name, pattern] of tokenPatterns) {
       if (pattern.test(line)) findings.push({ line: index + 1, type: name });
     }

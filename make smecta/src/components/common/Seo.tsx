@@ -35,7 +35,7 @@ export function Seo({ title, description, noindex, jsonLd, faqs }: SeoProps) {
   const location = useLocation();
   const { t } = useTranslation();
   const locale = localeFromPath(location.pathname);
-  const base = (import.meta.env.VITE_SITE_URL || 'https://astep.example').replace(/\/$/, '');
+  const base = (import.meta.env.VITE_SITE_URL || 'https://www.astepimmigration.space').replace(/\/$/, '');
   const canonical = `${base}${location.pathname}`;
   const stripped = location.pathname.replace(/^\/(fr|ar)(?=\/|$)/, '') || '/';
   const alternate = (target: 'en' | 'fr' | 'ar') => `${base}${target === 'en' ? stripped : `/${target}${stripped === '/' ? '/' : stripped}`}`;

@@ -1,5 +1,7 @@
 import { sha256 } from '../crypto';
+import type { Env } from '../env';
 import { HttpError, json } from '../http';
+import type { AtomicRateLimiter } from './security-coordinators';
 
 interface RateLimitPolicy {
   name: string;
@@ -13,59 +15,46 @@ export interface RateLimitResult extends RateLimitPolicy {
   retryAfter: number;
 }
 
-interface DefaultCacheStorage {
-  default: Cache;
-}
+type RateLimiterStub = Pick<AtomicRateLimiter, 'check'>;
 
 export function resolveRateLimitPolicy(request: Request): RateLimitPolicy | null {
   if (request.method === 'OPTIONS') return null;
   const pathname = new URL(request.url).pathname;
   if (request.method === 'POST' && pathname === '/api/v1/contact') return { name: 'contact', limit: 5, windowSeconds: 600 };
-  if (request.method === 'POST' && pathname === '/api/v1/contact/delivery-confirmation') return { name: 'contact-confirmation', limit: 10, windowSeconds: 600 };
   if (request.method === 'POST' && pathname === '/api/v1/leads') return { name: 'leads', limit: 5, windowSeconds: 600 };
   if (request.method === 'POST' && pathname === '/api/v1/newsletter') return { name: 'newsletter', limit: 3, windowSeconds: 600 };
-  if (request.method === 'POST' && pathname === '/api/v1/auth/sign-in') return { name: 'admin-sign-in', limit: 5, windowSeconds: 600 };
-  if (pathname.startsWith('/api/v1/admin/')) return { name: 'admin', limit: 10, windowSeconds: 60 };
+  if (request.method === 'POST' && pathname === '/api/v1/newsletter/unsubscribe') return { name: 'unsubscribe', limit: 5, windowSeconds: 600 };
+  // Sign-in is governed by the stricter account-wide coordinator before password verification.
+  if (request.method === 'POST' && pathname === '/api/v1/auth/sign-in') return null;
+  if (pathname.startsWith('/api/v1/auth/')) return { name: 'admin-authenticated-auth', limit: 30, windowSeconds: 60 };
+  if (pathname.startsWith('/api/v1/admin/')) {
+    const upload = request.method === 'PUT' && request.headers.get('Content-Type') !== 'application/json';
+    return upload
+      ? { name: 'admin-upload', limit: 10, windowSeconds: 60 }
+      : { name: 'admin-api', limit: 60, windowSeconds: 60 };
+  }
+  if (pathname.startsWith('/api/v1/download/')) return { name: 'guide-download', limit: 20, windowSeconds: 60 };
+  if (pathname.startsWith('/api/v1/opportunity-images/')) return { name: 'opportunity-image', limit: 120, windowSeconds: 60 };
+  if (pathname === '/api/v1/guides' || pathname === '/api/v1/opportunities') {
+    return { name: 'public-catalog', limit: 120, windowSeconds: 60 };
+  }
+  if (pathname.startsWith('/api/v1/')) return { name: 'api-default', limit: 60, windowSeconds: 60 };
   return null;
 }
 
-export async function checkRateLimit(request: Request, now = Date.now()): Promise<RateLimitResult | null> {
+export async function checkRateLimit(
+  request: Request,
+  env: Pick<Env, 'RATE_LIMITER'>,
+  nowMilliseconds = Date.now(),
+): Promise<RateLimitResult | null> {
   const policy = resolveRateLimitPolicy(request);
   if (!policy) return null;
   const ip = request.headers.get('CF-Connecting-IP')?.trim() || 'unknown';
   const actor = await sha256(ip);
-  const key = new Request(`https://rate-limit.invalid/${policy.name}/${actor}`);
-  const edgeCache = (caches as unknown as DefaultCacheStorage).default;
-
+  const stub = env.RATE_LIMITER.getByName(`${policy.name}:${actor}`) as unknown as RateLimiterStub;
   try {
-    const cached = await edgeCache.match(key);
-    const previous = cached ? await cached.json() as unknown : [];
-    const cutoff = now - policy.windowSeconds * 1000;
-    const timestamps = Array.isArray(previous)
-      ? previous.filter((value): value is number => Number.isSafeInteger(value) && value > cutoff && value <= now)
-      : [];
-    if (timestamps.length >= policy.limit) {
-      return {
-        ...policy,
-        allowed: false,
-        remaining: 0,
-        retryAfter: Math.max(1, Math.ceil((timestamps[0] + policy.windowSeconds * 1000 - now) / 1000)),
-      };
-    }
-
-    timestamps.push(now);
-    await edgeCache.put(key, new Response(JSON.stringify(timestamps), {
-      headers: {
-        'Cache-Control': `max-age=${policy.windowSeconds}`,
-        'Content-Type': 'application/json',
-      },
-    }));
-    return {
-      ...policy,
-      allowed: true,
-      remaining: policy.limit - timestamps.length,
-      retryAfter: 0,
-    };
+    const result = await stub.check(policy.limit, policy.windowSeconds, Math.floor(nowMilliseconds / 1000));
+    return { ...policy, ...result };
   } catch {
     throw new HttpError(503, 'rate_limiter_unavailable');
   }

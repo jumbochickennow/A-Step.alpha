@@ -17,7 +17,7 @@ export function AdminLogin() {
     event.preventDefault(); setLoading(true); setError(null);
     try {
       await signInAdmin(passkey);
-      navigate('/astep-control-vault/dashboard');
+      navigate('/admin/dashboard');
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : t('admin.error'));
     } finally { setLoading(false); }

@@ -1,6 +1,5 @@
 User-agent: *
 Allow: /
 Disallow: /admin
-Disallow: /astep-control-vault
 
-Sitemap: https://astep.example/sitemap.xml
+Sitemap: https://www.astepimmigration.space/sitemap.xml

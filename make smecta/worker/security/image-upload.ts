@@ -31,29 +31,70 @@ export function imageExtensionForRequest(request: Request): string {
   return EXTENSIONS[mediaType(request)];
 }
 
-/** Streams a size-capped image to R2 after MIME and magic-byte validation. */
-export function validatedImageBody(request: Request): ReadableStream<Uint8Array> {
+export interface ValidatedImageBody {
+  body: ReadableStream<Uint8Array>;
+  completion: Promise<void>;
+}
+
+/** Validates the signature before R2 sees bytes, then streams through a fixed-length size cap. */
+export async function validatedImageBody(request: Request): Promise<ValidatedImageBody> {
   const type = mediaType(request);
-  const declared = Number(request.headers.get('Content-Length') ?? '0');
-  if (Number.isFinite(declared) && declared > MAX_UPLOAD_BYTES) throw new HttpError(413, 'payload_too_large');
+  const declaredHeader = request.headers.get('Content-Length');
+  if (declaredHeader === null) throw new HttpError(411, 'content_length_required');
+  const declared = Number(declaredHeader);
+  if (!Number.isSafeInteger(declared) || declared < 0) throw new HttpError(400, 'invalid_content_length');
+  if (declared > MAX_UPLOAD_BYTES) throw new HttpError(413, 'payload_too_large');
   if (!request.body) throw new HttpError(400, 'empty_upload');
 
-  let total = 0;
+  const reader = request.body.getReader();
+  const buffered: Uint8Array[] = [];
   const header: number[] = [];
-  let signatureChecked = false;
-  return request.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
-    transform(chunk, controller) {
+  let total = 0;
+  while (header.length < 12) {
+    const result = await reader.read();
+    if (result.done) break;
+    const chunk = result.value;
+    buffered.push(chunk);
+    total += chunk.byteLength;
+    if (total > MAX_UPLOAD_BYTES) {
+      await reader.cancel('payload_too_large').catch(() => undefined);
+      throw new HttpError(413, 'payload_too_large');
+    }
+    for (let index = 0; index < chunk.length && header.length < 12; index += 1) header.push(chunk[index]);
+  }
+  if (header.length < 12 || !hasExpectedSignature(type, header)) {
+    await reader.cancel('invalid_image').catch(() => undefined);
+    throw new HttpError(400, 'invalid_image');
+  }
+
+  const validated = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const chunk of buffered) controller.enqueue(chunk);
+    },
+    async pull(controller) {
+      const result = await reader.read();
+      if (result.done) {
+        controller.close();
+        return;
+      }
+      const chunk = result.value;
       total += chunk.byteLength;
-      if (total > MAX_UPLOAD_BYTES) throw new HttpError(413, 'payload_too_large');
-      for (let index = 0; index < chunk.length && header.length < 12; index += 1) header.push(chunk[index]);
-      if (!signatureChecked && header.length === 12) {
-        signatureChecked = true;
-        if (!hasExpectedSignature(type, header)) throw new HttpError(400, 'invalid_image');
+      if (total > MAX_UPLOAD_BYTES) {
+        controller.error(new HttpError(413, 'payload_too_large'));
+        await reader.cancel('payload_too_large').catch(() => undefined);
+        return;
       }
       controller.enqueue(chunk);
     },
-    flush() {
-      if (!signatureChecked || !hasExpectedSignature(type, header)) throw new HttpError(400, 'invalid_image');
+    cancel(reason) {
+      return reader.cancel(reason);
     },
-  }));
+  });
+  const fixedLength = typeof FixedLengthStream === 'undefined'
+    ? new TransformStream<ArrayBuffer | ArrayBufferView, Uint8Array>()
+    : new FixedLengthStream(declared);
+  return {
+    body: fixedLength.readable,
+    completion: validated.pipeTo(fixedLength.writable),
+  };
 }

@@ -5,6 +5,7 @@ import { FaqList } from '../components/common/FaqList';
 import { Seo } from '../components/common/Seo';
 import { WhatsAppCTA } from '../components/common/WhatsAppCTA';
 import { ConsultationBand, IntroSection, ServicesSection, StorySection } from '../components/home/HomeSections';
+import { KineticTrustRow } from '../components/home/KineticTrustRow';
 import { localizedPath, useLocale } from '../hooks/useLocale';
 import { track } from '../services/analytics';
 
@@ -21,8 +22,7 @@ export function Home() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'A-Step Immigration Space',
-    url: import.meta.env.VITE_SITE_URL || 'https://astep.example',
-    email: 'belabbesbadiastep@gmail.com',
+    url: import.meta.env.VITE_SITE_URL || 'https://www.astepimmigration.space',
   };
 
   return (
@@ -52,14 +52,7 @@ export function Home() {
             </a>
           </div>
 
-          <div className="mt-16 grid min-h-[8.5rem] w-full max-w-4xl grid-cols-2 gap-y-6 md:min-h-12 md:grid-cols-4">
-            {trust.map(([Icon, label], index) => (
-              <div key={label} className="relative flex items-center justify-center gap-3 px-3 text-[0.7rem] text-ink-muted md:[&:not(:first-child)]:before:absolute md:[&:not(:first-child)]:before:inset-y-1 md:[&:not(:first-child)]:before:start-0 md:[&:not(:first-child)]:before:w-px md:[&:not(:first-child)]:before:bg-white/10">
-                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[rgb(34_77_199/0.35)] text-brand-blue-text"><Icon size={14} aria-hidden="true" /></span>
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
+          <KineticTrustRow items={trust} />
         </div>
       </section>
 

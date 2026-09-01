@@ -33,7 +33,7 @@
   },
   "categories": {
     "algeria": "Algérie", "france": "France", "italy": "Italie", "canada": "Canada", "china": "Chine", "germany": "Allemagne", "poland": "Pologne", "gulf": "Golfe", "europe": "Europe",
-    "scholarships": "Bourses", "universities": "Universités", "visas": "Visas", "cabinCrew": "Personnel navigant"
+    "applications": "Candidatures", "careers": "Carrières", "scholarships": "Bourses", "universities": "Universités", "visas": "Visas", "cabinCrew": "Personnel navigant"
   },
   "home": {
     "metaTitle": "A-Step | Études et immigration pour les étudiants algériens",
@@ -297,9 +297,9 @@
     "useTitle": "Utilisation des données",
     "useBody": "Nous utilisons ces données pour fournir les ressources demandées, répondre aux messages, gérer les abonnements et protéger les formulaires. Nous ne vendons pas vos informations personnelles.",
     "storageTitle": "Lieu de stockage",
-    "storageBody": "Les données sont traitées et stockées de manière sécurisée sur l’infrastructure cloud d’A-Step. L’accès aux prospects et messages est réservé aux administrateurs autorisés d’A-Step.",
+    "storageBody": "Les données de référence sont chiffrées au repos dans Cloudflare D1. Une copie opérationnelle est conservée dans une feuille Google privée accessible uniquement aux responsables A-Step autorisés et à un compte de service dédié. Les données sont réexaminées après 24 mois et supprimées lorsqu’elles ne sont plus nécessaires.",
     "rightsTitle": "Vos choix",
-    "rightsBody": "Vous pouvez vous désabonner des messages marketing à tout moment. Pour demander l’accès, la correction ou la suppression de vos données, écrivez à belabbesbadiastep@gmail.com.",
+    "rightsBody": "Vous pouvez vous désabonner des messages marketing à tout moment. Pour demander l’accès, la correction ou la suppression de vos données, utilisez la page Contact.",
     "cookiesTitle": "Cookies et mesure d’audience",
     "cookiesBody": "Le site ne dépose pas de cookies publicitaires. Si une solution d’analyse respectueuse de la vie privée est configurée, elle sert uniquement à comprendre l’utilisation globale du site sans créer de profils publicitaires."
   },
@@ -317,7 +317,7 @@
     "conductTitle": "Utilisation acceptable",
     "conductBody": "N’utilisez pas abusivement les formulaires, ne tentez pas d’accès non autorisé, ne redistribuez pas les ressources payantes sans autorisation et ne perturbez pas le service.",
     "contactTitle": "Questions",
-    "contactBody": "Pour toute question sur ces conditions, contactez belabbesbadiastep@gmail.com."
+    "contactBody": "Pour toute question sur ces conditions, utilisez la page Contact."
   },
   "notFound": {
     "metaTitle": "Page introuvable | A-Step",
@@ -393,9 +393,16 @@
     "saveBeforeUpload": "Enregistrez le guide avant de téléverser les PDF.",
     "image": "Image de l’opportunité",
     "invalidImage": "Sélectionnez une image PNG, JPEG, WebP ou AVIF de 50 Mo maximum.",
-    "imageUploadHelp": "Choisissez une image depuis votre ordinateur (50 Mo maximum).",
+    "imageUploadHelp": "PNG, JPEG, WebP ou AVIF jusqu’à 50 Mo. Le fichier original est conservé sans redimensionnement ni recompression.",
     "imageNotUploaded": "Aucune image téléversée.",
     "selectedImage": "Sélection : {{name}}",
+    "uploadImage": "Téléverser",
+    "replaceImage": "Téléverser le remplacement",
+    "uploadingImage": "Téléversement…",
+    "imageUploaded": "Image téléversée avec succès",
+    "uploadImageFirst": "Téléversez l’image sélectionnée avant d’enregistrer.",
+    "invalidOpportunityDetails": "Saisissez un slug en minuscules avec des tirets, un pays et au moins une catégorie avant le téléversement.",
+    "invalidApplyUrl": "L’URL de candidature doit être une adresse HTTPS valide.",
     "titleLabel": "Titre",
     "descriptionLabel": "Description",
     "exportCsv": "Exporter en CSV",

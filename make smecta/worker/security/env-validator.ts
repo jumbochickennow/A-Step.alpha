@@ -7,14 +7,14 @@ const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 const REQUIRED_RUNTIME_VALUES = [
   'PII_ENCRYPTION_KEY_V1',
   'BLIND_INDEX_SECRET',
-  'SESSION_SECRET',
-  'ADMIN_PASSWORD',
-  'WEBHOOK_HMAC_SECRET',
+  'ADMIN_PASSWORD_HASH',
+  'ADMIN_PASSWORD_PEPPER',
+  'RESOURCE_REF_SECRET',
   'TURNSTILE_SECRET_KEY',
   'TURNSTILE_ALLOWED_HOSTNAMES',
   'ALLOWED_ORIGINS',
-  'OUTBOUND_WEBHOOK_URL',
-  'OUTBOUND_WEBHOOK_ALLOWED_HOSTS',
+  'GOOGLE_SHEETS_CLIENT_EMAIL',
+  'GOOGLE_SHEETS_PRIVATE_KEY',
 ] as const satisfies readonly (keyof Env)[];
 
 function invalid(name?: keyof Env): never {
@@ -72,13 +72,12 @@ export function assertRuntimeEnv(env: Env): void {
 
   secret('PII_ENCRYPTION_KEY_V1', env.PII_ENCRYPTION_KEY_V1);
   secret('BLIND_INDEX_SECRET', env.BLIND_INDEX_SECRET);
-  secret('SESSION_SECRET', env.SESSION_SECRET);
-  secret('WEBHOOK_HMAC_SECRET', env.WEBHOOK_HMAC_SECRET);
-  const adminPassword = env.ADMIN_PASSWORD ?? '';
-  if (adminPassword.length < 16 || adminPassword.length > 256
-    || adminPassword.trim() !== adminPassword
-    || /^(?:change-?me|placeholder|undefined|null)$/i.test(adminPassword)
-    || adminPassword === env.SESSION_SECRET) invalid('ADMIN_PASSWORD');
+  secret('RESOURCE_REF_SECRET', env.RESOURCE_REF_SECRET);
+  secret('ADMIN_PASSWORD_PEPPER', env.ADMIN_PASSWORD_PEPPER);
+  const adminPasswordHash = env.ADMIN_PASSWORD_HASH ?? '';
+  if (!/^hmac-sha256\$v1\$[A-Za-z0-9_-]{43}$/.test(adminPasswordHash)) {
+    invalid('ADMIN_PASSWORD_HASH');
+  }
 
   required('TURNSTILE_SECRET_KEY', env.TURNSTILE_SECRET_KEY, 16, 512);
   const allowedHosts = required('TURNSTILE_ALLOWED_HOSTNAMES', env.TURNSTILE_ALLOWED_HOSTNAMES, 1, 2048).split(',');
@@ -88,17 +87,29 @@ export function assertRuntimeEnv(env: Env): void {
     .map((origin) => secureUrl('ALLOWED_ORIGINS', origin.trim(), true));
   if (origins.some((origin) => origin.origin !== origin.href.replace(/\/$/, ''))) invalid('ALLOWED_ORIGINS');
 
-  const webhook = secureUrl('OUTBOUND_WEBHOOK_URL', env.OUTBOUND_WEBHOOK_URL);
-  if (webhook.port || webhook.pathname === '/' || webhook.search || webhook.hash) invalid('OUTBOUND_WEBHOOK_URL');
-  const webhookHosts = new Set(required('OUTBOUND_WEBHOOK_ALLOWED_HOSTS', env.OUTBOUND_WEBHOOK_ALLOWED_HOSTS, 1, 2048)
-    .split(',').map((host) => host.trim().toLowerCase()));
-  if (!webhookHosts.has(webhook.hostname.toLowerCase())) invalid('OUTBOUND_WEBHOOK_ALLOWED_HOSTS');
+  const spreadsheetId = required('GOOGLE_SHEETS_SPREADSHEET_ID', env.GOOGLE_SHEETS_SPREADSHEET_ID, 20, 128);
+  if (!/^[A-Za-z0-9_-]+$/.test(spreadsheetId)) invalid('GOOGLE_SHEETS_SPREADSHEET_ID');
+  const serviceAccountEmail = required(
+    'GOOGLE_SHEETS_CLIENT_EMAIL', env.GOOGLE_SHEETS_CLIENT_EMAIL, 20, 320,
+  );
+  if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.iam\.gserviceaccount\.com$/.test(serviceAccountEmail)) {
+    invalid('GOOGLE_SHEETS_CLIENT_EMAIL');
+  }
+  const privateKey = env.GOOGLE_SHEETS_PRIVATE_KEY?.replaceAll('\\n', '\n').trim() ?? '';
+  if (privateKey.length < 800 || privateKey.length > 8192
+    || !/^-----BEGIN PRIVATE KEY-----\n[\s\S]+\n-----END PRIVATE KEY-----$/.test(privateKey)) { // secret-scan: allow-test-fixture
+    invalid('GOOGLE_SHEETS_PRIVATE_KEY');
+  }
+
   const missingBindings = [
     typeof env.ASSETS?.fetch !== 'function' && 'ASSETS',
     typeof env.EVENT_QUEUE?.send !== 'function' && 'EVENT_QUEUE',
     typeof env.DB?.prepare !== 'function' && 'DB',
     typeof env.GUIDES_BUCKET?.get !== 'function' && 'GUIDES_BUCKET',
     typeof env.OPPORTUNITY_IMAGES_BUCKET?.get !== 'function' && 'OPPORTUNITY_IMAGES_BUCKET',
+    typeof env.ADMIN_SECURITY?.getByName !== 'function' && 'ADMIN_SECURITY',
+    typeof env.RATE_LIMITER?.getByName !== 'function' && 'RATE_LIMITER',
+    typeof env.CONTACT_EMAIL?.send !== 'function' && 'CONTACT_EMAIL',
   ].filter((name): name is string => Boolean(name));
   if (missingBindings.length) {
     console.error(`[Runtime] Missing required bindings: ${missingBindings.join(', ')}`);

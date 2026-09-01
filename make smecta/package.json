@@ -18,6 +18,7 @@
     "scan:secrets:all": "node scripts/scan-staged-secrets.mjs --working-tree",
     "check:assets": "node scripts/check-public-assets.mjs",
     "test:security": "esbuild scripts/phase3-security-assertions.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/security-assertions.mjs --log-level=error && node node_modules/.cache/security-assertions.mjs",
+    "test:workers": "vitest run --config vitest.config.ts",
     "verify:dist": "node scripts/verify-dist.mjs",
     "audit:health": "node scripts/audit-health.mjs",
     "audit:all": "npm run audit:health && npm run check:i18n && tsc -b",
@@ -35,6 +36,7 @@
     "i18next": "^25.3.2",
     "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^0.468.0",
+    "pdf-lib": "^1.17.1",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^18.3.1",
@@ -47,6 +49,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.1.2",
     "@types/node": "^22.13.4",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
@@ -56,6 +59,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "~5.7.2",
     "vite": "^6.1.0",
+    "vitest": "^4.1.11",
     "wrangler": "^4.125.0"
   }
 }

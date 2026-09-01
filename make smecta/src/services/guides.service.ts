@@ -18,7 +18,8 @@ export function allGuides(): Guide[] {
 export async function listGuides(locale: Locale): Promise<LocalizedGuide[]> {
   let guides = allGuides();
   try {
-    guides = (await apiJson<{ items: Guide[] }>('/api/v1/guides')).items;
+    const response = await apiJson<{ items?: Guide[] }>('/api/v1/guides');
+    if (Array.isArray(response.items)) guides = response.items;
   } catch {
     // The bundled catalog remains usable while the edge API is unavailable.
   }
