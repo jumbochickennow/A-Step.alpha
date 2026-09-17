@@ -15,6 +15,8 @@ const Guides = lazy(() => import('./pages/Guides').then((module) => ({ default: 
 const Opportunities = lazy(() => import('./pages/Opportunities').then((module) => ({ default: module.Opportunities })));
 const About = lazy(() => import('./pages/About').then((module) => ({ default: module.About })));
 const Contact = lazy(() => import('./pages/Contact').then((module) => ({ default: module.Contact })));
+const Prices = lazy(() => import('./pages/Prices').then((module) => ({ default: module.Prices })));
+const Resources = lazy(() => import('./pages/Resources').then((module) => ({ default: module.Resources })));
 const Privacy = lazy(() => import('./pages/Privacy').then((module) => ({ default: module.Privacy })));
 const Terms = lazy(() => import('./pages/Terms').then((module) => ({ default: module.Terms })));
 const Unsubscribe = lazy(() => import('./pages/Unsubscribe').then((module) => ({ default: module.Unsubscribe })));
@@ -28,6 +30,8 @@ const children = [
   { path: 'opportunities', element: <Opportunities /> },
   { path: 'about', element: <About /> },
   { path: 'contact', element: <Contact /> },
+  { path: 'prices', element: <Prices /> },
+  { path: 'resources', element: <Resources /> },
   { path: 'privacy', element: <Privacy /> },
   { path: 'terms', element: <Terms /> },
   { path: 'unsubscribe', element: <Unsubscribe /> },

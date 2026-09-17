@@ -13,13 +13,15 @@ const links = [
   ['nav.guides', '/guides'],
   ['nav.about', '/about'],
   ['nav.contact', '/contact'],
+  ['nav.resources', '/resources'],
+  ['nav.prices', '/prices'],
 ] as const;
 
 function DesktopLinks({ light }: { light: boolean }) {
   const { t } = useTranslation();
   const { locale } = useLocale();
   return (
-    <nav aria-label="Primary" className="hidden items-center gap-10 lg:flex">
+    <nav aria-label="Primary" className="hidden items-center gap-6 xl:gap-10 lg:flex">
       {links.map(([key, path]) => (
         <NavLink
           key={path}

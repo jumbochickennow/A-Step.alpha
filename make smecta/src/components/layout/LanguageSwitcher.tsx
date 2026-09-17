@@ -33,7 +33,7 @@ export function LanguageSwitcher({ light = false }: { light?: boolean }) {
             }}
             className={cn(
               'grid size-9 place-items-center rounded-full transition-colors',
-              active && (light ? 'bg-white text-brand-blue' : 'bg-white text-brand-coral'),
+              active && 'bg-white text-brand-blue',
             )}
           >
             {localeNames[item]}
