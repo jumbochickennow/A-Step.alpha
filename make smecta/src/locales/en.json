@@ -9,6 +9,8 @@
     "opportunities": "Opportunities",
     "about": "About",
     "contact": "Contact",
+    "resources": "Resources",
+    "prices": "Prices",
     "consultation": "Book a consultation",
     "menuOpen": "Open navigation menu",
     "menuClose": "Close navigation menu",
@@ -33,7 +35,7 @@
   },
   "categories": {
     "algeria": "Algeria", "france": "France", "italy": "Italy", "canada": "Canada", "china": "China", "germany": "Germany", "poland": "Poland", "gulf": "Gulf", "europe": "Europe",
-    "scholarships": "Scholarships", "universities": "Universities", "visas": "Visas", "cabinCrew": "Cabin Crew"
+    "applications": "Applications", "careers": "Careers", "scholarships": "Scholarships", "universities": "Universities", "visas": "Visas", "cabinCrew": "Cabin Crew"
   },
   "home": {
     "metaTitle": "A-Step | Study and immigration guidance for Algerian students",
@@ -204,6 +206,9 @@
     "closingSoon": "Closing soon",
     "open": "Open",
     "apply": "Apply now",
+    "openingSoon": "Opens {{date}}",
+    "applyUnavailable": "Application link unavailable",
+    "deadlinePassed": "Deadline passed",
     "askWhatsapp": "Ask on WhatsApp",
     "featured": "Featured opportunity",
     "pastTitle": "Past opportunities",
@@ -291,15 +296,15 @@
     "metaTitle": "Privacy policy | A-Step",
     "eyebrow": "Your information",
     "title": "Privacy policy",
-    "updated": "Last updated: August 2026",
+    "updated": "Last updated: September 2026",
     "introTitle": "What we collect",
     "introBody": "When you request a guide, subscribe or contact us, we collect the details you submit: your name, email address and message. Our server may retain a salted hash of your IP address for abuse prevention; we do not store your raw IP for this purpose.",
     "useTitle": "Why we collect it",
     "useBody": "We use this information to deliver requested resources, answer messages, manage subscriptions and protect forms from abuse. We do not sell personal information.",
     "storageTitle": "Where it is stored",
-    "storageBody": "Data is securely processed and stored on A-Step cloud infrastructure. Access to leads and messages is restricted to authorized A-Step administrators.",
+    "storageBody": "Submitted records are encrypted at rest in Cloudflare D1 and accessible to authorized A-Step operators through the admin dashboard. Records are reviewed after 24 months and removed when no longer required.",
     "rightsTitle": "Your choices",
-    "rightsBody": "You may unsubscribe from marketing messages at any time. To request access, correction or deletion of your information, email belabbesbadiastep@gmail.com.",
+    "rightsBody": "You may unsubscribe from marketing messages at any time. To request access, correction or deletion of your information, use the Contact page.",
     "cookiesTitle": "Cookies and analytics",
     "cookiesBody": "The site does not set advertising cookies. If privacy-friendly analytics is configured, it is used only to understand aggregate site usage without building advertising profiles."
   },
@@ -317,7 +322,7 @@
     "conductTitle": "Acceptable use",
     "conductBody": "Do not misuse forms, attempt unauthorized access, redistribute paid materials without permission or use the site in a way that disrupts service for others.",
     "contactTitle": "Questions",
-    "contactBody": "For questions about these terms, contact belabbesbadiastep@gmail.com."
+    "contactBody": "For questions about these terms, use the Contact page."
   },
   "notFound": {
     "metaTitle": "Page not found | A-Step",
@@ -393,9 +398,16 @@
     "saveBeforeUpload": "Save the guide before uploading PDFs.",
     "image": "Opportunity image",
     "invalidImage": "Select a PNG, JPEG, WebP, or AVIF image no larger than 50 MB.",
-    "imageUploadHelp": "Choose an image from your desktop (maximum 50 MB).",
+    "imageUploadHelp": "PNG, JPEG, WebP, or AVIF up to 50 MB. The original file is stored without resizing or recompression.",
     "imageNotUploaded": "No image uploaded yet.",
     "selectedImage": "Selected: {{name}}",
+    "uploadImage": "Upload",
+    "replaceImage": "Upload replacement",
+    "uploadingImage": "Uploading…",
+    "imageUploaded": "Image uploaded successfully",
+    "uploadImageFirst": "Upload the selected image before saving.",
+    "invalidOpportunityDetails": "Enter a lowercase hyphenated slug, country, and at least one category before uploading.",
+    "invalidApplyUrl": "Application URL must be a valid HTTPS address.",
     "titleLabel": "Title",
     "descriptionLabel": "Description",
     "exportCsv": "Export CSV",

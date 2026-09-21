@@ -12,5 +12,5 @@
     "isolatedModules": true,
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.security-tests.tsbuildinfo"
   },
-  "include": ["scripts/phase3-security-assertions.ts", "worker", "worker-configuration.d.ts"]
+  "include": ["scripts/phase3-security-assertions.ts", "worker", "worker-configuration.d.ts", "src/lib/resource-expiry.ts"]
 }

@@ -19,6 +19,7 @@ const expectedTables = [
   'guide_assets',
   'guides',
   'opportunities',
+  'resources',
   'outbox_events',
 ];
 const remote = process.argv.includes('--remote');

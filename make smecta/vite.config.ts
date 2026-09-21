@@ -17,7 +17,43 @@ export default defineConfig(({ command, mode }) => {
     process.env.VITE_SITE_URL = siteUrl;
   }
   return ({
-  plugins: [react()],
+  plugins: [react(), {
+    name: 'protect-local-api',
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        if (!request.url?.startsWith('/api')) return next();
+        const origin = request.headers.origin;
+        const referer = request.headers.referer;
+        let trusted = request.headers['sec-fetch-site'] !== 'cross-site';
+        try {
+          const expected = `http://${request.headers.host}`;
+          if (origin) trusted &&= new URL(origin).origin === expected;
+          if (referer) trusted &&= new URL(referer).origin === expected;
+          if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method ?? 'GET') && !origin && !referer) trusted = false;
+        } catch { trusted = false; }
+        if (!trusted) { response.statusCode = 403; response.end('Forbidden'); return; }
+        next();
+      });
+    },
+  }],
+  server: {
+    fs: {
+      deny: ['.env', '.env.*', '*.{crt,pem,key,p12,pfx}', '**/.git/**', '**/.dev.vars*', '**/wrangler.local.json', '**/*passkey*', '**/artifacts/**', '**/.wrangler/**'],
+    },
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true,
+        configure(proxy) {
+          // Development only: the browser uses this Vite origin, including LAN preview.
+          proxy.on('proxyReq', request => {
+            request.setHeader('Origin', 'http://127.0.0.1:8787');
+            request.setHeader('Referer', 'http://127.0.0.1:8787/');
+          });
+        },
+      },
+    },
+  },
   build: {
     target: 'es2020',
     cssCodeSplit: true,

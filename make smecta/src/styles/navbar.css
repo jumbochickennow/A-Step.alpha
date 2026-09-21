@@ -1,0 +1,31 @@
+.astep-navbar { background:transparent; }
+.navbar-inner { width:min(1280px,calc(100% - 40px)); min-height:80px; margin-inline:auto; }
+.astep-navbar nav[aria-label='Primary'] { gap:20px; }
+.navbar-link { color:var(--blue); }
+.navbar-link,.navbar-menu-trigger,.navbar-languages button,.navbar-drawer > button {
+  transition:transform 180ms ease-out, background-color 180ms ease-out, box-shadow 180ms ease-out;
+}
+.navbar-link::after { transition:transform 180ms ease-out; }
+.navbar-link:focus-visible,.navbar-menu-trigger:focus-visible,.navbar-languages button:focus-visible {
+  outline:2px solid var(--blue); outline-offset:4px;
+}
+.navbar-link:focus-visible,.navbar-menu-trigger:focus-visible,.navbar-languages button:focus-visible { transform:translateY(-2px); }
+.navbar-drawer[role='dialog'] { --drawer-entry:100%; background:#fff; border-color:#0e7be526; }
+[dir='rtl'] .navbar-drawer { --drawer-entry:-100%; }
+.navbar-drawer[role='dialog'] > button { color:var(--blue); }
+.navbar-drawer .navbar-link[aria-current='page'] { background:#0e7be50d; box-shadow:inset 3px 0 var(--coral); }
+[dir='rtl'] .navbar-drawer .navbar-link[aria-current='page'] { box-shadow:inset -3px 0 var(--coral); }
+.navbar-drawer[data-state='open'] { animation:navbar-slide-in 220ms ease-out; }
+.navbar-drawer[data-state='closed'] { animation:navbar-slide-out 180ms ease-in; }
+@keyframes navbar-slide-in { from { opacity:0; transform:translateX(var(--drawer-entry)); } to { opacity:1; transform:translateX(0); } }
+@keyframes navbar-slide-out { from { opacity:1; transform:translateX(0); } to { opacity:0; transform:translateX(var(--drawer-entry)); } }
+@media (hover:hover) {
+  .navbar-link:hover,.navbar-menu-trigger:hover,.navbar-languages button:hover { transform:translateY(-2px); }
+  .navbar-menu-trigger:hover,.navbar-drawer .navbar-link:hover { background:#0e7be50d; }
+  .navbar-languages button:not([aria-pressed='true']):hover { background:#ffffff26; }
+}
+.navbar-link:active,.navbar-menu-trigger:active,.navbar-languages button:active { transform:scale(.97); }
+@media (prefers-reduced-motion:reduce) {
+  .navbar-drawer { animation:none!important; }
+  .navbar-link,.navbar-link::after,.navbar-menu-trigger,.navbar-languages button,.navbar-drawer > button { transition:none; transform:none!important; }
+}

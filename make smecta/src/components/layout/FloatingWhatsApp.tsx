@@ -2,29 +2,20 @@ import { MessageCircle } from 'lucide-react';
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '../../hooks/useLocale';
-import { WHATSAPP_MESSAGES } from '../../lib/constants';
+import { WHATSAPP_MESSAGES, whatsappHref } from '../../lib/constants';
 import { track } from '../../services/analytics';
 
-/** Fallback number used when VITE_WHATSAPP_NUMBER is missing or malformed. */
-const FALLBACK_WHATSAPP_NUMBER = '213783145805';
 /** Minimum delay between accepted clicks (blocks rapid tab-opening loops). */
 const CLICK_COOLDOWN_MS = 3000;
-
-/** Normalizes the configured number to digits only, with a safe fallback. */
-function resolveWhatsappNumber(raw: string | undefined): string {
-  const digits = raw?.replace(/\D/g, '') ?? '';
-  return digits.length >= 8 ? digits : FALLBACK_WHATSAPP_NUMBER;
-}
 
 export function FloatingWhatsApp() {
   const { t } = useTranslation();
   const { locale } = useLocale();
   const [visible, setVisible] = useState(false);
   const lastClickAt = useRef(0);
-  const number = resolveWhatsappNumber(import.meta.env.VITE_WHATSAPP_NUMBER);
   // Locale-missing fallback keeps the pre-filled text strictly defined.
   const message = WHATSAPP_MESSAGES[locale] ?? WHATSAPP_MESSAGES.en;
-  const href = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+  const href = whatsappHref(message);
 
   /** Blocks rapid consecutive activations so tabs cannot be opened in a loop. */
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {

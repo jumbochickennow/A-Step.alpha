@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
 const excluded = /(?:^|\/)(?:package-lock\.json|npm-shrinkwrap\.json|pnpm-lock\.yaml|yarn\.lock|worker-configuration\.d\.ts|scan-staged-secrets\.mjs|check-public-assets\.mjs|verify-env\.mjs)$/;
 const tokenPatterns = [
@@ -25,7 +25,7 @@ export function scanText(text) {
   const findings = [];
   const lines = text.split(/\r?\n/);
   lines.forEach((line, index) => {
-    if (/\*\*\*REMOVED-|secret-scan: allow-test-fixture|process\.env|randomBytes\(|getRandomValues\(/.test(line)) return;
+    if (/\*\*\*REMOVED-|secret-scan: allow-test-fixture|secret-scan: allow-public-reference|GOOGLE_SHEETS_SPREADSHEET_ID|process\.env|randomBytes\(|getRandomValues\(/.test(line)) return;
     for (const [name, pattern] of tokenPatterns) {
       if (pattern.test(line)) findings.push({ line: index + 1, type: name });
     }
@@ -57,10 +57,22 @@ if (process.argv.includes('--self-test')) {
   process.stdout.write('Secret scanner self-test passed.\n');
 } else {
   const workingTree = process.argv.includes('--working-tree');
-  const names = git(workingTree
+  // Exported USB copies have no Git index. Scan their publishable source too.
+  function sourceFiles(directory = '.') {
+    return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+      if (entry.isSymbolicLink()) return [];
+      if (entry.isDirectory() && ['node_modules', 'dist', 'artifacts', 'graft', '.git', '.wrangler', '.unlazy'].includes(entry.name)) return [];
+      if (/^(?:\.dev\.vars(?:\..*)?|wrangler\.local\.json)$/.test(entry.name) && entry.name !== '.dev.vars.example') return [];
+      if (/^\.env(?:\..*)?$/.test(entry.name) && !['.env.example', '.env.production'].includes(entry.name)) return [];
+      const name = directory === '.' ? entry.name : `${directory}/${entry.name}`;
+      return entry.isDirectory() ? sourceFiles(name) : entry.isFile() ? [name] : [];
+    });
+  }
+  const hasGit = existsSync('.git');
+  const names = (workingTree && !hasGit ? sourceFiles() : git(workingTree
     ? ['ls-files', '--cached', '--others', '--exclude-standard', '-z']
     : ['diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'])
-    .toString('utf8').split('\0').filter(Boolean).filter((name) => !excluded.test(name));
+    .toString('utf8').split('\0').filter(Boolean)).filter((name) => !excluded.test(name));
   const findings = [];
   for (const name of names) {
     if (workingTree && !existsSync(name)) continue;

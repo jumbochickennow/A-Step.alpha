@@ -6,7 +6,6 @@ import {
 } from 'chart.js';
 import { Bar, Line, Pie } from 'react-chartjs-2';
 import { BookOpen, ClipboardList, LogOut } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import { getAdminSession, signOutAdmin } from '../../services/admin.service';
 import { fetchAdminMetrics, fetchChartData, type AdminMetrics, type ChartData } from '../../services/admin-metrics.service';
 import { Brand } from '../../components/layout/Brand';
@@ -20,7 +19,7 @@ const BLUE = '#1565C0';
 const ACCESS = '#1E88E5';
 const CORAL = '#E53935';
 
-type Section = 'guides' | 'opportunities';
+type Section = 'guides' | 'opportunities' | 'resources';
 
 function MetricCard({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
@@ -35,7 +34,6 @@ function MetricCard({ icon, label, value }: { icon: string; label: string; value
 }
 
 export function AdminDashboard() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const [section, setSection] = useState<Section>('guides');
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
@@ -49,7 +47,7 @@ export function AdminDashboard() {
   }, []);
 
   const logout = async () => {
-    try { window.location.assign(await signOutAdmin()); } catch { navigate('/astep-control-vault', { replace: true }); }
+    try { window.location.assign(await signOutAdmin()); } catch { navigate('/admin', { replace: true }); }
   };
 
   const barOptions = {
@@ -101,6 +99,7 @@ export function AdminDashboard() {
           >
             <ClipboardList size={17} aria-hidden="true" /> Opportunity Card
           </button>
+          <button type="button" onClick={() => setSection('resources')} className={`rounded-xl px-3 py-2.5 text-start text-sm font-semibold ${section === 'resources' ? 'bg-brand-blue/10 text-brand-blue' : 'text-ink-muted'}`}>Resources</button>
           <button type="button" onClick={() => void logout()} className="mt-auto flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-ink-muted transition hover:bg-surface-2 hover:text-brand-coral">
             <LogOut size={17} aria-hidden="true" /> Logout
           </button>
@@ -125,7 +124,8 @@ export function AdminDashboard() {
         <main className="mx-auto w-full max-w-6xl px-5 py-8 lg:px-8">
           <h1 className="text-2xl font-extrabold tracking-tight text-ink md:text-3xl">Welcome Belabbes</h1>
 
-          {section === 'guides' ? (
+          <nav className="my-4 flex flex-wrap gap-3 md:hidden" aria-label="Content sections">{(['guides', 'opportunities', 'resources'] as const).map(item => <button key={item} onClick={() => setSection(item)} className={`rounded-lg px-3 py-2 capitalize ${section === item ? 'bg-brand-blue text-white' : 'bg-surface-2'}`}>{item}</button>)}</nav>
+          {section === 'resources' ? <OpportunityManager key="resources" resourceMode /> : section === 'guides' ? (
             <>
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <MetricCard icon="💰" label="Number of Downloads" value={String(metrics?.downloads ?? 0)} />
@@ -159,7 +159,7 @@ export function AdminDashboard() {
                   : <p className="mt-4 text-sm text-ink-muted">No history data yet.</p>}
               </div>
               <div className="mt-8">
-                <OpportunityManager />
+                <OpportunityManager key="opportunities" />
               </div>
             </>
           )}
@@ -181,9 +181,5 @@ export function AdminDashboardRoute() {
   }, []);
 
   if (authorized === null) return null;
-  return authorized ? <AdminDashboard /> : <Navigate to="/astep-control-vault" replace />;
-}
-
-export function AdminRedirect() {
-  return <Navigate to="/astep-control-vault" replace />;
+  return authorized ? <AdminDashboard /> : <Navigate to="/admin" replace />;
 }

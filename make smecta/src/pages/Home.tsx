@@ -1,11 +1,13 @@
-import { BadgeCheck, CalendarClock, Check, Clock3, MapPin, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, CalendarClock, Check, Clock3, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { FaqList } from '../components/common/FaqList';
 import { Seo } from '../components/common/Seo';
 import { WhatsAppCTA } from '../components/common/WhatsAppCTA';
 import { ConsultationBand, IntroSection, ServicesSection, StorySection } from '../components/home/HomeSections';
+import { KineticTrustRow } from '../components/home/KineticTrustRow';
 import { localizedPath, useLocale } from '../hooks/useLocale';
+import { whatsappHref } from '../lib/constants';
 import { track } from '../services/analytics';
 
 export function Home() {
@@ -21,8 +23,7 @@ export function Home() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'A-Step Immigration Space',
-    url: import.meta.env.VITE_SITE_URL || 'https://astep.example',
-    email: 'belabbesbadiastep@gmail.com',
+    url: import.meta.env.VITE_SITE_URL || 'https://www.astepimmigration.space',
   };
 
   return (
@@ -41,7 +42,7 @@ export function Home() {
             <WhatsAppCTA label={t('home.hero.primary')} source="home_hero" className="mt-7 rounded-full px-6 [&_svg]:order-2 [&_svg]:rounded-full [&_svg]:bg-white [&_svg]:p-1 [&_svg]:text-brand-blue" />
             {/* Subtle pricing/offers intake link directly beneath the primary CTA. */}
             <a
-              href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER?.trim() || '213783145805'}?text=${encodeURIComponent('Hello A-Step, I would like to receive the latest prices and offers')}`}
+              href={whatsappHref('Hello A-Step, I would like to receive the latest prices and offers')}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`${t('home.hero.pricingNote')} — ${t('common.whatsappLabel')}`}
@@ -52,14 +53,7 @@ export function Home() {
             </a>
           </div>
 
-          <div className="mt-16 grid min-h-[8.5rem] w-full max-w-4xl grid-cols-2 gap-y-6 md:min-h-12 md:grid-cols-4">
-            {trust.map(([Icon, label], index) => (
-              <div key={label} className="relative flex items-center justify-center gap-3 px-3 text-[0.7rem] text-ink-muted md:[&:not(:first-child)]:before:absolute md:[&:not(:first-child)]:before:inset-y-1 md:[&:not(:first-child)]:before:start-0 md:[&:not(:first-child)]:before:w-px md:[&:not(:first-child)]:before:bg-white/10">
-                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[rgb(34_77_199/0.35)] text-brand-blue-text"><Icon size={14} aria-hidden="true" /></span>
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
+          <KineticTrustRow items={trust} />
         </div>
       </section>
 

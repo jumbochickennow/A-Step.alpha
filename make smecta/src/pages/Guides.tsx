@@ -10,6 +10,7 @@ import { GuideCard } from '../components/guides/GuideCard';
 import { useGuides } from '../hooks/useContent';
 import { useLocale } from '../hooks/useLocale';
 import { CATEGORIES, categoryLabel } from '../lib/constants';
+import { filterGuides, normalizeGuideFilter } from '../lib/guide-filters';
 import { track } from '../services/analytics';
 import { WhatsAppCTA } from '../components/common/WhatsAppCTA';
 
@@ -18,10 +19,11 @@ export function Guides() {
   const { locale } = useLocale();
   const query = useGuides(locale);
   const [params, setParams] = useSearchParams();
-  const category = params.get('category') || '';
-  const filtered = useMemo(() => query.data?.filter((guide) => !category || guide.category === category) ?? [], [category, query.data]);
+  const category = normalizeGuideFilter(params.get('category'));
+  const guides = query.data ?? [];
+  const filtered = useMemo(() => filterGuides(guides, category), [category, guides]);
   const setCategory = (value: string) => {
-    setParams(value ? { category: value } : {}, { replace: true });
+    setParams(value ? { category: value } : {});
     if (value) track('filter_used', { surface: 'guides', value });
   };
 
@@ -67,7 +69,7 @@ export function Guides() {
           {query.isLoading ? <CardGridSkeleton /> : query.isError ? <ErrorState message={t('guides.error')} retry={() => void query.refetch()} /> : filtered.length === 0 ? (
             <EmptyState message={t('guides.empty')} action={<Button variant="ghost" onClick={() => setCategory('')}>{t('common.clearFilter')}</Button>} />
           ) : (
-            <div className="grid grid-cols-1 gap-7 md:grid-cols-2">{filtered.map((guide) => <GuideCard key={guide.id} guide={guide} />)}</div>
+            <div key={category} className="grid grid-cols-1 gap-7 md:grid-cols-2 animate-fade-rise">{filtered.map((guide) => <GuideCard key={guide.id} guide={guide} />)}</div>
           )}
         </div>
       </section>

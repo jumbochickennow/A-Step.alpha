@@ -5,13 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0B1220" />
     <meta name="color-scheme" content="dark" />
-    <meta name="description" content="A-Step helps Algerian students navigate international education, scholarships, visas and immigration procedures." />
+    <!--
+      Single, authoritative, absolute Open Graph / Twitter Card block.
+      WhatsApp, Facebook, Instagram and Twitter/X crawlers do not execute this
+      SPA's JavaScript, so these static tags are the only ones they ever see —
+      Seo.tsx (react-helmet-async) intentionally does not re-declare og:*/
+      twitter:* to avoid a second, inconsistent set landing later in the DOM.
+      Per-route <title> and <meta name="description"> ARE owned by Seo.tsx
+      instead, since Google's JS-rendering pipeline reads the final DOM for
+      those two specifically and (per Google's own docs) uses only the first
+      occurrence of each — so a static duplicate here would silently defeat
+      the per-route work Seo.tsx already does.
+    -->
     <meta property="og:title" content="A-Step Immigration Space" />
     <meta property="og:description" content="Clear guidance for your international study and immigration journey." />
-    <meta property="og:image" content="/og/default.png" />
+    <meta property="og:url" content="https://www.astepimmigration.space/" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="A-Step" />
+    <meta property="og:site_name" content="A-Step Immigration Space" />
+    <meta property="og:locale" content="en_DZ" />
+    <meta property="og:image" content="https://www.astepimmigration.space/og/default.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="A-Step Immigration Space" />
+    <meta name="twitter:description" content="Clear guidance for your international study and immigration journey." />
+    <meta name="twitter:image" content="https://www.astepimmigration.space/og/default.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <!-- Critical variable fonts: start downloads immediately (both locales covered). -->

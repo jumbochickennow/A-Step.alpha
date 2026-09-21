@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { useToast } from '../../hooks/useToast';
 import { CATEGORIES, categoryLabel } from '../../lib/constants';
 import { saveAdminGuide, uploadAdminGuidePdf } from '../../services/admin.service';
 import { ApiError } from '../../services/api-client';
@@ -21,6 +21,7 @@ const MAX_PDF_BYTES = 50 * 1024 * 1024;
 
 export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCancel: () => void; onSaved: () => void }) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [active, setActive] = useState<Locale>('en');
   const [value, setValue] = useState<Omit<Guide, 'id'> & { id?: string }>({
     id: guide?.id,
@@ -40,6 +41,7 @@ export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCan
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<GuideLanguage | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [files, setFiles] = useState<Partial<Record<GuideLanguage, File>>>({});
   const [error, setError] = useState<string | null>(null);
 
@@ -57,9 +59,9 @@ export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCan
   const uploadPdf = async (language: GuideLanguage, field: 'r2KeyEn' | 'r2KeyFr' | 'r2KeyAr') => {
     const file = files[language];
     if (!value.id || !file) return;
-    setUploading(language); setError(null);
+    setUploading(language); setUploadProgress(0); setError(null);
     try {
-      const objectKey = await uploadAdminGuidePdf(value.id, language, file);
+      const objectKey = await uploadAdminGuidePdf(value.id, language, file, setUploadProgress);
       setValue((current) => ({
         ...current,
         [field]: objectKey,
@@ -67,7 +69,7 @@ export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCan
       }));
       setFiles((current) => ({ ...current, [language]: undefined }));
       toast.success(t('admin.pdfUploaded'));
-    } catch (cause) { setError(messageFor(cause)); } finally { setUploading(null); }
+    } catch (cause) { setError(messageFor(cause)); } finally { setUploading(null); setUploadProgress(0); }
   };
 
   const submit = async (event: FormEvent) => {
@@ -110,8 +112,13 @@ export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCan
                   disabled={!value.id || !files[language] || uploading !== null}
                   onClick={() => void uploadPdf(language, field)}
                 >
-                  {uploading === language ? t('admin.uploadingPdf') : t(deployed ? 'admin.replacePdf' : 'admin.uploadPdf')}
+                  {uploading === language
+                    ? `${t('admin.uploadingPdf')} ${uploadProgress}%`
+                    : t(deployed ? 'admin.replacePdf' : 'admin.uploadPdf')}
                 </Button>
+                {uploading === language ? (
+                  <progress className="mt-2 w-full" max="100" value={uploadProgress} aria-label={`${uploadProgress}%`} />
+                ) : null}
               </section>
             );
           })}

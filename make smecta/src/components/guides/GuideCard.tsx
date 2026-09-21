@@ -9,7 +9,7 @@ export function GuideCard({ guide }: { guide: LocalizedGuide }) {
   const { t } = useTranslation();
   const { locale } = useLocale();
   return (
-    <article className="group card-hover flex min-h-[270px] h-full flex-col rounded-xl border border-border bg-[#212a3a] p-6 shadow-[0_10px_26px_rgb(0_0_0/0.35)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl motion-reduce:transform-none motion-reduce:transition-none md:p-7">
+    <article className="group glow-edge card-hover flex min-h-[270px] h-full flex-col rounded-xl border border-border bg-[#212a3a] p-6 shadow-[0_10px_26px_rgb(0_0_0/0.35)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl motion-reduce:transform-none motion-reduce:transition-none md:p-7">
       <div className="flex items-start justify-between gap-4">
         <h3 className="text-xl font-bold leading-tight md:text-2xl"><bdi>{guide.title}</bdi></h3>
         <FileCheck2 className="shrink-0 text-white transition-transform duration-300 group-hover:scale-110 ltr:group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:group-hover:scale-110" size={30} aria-hidden="true" />

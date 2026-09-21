@@ -5,7 +5,7 @@ import { cn } from '../../lib/utils';
 import { track } from '../../services/analytics';
 import type { Locale } from '../../types/content';
 
-export function LanguageSwitcher({ light = false }: { light?: boolean }) {
+export function LanguageSwitcher() {
   const { t } = useTranslation();
   const { locale, changeLocale } = useLocale();
 
@@ -13,10 +13,7 @@ export function LanguageSwitcher({ light = false }: { light?: boolean }) {
     <div
       role="group"
       aria-label={t('nav.language')}
-      className={cn(
-        'inline-flex h-11 items-center rounded-full p-1 text-xs font-bold text-white shadow-sm',
-        light ? 'bg-brand-blue' : 'bg-brand-coral',
-      )}
+      className="navbar-languages inline-flex h-11 items-center rounded-full bg-brand-coral p-1 text-xs font-bold text-white shadow-sm"
     >
       {LOCALES.map((item) => {
         const active = locale === item;
@@ -33,7 +30,7 @@ export function LanguageSwitcher({ light = false }: { light?: boolean }) {
             }}
             className={cn(
               'grid size-9 place-items-center rounded-full transition-colors',
-              active && (light ? 'bg-white text-brand-blue' : 'bg-white text-brand-coral'),
+              active && 'bg-white text-brand-blue',
             )}
           >
             {localeNames[item]}

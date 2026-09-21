@@ -19,13 +19,13 @@ import { assertRuntimeEnv } from './security/env-validator';
 import { consumeOutbox, drainOutbox, type QueueBatchLike } from './queue/outbox-consumer';
 import {
   createContact,
-  confirmContactDelivery,
   createGuideLead,
   createNewsletterSubscription,
   listGuideAvailability,
   listPublishedOpportunities,
   unsubscribeNewsletter,
 } from './public-api';
+export { AdminSecurityCoordinator, AtomicRateLimiter } from './security/security-coordinators';
 
 async function authenticateAdminRequest(request: Request, env: Env): Promise<AdminIdentity> {
   const session = await readAdminSession(request, env);
@@ -36,10 +36,10 @@ async function authenticateAdminRequest(request: Request, env: Env): Promise<Adm
 async function routeApi(request: Request, env: Env, ctx: ExecutionContextLike): Promise<Response> {
   const { pathname } = new URL(request.url);
   if (pathname === '/api/v1/contact') return createContact(request, env, ctx);
-  if (pathname === '/api/v1/contact/delivery-confirmation') return confirmContactDelivery(request, env);
   if (pathname.startsWith('/api/v1/opportunity-images/')) return opportunityImage(request, env);
   if (pathname === '/api/v1/guides') return listGuideAvailability(request, env);
   if (pathname === '/api/v1/opportunities') return listPublishedOpportunities(request, env);
+  if (pathname === '/api/v1/resources') return listPublishedOpportunities(request, env, 'resources');
   if (pathname === '/api/v1/leads') return createGuideLead(request, env, ctx);
   if (pathname === '/api/v1/newsletter') return createNewsletterSubscription(request, env, ctx);
   if (pathname === '/api/v1/newsletter/unsubscribe') return unsubscribeNewsletter(request, env);
@@ -48,7 +48,7 @@ async function routeApi(request: Request, env: Env, ctx: ExecutionContextLike): 
     return signIn(request, env);
   }
   if (pathname.startsWith('/api/v1/admin/') || pathname.startsWith('/api/v1/auth/')) {
-    if (pathname === '/api/v1/auth/sign-out') return signOut(request);
+    if (pathname === '/api/v1/auth/sign-out') return signOut(request, env);
     const identity = await authenticateAdminRequest(request, env);
     if (pathname.startsWith('/api/v1/admin/')) return adminApi(request, env, identity);
     if (pathname === '/api/v1/auth/session') return sessionStatus(request, identity);
@@ -57,9 +57,7 @@ async function routeApi(request: Request, env: Env, ctx: ExecutionContextLike): 
 }
 
 function isAdminPage(pathname: string): boolean {
-  return (pathname.startsWith('/astep-control-vault/') && pathname !== '/astep-control-vault/')
-    || pathname === '/admin'
-    || pathname.startsWith('/admin/');
+  return pathname === '/admin/dashboard' || pathname.startsWith('/admin/dashboard/');
 }
 
 export default {
@@ -78,7 +76,7 @@ export default {
         }
         enforceUploadBoundary(request);
         enforceRequestEnvelope(request);
-        const rateLimit = await checkRateLimit(request);
+        const rateLimit = await checkRateLimit(request, env);
         if (rateLimit && !rateLimit.allowed) {
           const rejected = applyCorsHeaders(rateLimitResponse(rateLimit, requestId), originContext);
           return applySecurityHeaders(attachRequestId(rejected, requestId));
@@ -89,10 +87,18 @@ export default {
       if (isAdminPage(url.pathname)) {
         await authenticateAdminRequest(request, env);
       }
+      if (url.pathname === '/astep-control-vault' || url.pathname.startsWith('/astep-control-vault/')) {
+        throw new HttpError(404, 'not_found');
+      }
       const asset = await env.ASSETS.fetch(request);
       const response = new Response(asset.body, asset);
       if (response.headers.get('Content-Type')?.includes('text/html')) {
-        response.headers.set('Cache-Control', 'no-store');
+        response.headers.set(
+          'Cache-Control',
+          url.pathname.startsWith('/admin') ? 'no-store' : 'public, max-age=0, must-revalidate',
+        );
+      } else if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/fonts/')) {
+        response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
       }
       return applySecurityHeaders(attachRequestId(response, requestId));
     } catch (error) {

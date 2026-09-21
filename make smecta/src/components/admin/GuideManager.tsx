@@ -15,7 +15,7 @@ export function GuideManager() {
   const [editing, setEditing] = useState<Guide | null | undefined>(undefined);
   const [error, setError] = useState(false);
   const [page, setPage] = useState(1);
-  const load = async () => { try { setRows(await listAdminGuides()); setEditing(undefined); setError(false); } catch { setError(true); } };
+  const load = async () => { try { setRows(await listAdminGuides()); setError(false); } catch { setError(true); } };
   useEffect(() => { void load(); }, []);
 
   const sorted = useMemo(() => [...rows].sort((a, b) => a.sortOrder - b.sortOrder), [rows]);
@@ -24,8 +24,8 @@ export function GuideManager() {
   const visible = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const atCap = sorted.length >= GUIDE_SLOT_CAP;
 
-  const remove = async (id: string) => { if (!window.confirm(t('admin.confirmDelete'))) return; await deleteAdminGuide(id); await load(); };
-  if (editing !== undefined) return <GuideEditor guide={editing ?? undefined} onCancel={() => setEditing(undefined)} onSaved={() => void load()} />;
+  const remove = async (id: string) => { if (!window.confirm(t('admin.confirmDelete'))) return; try { await deleteAdminGuide(id); await load(); } catch { setError(true); } };
+  if (editing !== undefined) return <GuideEditor guide={editing ?? undefined} onCancel={() => setEditing(undefined)} onSaved={() => { setEditing(undefined); void load(); }} />;
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -48,18 +48,18 @@ export function GuideManager() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" onClick={() => setEditing(guide)}>{t('admin.edit')}</Button>
-              <Button variant="ghost" onClick={() => void remove(guide.id)}>{t('admin.delete')}</Button>
+              <Button variant="ghost" className="text-ink hover:text-brand-blue" onClick={() => setEditing(guide)}>{t('admin.edit')}</Button>
+              <Button variant="ghost" className="text-ink hover:text-brand-blue" onClick={() => void remove(guide.id)}>{t('admin.delete')}</Button>
             </div>
           </div>
         ))}
       </div>
       {pageCount > 1 ? (
         <div className="mt-6 flex items-center justify-center gap-3 text-sm">
-          <Button variant="ghost" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)}>‹ Previous</Button>
+          <Button variant="ghost" className="text-ink hover:text-brand-blue" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)}>‹ Previous</Button>
           <span className="rounded-lg bg-brand-blue px-3 py-1 font-bold text-white">{safePage}</span>
           <span className="text-ink-muted">/ {pageCount}</span>
-          <Button variant="ghost" disabled={safePage >= pageCount} onClick={() => setPage(safePage + 1)}>Next ›</Button>
+          <Button variant="ghost" className="text-ink hover:text-brand-blue" disabled={safePage >= pageCount} onClick={() => setPage(safePage + 1)}>Next ›</Button>
         </div>
       ) : null}
     </div>

@@ -32,11 +32,6 @@ async function importHmacKey(secret: string): Promise<CryptoKey> {
   return crypto.subtle.importKey('raw', bytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
 }
 
-export async function signHmac(value: string, secret: string): Promise<string> {
-  const signature = await crypto.subtle.sign('HMAC', await importHmacKey(secret), encoder.encode(value));
-  return base64UrlEncode(new Uint8Array(signature));
-}
-
 export async function verifyHmac(value: string, signature: string, secret: string): Promise<boolean> {
   try {
     return crypto.subtle.verify(

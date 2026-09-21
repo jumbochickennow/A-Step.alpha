@@ -6,6 +6,17 @@
 		"nodejs_compat"
 	],
 	"main": "worker/index.ts",
+	"workers_dev": false,
+	"routes": [
+		{
+			"pattern": "www.astepimmigration.space/*",
+			"zone_name": "astepimmigration.space"
+		},
+		{
+			"pattern": "astepimmigration.space/*",
+			"zone_name": "astepimmigration.space"
+		}
+	],
 	"assets": {
 		"binding": "ASSETS",
 		"directory": "./dist",
@@ -22,13 +33,32 @@
 			"ALLOWED_ORIGINS",
 			"PII_ENCRYPTION_KEY_V1",
 			"BLIND_INDEX_SECRET",
-			"SESSION_SECRET",
-			"ADMIN_PASSWORD",
-			"WEBHOOK_HMAC_SECRET",
-			"OUTBOUND_WEBHOOK_URL",
-			"OUTBOUND_WEBHOOK_ALLOWED_HOSTS"
+			"ADMIN_PASSWORD_HASH",
+			"ADMIN_PASSWORD_PEPPER",
+			"RESOURCE_REF_SECRET"
 		]
 	},
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "ADMIN_SECURITY",
+				"class_name": "AdminSecurityCoordinator"
+			},
+			{
+				"name": "RATE_LIMITER",
+				"class_name": "AtomicRateLimiter"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1-security-coordinators",
+			"new_sqlite_classes": [
+				"AdminSecurityCoordinator",
+				"AtomicRateLimiter"
+			]
+		}
+	],
 	"d1_databases": [
 		{
 			"binding": "DB",
@@ -45,6 +75,16 @@
 		{
 			"binding": "OPPORTUNITY_IMAGES_BUCKET",
 			"bucket_name": "a-step-opportunity-images"
+		}
+	],
+	"send_email": [
+		{
+			"name": "CONTACT_EMAIL",
+			"destination_address": "contact@astepimmigration.space",
+			"allowed_sender_addresses": [
+				"contact@astepimmigration.space"
+			],
+			"remote": true
 		}
 	],
 	"queues": {

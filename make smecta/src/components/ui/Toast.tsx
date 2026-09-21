@@ -1,5 +1,5 @@
 import { CheckCircle2, Info, XCircle } from 'lucide-react';
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cn } from '../../lib/utils';
 
 export type ToastType = 'success' | 'error' | 'info';

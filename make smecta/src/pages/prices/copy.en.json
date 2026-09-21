@@ -1,0 +1,275 @@
+{
+  "metaTitle": "Prices & offers | A-Step Immigration Space",
+  "metaDescription": "Compare A-Step consultation, profile support and application packages. Clear prices in Algerian dinar and a practical plan for your next step abroad.",
+  "heroTitle": "How To Book A Consultation With A-Step",
+  "heroSubtitle": "From the comfort of your home",
+  "booking": [
+    {
+      "title": "Choose an Offer",
+      "body": "Browse and select one of our offers that you see fits you the best, not sure what to choose? ask us on WhatsApp"
+    },
+    {
+      "title": "Contact Us On WhatsApp",
+      "body": "Contact us on WhatsApp to book a consultation, ask questions or inquire which offer you want to have."
+    },
+    {
+      "title": "Pay and sign your contract",
+      "body": "We accept payments from Baridimob, CCP, Bank Transfer, after paying the client gets a contract to sign."
+    }
+  ],
+  "packagesTitle": "Our Prices And Packages",
+  "offeredCountries": ["Italy", "China", "Poland", "France"],
+  "countries": "Countries offered",
+  "upfront": "100% upfront",
+  "installments": "3 installments",
+  "inquire": "Inquire Now",
+  "request": "Request a slot",
+  "bookingNote": "Prices in Algerian dinar. A request is a booking request, not a purchase — nothing is charged on this page.",
+  "tiers": [
+    {
+      "name": "Standard",
+      "audience": "For whom: undecided or hesitant applicants, and candidates with non-linear academic histories.",
+      "features": [
+        "1× 60-min strategic consultation",
+        "Personalized check-list",
+        "Personalized Quick Guide",
+        "1× standardized ATS academic CV",
+        "Full profile analysis and breakdown",
+        "Upgrade to Professional: discount available"
+      ]
+    },
+    {
+      "name": "Professional",
+      "audience": "For whom: self-directed candidates needing professional file execution.",
+      "features": [
+        "2× strategy & document review sessions",
+        "5 customized CVs + tailored motivation letters for 5 chosen universities",
+        "Step-by-step submission assistance across official portals",
+        "Custom visa & proof-of-funds roadmap guide"
+      ]
+    },
+    {
+      "name": "Premium",
+      "audience": "For whom: high-stakes applicants and parents wanting end-to-end delegation.",
+      "features": [
+        "4 milestone check-ins",
+        "2× interview simulations",
+        "Complete document drafting, translation oversight & formatting",
+        "100% managed submission (Études en France / university portals)",
+        "Full visa file prep, TLScontact/VFS appointment, CROUS housing & bank account setup",
+        "Flight booking assistance, French bank account pre-opening guide & CAF subsidy filing"
+      ]
+    }
+  ],
+  "processTitle": "How does it work",
+  "processSubtitle": "From your first message to a file that is ready to submit. Six steps, in this order.",
+  "steps": [
+    {
+      "title": "Request a slot",
+      "body": "You send one message naming the offer you are interested in. No documents at this stage."
+    },
+    {
+      "title": "Short qualification",
+      "body": "We ask three things: your destination, your target intake, and which documents you already hold."
+    },
+    {
+      "title": "The call",
+      "body": "A scheduled video call. Your file is open on screen and we work through it together."
+    },
+    {
+      "title": "Your written plan",
+      "body": "You receive a written plan: what to prepare, in which order, and by which date."
+    },
+    {
+      "title": "The work",
+      "body": "CVs, motivation letters, translations and portal steps, handled at the level your tier covers."
+    },
+    {
+      "title": "Review before submission",
+      "body": "Nothing goes out before a final read-through against the programme’s own stated requirements."
+    }
+  ],
+  "coachingEyebrow": "ONE ON ONE",
+  "coachingTitle": "The one-on-one coaching space",
+  "coachingBody": "A private session is a scheduled video call with a named adviser. Your file is open on screen, the agenda is set before you join, and your questions are answered in Darja, French or English.",
+  "coachingEmphasis": "It is a working session, not a sales call.",
+  "arabic": "Arabic",
+  "english": "English",
+  "coachingNote": "Bring your questions. Documents are exchanged through the channel agreed during the call — never over WhatsApp.",
+  "session": "Session in progress",
+  "sessionTier": "STANDARD · 60 MIN",
+  "agenda": "AGENDA",
+  "documents": "YOUR DOCUMENTS",
+  "agendaItems": [
+    "Read through your file together",
+    "Shortlist: which programmes, and why",
+    "Gaps to close, and by which date",
+    "Your next three actions"
+  ],
+  "documentItems": [
+    "Transcripts — Bac + 2 years",
+    "Draft CV (v1)",
+    "Language certificate — pending",
+    "Programme shortlist"
+  ],
+  "sessionNote": "Everything decided here lands in your written plan.",
+  "guidesTitle": "Personalized guides based on your profile",
+  "guidesSubtitle": "Both are real work. They answer different questions.",
+  "freeGuide": "Free guide",
+  "freeGuideLabel": "DOWNLOADABLE · NO BOOKING NEEDED",
+  "freeFeatures": [
+    "General checklists, per destination",
+    "University and programme lists",
+    "Procedures, portals and deadlines",
+    "Document formats and translation rules",
+    "Updated as procedures change"
+  ],
+  "personalGuide": "Personalized guide",
+  "personalGuideLabel": "INCLUDED FROM STANDARD UPWARD",
+  "personalFeatures": [
+    "Your grades, read against real entry ranges",
+    "Your gaps, named with what closes them",
+    "Your timeline, back-dated from your intake",
+    "Your target intake and its exact deadlines",
+    "Your shortlist, reasoned — why these, not those"
+  ],
+  "exploreGuides": "Explore free guides",
+  "guidesNote": "The free guide tells you what the procedure is. The personalized guide tells you where you stand in it.",
+  "cvTitle": "CV and profile analysis",
+  "cvSubtitle": "The same profile, structured to what an international admissions office expects to read.",
+  "fictional": "EXAMPLE PROFILE — INVENTED FOR ILLUSTRATION, NEVER A REAL CLIENT DOCUMENT",
+  "before": "BEFORE",
+  "after": "AFTER",
+  "cvNotes": [
+    "Photo, date of birth and marital status removed. Most European admissions offices do not want them.",
+    "The objective paragraph becomes a profile statement: programme, intake, and what is actually targeted.",
+    "Algerian grades given with their scale and an equivalence, so a reader can place them.",
+    "“Divers” split into languages with certified levels and skills that match the programme’s prerequisites.",
+    "Experience rewritten as one outcome per line, with dates and volumes instead of duties."
+  ],
+  "supportTitle": "University and visa application support",
+  "supportSubtitle": "What the upper tiers add. Select a tier to see what it covers.",
+  "tierLabel": "Compare package coverage",
+  "coverageLabels": [
+    "Motivation letters",
+    "Portal submission",
+    "Proof of funds & visa file",
+    "Interview simulation",
+    "Post-arrival orientation"
+  ],
+  "coverage": [
+    [
+      "Your Standard session covers how to write one. The drafting is yours.",
+      "You submit yourself, using the check-list from your session.",
+      "Explained in your personalized quick guide; the file is not prepared for you.",
+      "Available from Premium.",
+      "Available from Premium."
+    ],
+    [
+      "Tailored motivation letters for your five chosen universities.",
+      "Step-by-step submission assistance across official portals.",
+      "A custom visa and proof-of-funds roadmap guide.",
+      "Available from Premium.",
+      "Available from Premium."
+    ],
+    [
+      "Complete document drafting, translation oversight and formatting.",
+      "Managed submission through Études en France or university portals.",
+      "Full visa file preparation, appointment, housing and bank account setup.",
+      "Two interview simulations included.",
+      "Flight booking assistance, French bank account pre-opening guide and CAF subsidy filing."
+    ]
+  ],
+  "notCovered": "NOT COVERED",
+  "guidance": "GUIDANCE ONLY",
+  "included": "INCLUDED",
+  "requestNote": "A booking request, not a purchase.",
+  "promiseEyebrow": "READ THIS BEFORE YOU PAY ANYONE",
+  "promiseTitle": "What we cannot promise",
+  "promiseIntro": "No one can guarantee you a visa or an admission. Anyone who tells you otherwise is lying to you.",
+  "promises": [
+    {
+      "title": "The decision is never ours",
+      "body": "Admissions belong to universities. Visas belong to consulates and public authorities. Both decide on their own criteria and neither is obliged to explain."
+    },
+    {
+      "title": "We are independent",
+      "body": "A-Step is an independent private service provider. We are not an embassy, a university, a consulate, a government body or an accredited agency, and we are not affiliated with any of them."
+    },
+    {
+      "title": "No insider route",
+      "body": "There is no file we can move to the top of a queue and no contact who can make an exception for you. What we sell is a dossier prepared properly and on time."
+    }
+  ],
+  "promiseNote": "What we are responsible for is the quality and the timing of the work we do on your file: complete documents, correct formats, letters written for the programme in question, and submission before the deadline. That is the whole of it, and it is written into our Terms.",
+  "refundTitle": "Reschedule and refund policy",
+  "refundSubtitle": "The full position is in the Terms. This is the short version.",
+  "refunds": [
+    {
+      "title": "Free reschedule",
+      "badge": "24H OR MORE",
+      "body": "For a scheduled consultation where substantive work has not been delivered, give at least 24 hours’ notice to choose one free reschedule, subject to availability. Send your name, service and appointment date/time through our official email or WhatsApp."
+    },
+    {
+      "title": "Full refund",
+      "badge": "24H OR MORE",
+      "body": "If you cancel at least 24 hours before a consultation and substantive service has not been delivered, you may choose a 100% refund of its professional fee. Approved refunds are processed within ten business days after the decision, unless a different mandatory period applies."
+    },
+    {
+      "title": "Inside 24 hours, or no-show",
+      "badge": "50% REFUND",
+      "body": "Cancellation less than 24 hours before a consultation, or a no-show without notice, gives a 50% refund of the consultation professional fee under Terms V4.0. Documented exceptional circumstances may qualify for one reschedule or a full refund; a no-show exception request must be sent within seven calendar days."
+    },
+    {
+      "title": "Multi-session packages",
+      "badge": "PRO RATA",
+      "body": "When substantive work has begun, any refund reflects the unperformed portion of the professional service, taking account of work delivered, agreed milestones and lawful non-recoverable costs. Third-party charges are excluded unless A-Step received them and is responsible for refunding them."
+    },
+    {
+      "title": "Right of withdrawal",
+      "badge": "APPLICABLE RIGHTS",
+      "body": "Ask us for the withdrawal conditions that apply to your booking before confirming it or requesting work to begin. Any mandatory consumer rights remain applicable; the consultation cancellation policy does not replace them."
+    }
+  ],
+  "termsNote": "Reschedules, refunds, scope and liability are set out in full in the Terms of Service. If anything here and the Terms disagree, the Terms apply.",
+  "termsButton": "Read the full Terms",
+  "minorNote": "Under nineteen? You are welcome to all the free resources and to an informational call. Any paid engagement involves a parent or guardian, who signs with you.",
+  "faqTitle": "Frequently asked questions",
+  "faqs": [
+    {
+      "q": "Is A-Step an agency?",
+      "a": "No. A-Step is an independent private service provider offering administrative guidance and tools for international applications. We are not a government agency, an embassy-certified firm or a diplomatic entity."
+    },
+    {
+      "q": "How do I pay?",
+      "a": "Any paid service, its scope and its price are explained before you agree. We accept the payment channels confirmed directly by A-Step, including Baridimob, CCP and bank transfer. An invoice is provided; third-party charges are excluded unless your order says otherwise. No payment is taken on this page."
+    },
+    {
+      "q": "What if I’m still in lycée?",
+      "a": "You can explore our free guides and ask for an informational call. If you are under nineteen, a parent or guardian takes part in any paid engagement and signs with you."
+    },
+    {
+      "q": "Do you work with my destination?",
+      "a": "Tell us your destination, programme and target intake when you contact us. We will confirm whether your application falls within the support we offer before you book."
+    },
+    {
+      "q": "What happens after the call?",
+      "a": "You receive a written plan setting out your next steps, what to prepare and the relevant dates. Any further work follows the scope of the package you chose."
+    },
+    {
+      "q": "Can my parents speak to you directly?",
+      "a": "Yes. Mention this when requesting your slot so we can arrange the conversation together. A parent or guardian is involved in paid engagements for clients under nineteen."
+    },
+    {
+      "q": "Do I send my documents on WhatsApp?",
+      "a": "No. Use WhatsApp to ask questions and arrange your session. Documents are exchanged through the channel agreed during the call."
+    }
+  ],
+  "closingTitle": "Ready To Start Your Journey Abroad",
+  "closingBody": "One message with the offer you are interested in. We reply with the next available slots and what to have ready.",
+  "email": "Email us instead",
+  "closingNote": "Your application time is valuable, don’t waste it on misinformation.",
+  "inquiryMessage": "Hello A-Step, I would like to request a slot for the {{tier}} package ({{price}} DA).",
+  "generalMessage": "Hello A-Step, I would like to request a consultation slot.",
+  "scrollOffers": "Explore our prices and packages"
+}

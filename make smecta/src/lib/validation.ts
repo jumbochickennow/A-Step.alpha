@@ -24,18 +24,6 @@ export const emailSchema = z
     return local.length > 1 && !/^\d+$/.test(local) && !junkLocalParts.has(local);
   }, 'junk');
 
-export const guideLeadSchema = z.object({
-  name: z.string().trim().min(2).max(80),
-  email: emailSchema,
-});
-
-export const contactSchema = z.object({
-  name: z.string().trim().min(2).max(80),
-  email: emailSchema,
-  subject: z.string().trim().min(3).max(120),
-  message: z.string().trim().min(10).max(2000),
-});
-
 export const newsletterSchema = z.object({
   email: emailSchema,
   consent: z.boolean().refine((value: boolean) => value),

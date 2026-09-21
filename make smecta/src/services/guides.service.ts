@@ -11,14 +11,15 @@ function catalog(): Guide[] {
 }
 
 /** Canonical read-only catalog; administrative writes go through the BFF. */
-export function allGuides(): Guide[] {
+function allGuides(): Guide[] {
   return catalog();
 }
 
 export async function listGuides(locale: Locale): Promise<LocalizedGuide[]> {
   let guides = allGuides();
   try {
-    guides = (await apiJson<{ items: Guide[] }>('/api/v1/guides')).items;
+    const response = await apiJson<{ items?: Guide[] }>('/api/v1/guides');
+    if (Array.isArray(response.items)) guides = response.items;
   } catch {
     // The bundled catalog remains usable while the edge API is unavailable.
   }
@@ -30,27 +31,4 @@ export async function listGuides(locale: Locale): Promise<LocalizedGuide[]> {
       availableLanguages: guide.availableLanguages ?? { en: true, fr: false, ar: false },
       ...translations[locale],
     }));
-}
-
-/** Strongly typed query filters for guide catalog lookups. */
-export interface GuideFilterOptions {
-  category?: string;
-  searchQuery?: string;
-}
-
-/**
- * Filters the localized guide catalog. `searchQuery` matches case-insensitively
- * against the active locale title and description.
- */
-export async function filterGuides(locale: Locale, options: GuideFilterOptions = {}): Promise<LocalizedGuide[]> {
-  const { category, searchQuery } = options;
-  const needle = searchQuery?.trim().toLowerCase();
-  return (await listGuides(locale)).filter((guide) => {
-    if (category && guide.category !== category) return false;
-    if (needle) {
-      const haystack = `${guide.title}\n${guide.description}`.toLowerCase();
-      if (!haystack.includes(needle)) return false;
-    }
-    return true;
-  });
 }

@@ -9,8 +9,10 @@
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.worker.tsbuildinfo",
     "noEmit": true
   },
-  "include": ["worker", "worker-configuration.d.ts"]
+  "include": ["worker", "worker-configuration.d.ts", "src/lib/resource-expiry.ts"]
 }

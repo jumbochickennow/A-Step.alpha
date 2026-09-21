@@ -1,4 +1,4 @@
-import { base64UrlDecode, base64UrlEncode, randomToken, sha256, signHmac, verifyHmac } from './crypto';
+import { randomToken, sha256 } from './crypto';
 import type { Env, ExecutionContextLike } from './env';
 import { HttpError, json, readJson, requireIdempotencyKey, requireMethod } from './http';
 import { createBlindIndex } from './security/blind-index';
@@ -14,7 +14,6 @@ import {
 
 const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60;
 const GRANT_TTL_SECONDS = 5 * 60;
-const CONTACT_CONFIRMATION_TTL_SECONDS = 24 * 60 * 60;
 
 interface StoredResponse { response: string | null }
 interface GuideAsset {
@@ -86,15 +85,16 @@ export async function listGuideAvailability(request: Request, env: Env): Promise
   });
 }
 
-export async function listPublishedOpportunities(request: Request, env: Env): Promise<Response> {
+export async function listPublishedOpportunities(request: Request, env: Env, table: 'opportunities' | 'resources' = 'opportunities'): Promise<Response> {
   requireMethod(request, ['GET']);
-  await seedAdminCatalog(env);
+  if (table === 'opportunities') await seedAdminCatalog(env);
   const { results } = await env.DB.prepare(
     `SELECT id, slug, country, categories, image_path, apply_url, opens_at, deadline,
-     featured, published, translations FROM opportunities
-     WHERE published = 1 ORDER BY deadline IS NULL ASC, deadline ASC LIMIT 100`,
+     featured, published, translations FROM ${table}
+     WHERE published = 1 ${table === 'resources' ? "AND deadline >= date('now', '+1 hours')" : ''}
+     ORDER BY ${table === 'resources' ? 'featured DESC,' : ''} deadline IS NULL ASC, deadline ASC LIMIT 100`,
   ).all<PublicOpportunityRow>();
-  return json({ items: results.map((row) => ({
+  return json({ now: Date.now(), items: results.map((row) => ({
     id: row.id,
     slug: row.slug,
     country: row.country,
@@ -153,8 +153,9 @@ export async function createGuideLead(request: Request, env: Env, ctx: Execution
   await verifyTurnstile(request, env, input.turnstileToken, 'lead_download');
 
   const asset = await env.DB.prepare(
-    `SELECT id, slug, object_key, r2_key_en, r2_key_fr, r2_key_ar
-     FROM guide_assets WHERE id = ?1 LIMIT 1`,
+    `SELECT ga.id, ga.slug, ga.object_key, ga.r2_key_en, ga.r2_key_fr, ga.r2_key_ar
+     FROM guide_assets ga JOIN guides g ON g.id = ga.id
+     WHERE ga.id = ?1 AND g.published = 1 LIMIT 1`,
   ).bind(input.guideId).first<GuideAsset>();
   if (!asset) throw new HttpError(404, 'guide_not_found');
   const requestedKey = input.guideLanguage === 'fr'
@@ -207,7 +208,7 @@ export async function createGuideLead(request: Request, env: Env, ctx: Execution
   return json(result.value);
 }
 
-export async function createContact(request: Request, env: Env, _ctx: ExecutionContextLike): Promise<Response> {
+export async function createContact(request: Request, env: Env, ctx: ExecutionContextLike): Promise<Response> {
   requireMethod(request, ['POST']);
   const idempotencyKey = requireIdempotencyKey(request);
   const parsed = contactInputSchema.safeParse(await readJson(request, 8192));
@@ -219,12 +220,11 @@ export async function createContact(request: Request, env: Env, _ctx: ExecutionC
   const createdAt = new Date(now * 1000).toISOString();
   const contactId = crypto.randomUUID();
   const eventId = crypto.randomUUID();
-  const confirmationPayload = base64UrlEncode(new TextEncoder().encode(JSON.stringify({
-    eventId,
-    exp: now + CONTACT_CONFIRMATION_TTL_SECONDS,
-  })));
-  const confirmationToken = `${confirmationPayload}.${await signHmac(confirmationPayload, env.WEBHOOK_HMAC_SECRET)}`;
-  const response = { success: true as const, delivery: 'browser' as const, confirmationToken };
+  const response = {
+    success: true as const,
+    submissionId: contactId,
+    deliveryStatus: 'pending' as const,
+  };
   const result = await idempotentBatch(env, idempotencyKey, 'contact', response, [
     env.DB.prepare(
       `INSERT INTO contact_submissions
@@ -246,41 +246,10 @@ export async function createContact(request: Request, env: Env, _ctx: ExecutionC
       `INSERT INTO outbox_events
         (id, event_type, aggregate_id, status, attempts, available_at, created_at, updated_at)
        VALUES (?1, 'contact.created', ?2, 'pending', 0, ?3, ?4, ?4)`,
-    ).bind(eventId, contactId, now + 5 * 60, createdAt),
+    ).bind(eventId, contactId, now, createdAt),
   ], now);
+  if (result.created) enqueue(ctx, env, eventId);
   return json(result.value, 202);
-}
-
-export async function confirmContactDelivery(request: Request, env: Env): Promise<Response> {
-  requireMethod(request, ['POST']);
-  const body = await readJson(request, 4096);
-  if (!body || typeof body !== 'object' || Array.isArray(body)
-    || Object.keys(body).length !== 1 || !('confirmationToken' in body)
-    || typeof body.confirmationToken !== 'string' || body.confirmationToken.length > 2048) {
-    throw new HttpError(400, 'invalid_delivery_confirmation');
-  }
-  const [payload, signature, extra] = body.confirmationToken.split('.');
-  if (!payload || !signature || extra || !await verifyHmac(payload, signature, env.WEBHOOK_HMAC_SECRET)) {
-    throw new HttpError(400, 'invalid_delivery_confirmation');
-  }
-  let confirmation: { eventId?: unknown; exp?: unknown };
-  try {
-    confirmation = JSON.parse(new TextDecoder().decode(base64UrlDecode(payload))) as typeof confirmation;
-  } catch {
-    throw new HttpError(400, 'invalid_delivery_confirmation');
-  }
-  const now = Math.floor(Date.now() / 1000);
-  if (typeof confirmation.eventId !== 'string' || !/^[0-9a-f-]{36}$/i.test(confirmation.eventId)
-    || typeof confirmation.exp !== 'number' || confirmation.exp <= now) {
-    throw new HttpError(400, 'invalid_delivery_confirmation');
-  }
-  const deliveredAt = new Date(now * 1000).toISOString();
-  await env.DB.prepare(
-    `UPDATE outbox_events SET status = 'delivered', delivered_at = ?1, locked_at = NULL,
-     last_error = NULL, updated_at = ?1
-     WHERE id = ?2 AND event_type = 'contact.created' AND status != 'delivered'`,
-  ).bind(deliveredAt, confirmation.eventId).run();
-  return json({ success: true });
 }
 
 export async function createNewsletterSubscription(request: Request, env: Env, ctx: ExecutionContextLike): Promise<Response> {

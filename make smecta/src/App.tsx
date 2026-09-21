@@ -15,13 +15,14 @@ const Guides = lazy(() => import('./pages/Guides').then((module) => ({ default: 
 const Opportunities = lazy(() => import('./pages/Opportunities').then((module) => ({ default: module.Opportunities })));
 const About = lazy(() => import('./pages/About').then((module) => ({ default: module.About })));
 const Contact = lazy(() => import('./pages/Contact').then((module) => ({ default: module.Contact })));
+const Prices = lazy(() => import('./pages/Prices').then((module) => ({ default: module.Prices })));
+const Resources = lazy(() => import('./pages/Resources').then((module) => ({ default: module.Resources })));
 const Privacy = lazy(() => import('./pages/Privacy').then((module) => ({ default: module.Privacy })));
 const Terms = lazy(() => import('./pages/Terms').then((module) => ({ default: module.Terms })));
 const Unsubscribe = lazy(() => import('./pages/Unsubscribe').then((module) => ({ default: module.Unsubscribe })));
 const NotFound = lazy(() => import('./pages/NotFound').then((module) => ({ default: module.NotFound })));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin').then((module) => ({ default: module.AdminLogin })));
 const AdminDashboardRoute = lazy(() => import('./pages/admin/AdminDashboard').then((module) => ({ default: module.AdminDashboardRoute })));
-const AdminRedirect = lazy(() => import('./pages/admin/AdminDashboard').then((module) => ({ default: module.AdminRedirect })));
 
 const children = [
   { index: true, element: <Home /> },
@@ -29,6 +30,8 @@ const children = [
   { path: 'opportunities', element: <Opportunities /> },
   { path: 'about', element: <About /> },
   { path: 'contact', element: <Contact /> },
+  { path: 'prices', element: <Prices /> },
+  { path: 'resources', element: <Resources /> },
   { path: 'privacy', element: <Privacy /> },
   { path: 'terms', element: <Terms /> },
   { path: 'unsubscribe', element: <Unsubscribe /> },
@@ -40,7 +43,6 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
   { path: '/fr', element: <SiteLayout />, children },
   { path: '/ar', element: <SiteLayout />, children },
   // Isolated administrative bundles load behind the branded page fallback.
-  { path: '/astep-control-vault', element: <Suspense fallback={<PageLoadingFallback />}><AdminLogin /></Suspense> },
-  { path: '/astep-control-vault/dashboard', element: <Suspense fallback={<PageLoadingFallback />}><AdminDashboardRoute /></Suspense> },
-  { path: '/admin/*', element: <Suspense fallback={<PageLoadingFallback />}><AdminRedirect /></Suspense> },
+  { path: '/admin', element: <Suspense fallback={<PageLoadingFallback />}><AdminLogin /></Suspense> },
+  { path: '/admin/dashboard', element: <Suspense fallback={<PageLoadingFallback />}><AdminDashboardRoute /></Suspense> },
 ]);

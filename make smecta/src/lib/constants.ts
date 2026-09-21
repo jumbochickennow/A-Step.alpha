@@ -1,60 +1,11 @@
-import type { Locale, LocalizedText, OpportunityCategory, OpportunityStatus } from '../types/content';
+import type { Locale } from '../types/content';
 
 export const LOCALES: Locale[] = ['en', 'fr', 'ar'];
 export const COUNTRIES = ['Algeria', 'France', 'Italy', 'Canada', 'China', 'Germany', 'Poland', 'Gulf'] as const;
 export const TOPICS = ['Scholarships', 'Universities', 'Visas', 'Cabin Crew'] as const;
 export const CATEGORIES = [...COUNTRIES, ...TOPICS] as const;
 
-/* ------------------------------------------------------------------ */
-/* Readonly registries & runtime type guards (Task 3.2)                */
-/* ------------------------------------------------------------------ */
-
 export const SUPPORTED_LOCALES: readonly Locale[] = ['ar', 'en', 'fr'] as const;
-
-export const OPPORTUNITY_CATEGORIES: readonly OpportunityCategory[] = [
-  'scholarship',
-  'internship',
-  'job',
-  'study_program',
-  'visa_guide',
-  'cabin_crew',
-] as const;
-
-export const OPPORTUNITY_STATUSES: readonly OpportunityStatus[] = [
-  'open',
-  'closing_soon',
-  'closed',
-  'archived',
-] as const;
-
-/** Runtime guard narrowing an unknown value to a supported Locale. */
-export function isLocale(value: unknown): value is Locale {
-  return typeof value === 'string' && (SUPPORTED_LOCALES as readonly string[]).includes(value);
-}
-
-/** Runtime guard narrowing an unknown value to an OpportunityCategory. */
-export function isOpportunityCategory(value: unknown): value is OpportunityCategory {
-  return typeof value === 'string' && (OPPORTUNITY_CATEGORIES as readonly string[]).includes(value);
-}
-
-/** Runtime guard narrowing an unknown value to an OpportunityStatus. */
-export function isOpportunityStatus(value: unknown): value is OpportunityStatus {
-  return typeof value === 'string' && (OPPORTUNITY_STATUSES as readonly string[]).includes(value);
-}
-
-/**
- * Resolves localized copy for a locale with graceful cascade:
- * active locale → English → French → Arabic → provided fallback.
- */
-export function getLocalizedValue(
-  text: LocalizedText | undefined | null,
-  locale: Locale,
-  fallback = '',
-): string {
-  if (!text) return fallback;
-  return text[locale] || text.en || text.fr || text.ar || fallback;
-}
-
 export const WHATSAPP_MESSAGES: Record<Locale, string> = {
   en: 'Hello, I am interested in booking a consultation with A-Step.',
   fr: 'Bonjour, je souhaite réserver une consultation avec A-Step.',
@@ -79,6 +30,7 @@ export const localeNames: Record<Locale, string> = {
 const categoryKeys: Record<string, string> = {
   Algeria: 'algeria', France: 'france', Italy: 'italy', Canada: 'canada', China: 'china', Germany: 'germany', Poland: 'poland', Gulf: 'gulf', Europe: 'europe',
   Scholarships: 'scholarships', Universities: 'universities', Visas: 'visas', 'Cabin Crew': 'cabinCrew',
+  applications: 'applications', careers: 'careers', scholarships: 'scholarships', universities: 'universities', visas: 'visas',
 };
 
 export function categoryLabel(category: string, translate: (key: string) => string) {

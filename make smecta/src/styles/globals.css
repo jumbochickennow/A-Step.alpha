@@ -16,6 +16,8 @@
 
   body {
     @apply m-0 min-w-[320px] bg-bg font-sans text-ink antialiased;
+    /* Hide the browser's caret-browsing cursor on ordinary page copy. */
+    caret-color: transparent;
     min-height: 100%;
     overflow-x: hidden;
     overflow-y: visible;
@@ -101,9 +103,44 @@
     font: inherit;
   }
 
+  input,
+  textarea,
+  [contenteditable]:not([contenteditable='false']) {
+    /* Editable controls still need a visible insertion caret. */
+    caret-color: auto;
+  }
+
   :focus-visible {
-    outline: 2px solid var(--focus-ring);
+    outline: 2px solid var(--ring-dark);
     outline-offset: 3px;
+  }
+
+  /*
+   * On light/white sections the default ring (--ring-dark, tuned for --bg)
+   * drops to ~2.6:1 — below WCAG 2.2 SC 1.4.11's 3:1 non-text minimum.
+   * Swap to --ring-light (~4.2:1 on white) wherever a Tailwind bg-white /
+   * bg-slate-50 surface is focused directly or contains the focused control.
+   * [data-surface="light"] is an explicit opt-in escape hatch for any future
+   * light surface a utility class can't target directly.
+   *
+   * Verified safe against the actual component tree, not applied blindly:
+   * - Radix Dialog content (GuideDownloadDialog, the mobile nav drawer)
+   *   renders through a Portal straight to <body> — it is never a DOM
+   *   descendant of a bg-white/bg-slate-50 page section, so these dialogs
+   *   cannot inherit the light ring by nesting accident.
+   * - The two light sections that exist today (HomeSections' StorySection
+   *   at bg-slate-50, ConsultationBand at bg-white) contain no dark-styled
+   *   focusable content; their only interactive elements are Button/
+   *   WhatsAppCTA, which already replace the native outline with their own
+   *   Tailwind ring and so ignore this rule entirely.
+   */
+  .bg-white :focus-visible,
+  .bg-slate-50 :focus-visible,
+  .bg-white:focus-visible,
+  .bg-slate-50:focus-visible,
+  [data-surface='light'] :focus-visible,
+  [data-surface='light']:focus-visible {
+    outline-color: var(--ring-light);
   }
 
   ::selection {
@@ -113,6 +150,39 @@
 }
 
 @layer components {
+  /*
+   * Progressive-enhancement scroll reveal — replaces the old useScrollReveal
+   * hook (removed). Base state is deliberately empty: content is fully
+   * visible by default in every browser, with no opacity:0 fallback trap
+   * that depended on an IntersectionObserver firing. Only browsers that
+   * support scroll-driven animations (behind @supports) and haven't asked
+   * for reduced motion get the enhanced entry animation; everyone else just
+   * sees the section, instantly, exactly as if this class didn't exist.
+   * "scroll-reveal" is a dedicated keyframe name, kept separate from
+   * Tailwind's own fade-rise utility/animation config so the two can never
+   * collide or be purged into each other.
+   */
+  @keyframes scroll-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal {
+        animation: scroll-reveal 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        animation-timeline: view();
+        animation-range: entry 10% cover 32%;
+      }
+    }
+  }
+
   .container-shell {
     @apply mx-auto w-full min-w-0 max-w-[1280px] px-5 md:px-8 xl:px-12;
   }
@@ -128,6 +198,75 @@
   .scroll-row::-webkit-scrollbar-thumb {
     background: var(--border-strong);
     border-radius: var(--r-full);
+  }
+
+  /*
+   * Edge-fade affordance: on narrow viewports the chip row is wider than the
+   * screen (below the sm: breakpoint it wraps instead — see FilterChips.tsx),
+   * and a thin scrollbar alone doesn't read as "more content here" on touch.
+   * A trailing fade is a static, always-visible signal that costs nothing at
+   * rest and needs no JS scroll listener. Mirrored for RTL, off once chips
+   * wrap onto multiple rows.
+   */
+  .scroll-row {
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 40px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 40px), transparent 100%);
+  }
+  [dir='rtl'] .scroll-row {
+    -webkit-mask-image: linear-gradient(to left, #000 0, #000 calc(100% - 40px), transparent 100%);
+    mask-image: linear-gradient(to left, #000 0, #000 calc(100% - 40px), transparent 100%);
+  }
+  @media (min-width: 640px) {
+    .scroll-row {
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+  }
+
+  /*
+   * Restrained neon accents. Glow marks state (hover/focus/genuine urgency)
+   * and is invisible at rest — never an ambient/idle effect. Costs a single
+   * compositor-only opacity transition; @media (prefers-reduced-motion)
+   * below already zeroes every transition-duration on *, *::before, *::after,
+   * so no extra guard is needed here.
+   */
+  .glow-edge {
+    position: relative;
+    isolation: isolate;
+  }
+  .glow-edge::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    box-shadow: var(--glow-blue);
+    opacity: 0;
+    transition: opacity 220ms ease;
+    pointer-events: none;
+  }
+  .glow-edge:hover::before,
+  .glow-edge:focus-within::before {
+    opacity: 1;
+  }
+
+  @keyframes pill-breathe {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+  }
+  /* Closing-soon badge: three breaths on mount, then rests — not a perpetual pulse. */
+  .pill-urgent {
+    position: relative;
+    isolation: isolate;
+  }
+  .pill-urgent::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    box-shadow: var(--glow-coral);
+    animation: pill-breathe 2.6s ease-in-out 3;
   }
 
   .section-space {
@@ -155,12 +294,6 @@
     letter-spacing: -0.01em;
   }
 
-  .card-title {
-    font-size: clamp(1.125rem, 1.6vw, 1.375rem);
-    font-weight: 650;
-    line-height: 1.3;
-  }
-
   .eyebrow {
     @apply text-[0.8125rem] font-semibold uppercase tracking-[0.08em] text-brand-blue-text;
   }
@@ -175,15 +308,144 @@
 
   .field {
     @apply min-h-11 w-full rounded-md border border-border bg-surface-2 px-4 py-3 text-base text-ink placeholder:text-ink-subtle;
+    transition: border-color 180ms ease, box-shadow 180ms ease;
+  }
+
+  .field:focus-visible {
+    border-color: var(--ring-dark);
+    box-shadow: var(--glow-blue);
   }
 
   .field[aria-invalid='true'] {
     border-color: var(--danger);
   }
 
-  /* Elevation token helper (pairs with --shadow-elevated in tokens.css). */
-  .shadow-elevated {
-    box-shadow: var(--shadow-elevated);
+  /*
+   * Press feedback: a soft highlight that blooms in on :active and fades out,
+   * layered under the button's own content (z-index below, via stacking on a
+   * ::after clipped to the button's own rounded corners). Compositor-only.
+   */
+  .press-sheen {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+  .press-sheen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(circle at 50% 50%, rgb(255 255 255 / 0.35), transparent 70%);
+    opacity: 0;
+    transition: opacity 260ms ease;
+    pointer-events: none;
+  }
+  .press-sheen:active::after {
+    opacity: 1;
+    transition-duration: 40ms;
+  }
+
+  .kinetic-trust-row {
+    transform-style: preserve-3d;
+  }
+
+  .kinetic-trust-feature {
+    --pointer-x: 0px;
+    --pointer-y: 0px;
+    --tilt-x: 0deg;
+    --tilt-y: 0deg;
+    --icon-x: 0px;
+    perspective: 600px;
+    transform-style: preserve-3d;
+    transition:
+      opacity 420ms ease-out,
+      transform 520ms cubic-bezier(0.16, 1, 0.3, 1),
+      color 180ms ease-out;
+  }
+
+  .kinetic-trust-row[data-motion-ready='true']:not([data-visible='true']) .kinetic-trust-feature {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+    transition-delay: calc(var(--feature-index) * 80ms);
+  }
+
+  .kinetic-trust-row[data-visible='true'] .kinetic-trust-feature {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    transition-delay: calc(var(--feature-index) * 80ms);
+  }
+
+  .kinetic-trust-icon,
+  .kinetic-trust-label,
+  .kinetic-trust-segment {
+    transform-style: preserve-3d;
+  }
+
+  .kinetic-trust-icon {
+    transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .kinetic-trust-label {
+    display: inline-flex;
+    white-space: pre;
+    transition:
+      color 180ms ease-out,
+      transform 380ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .kinetic-trust-segment {
+    display: inline-block;
+    transition:
+      opacity 220ms ease-out,
+      transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .kinetic-trust-space {
+    white-space: pre;
+  }
+
+  .kinetic-trust-feature:focus-visible {
+    color: white;
+    outline: none;
+  }
+
+  .kinetic-trust-feature:focus-visible .kinetic-trust-icon {
+    outline: 2px solid var(--ring-dark);
+    outline-offset: 3px;
+  }
+
+  .kinetic-trust-feature:focus-visible .kinetic-trust-label {
+    text-decoration: underline;
+    text-decoration-color: var(--ring-dark);
+    text-underline-offset: 0.35rem;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .kinetic-trust-feature:hover {
+    color: white;
+  }
+
+  .kinetic-trust-feature:hover .kinetic-trust-label {
+    transform:
+      translate3d(var(--pointer-x), calc(-2px + var(--pointer-y)), 10px)
+      rotateX(var(--tilt-x))
+      rotateY(var(--tilt-y))
+      scale(1.012);
+  }
+
+  .kinetic-trust-feature:hover .kinetic-trust-segment {
+    opacity: 1;
+    transform: translate3d(0, -1px, 8px) scale(1.012);
+    transition-delay: calc(var(--segment-index) * 9ms);
+  }
+
+  .kinetic-trust-feature:hover .kinetic-trust-icon {
+    transform:
+      translate3d(var(--icon-x), calc(-3px + var(--pointer-y)), 16px)
+      rotateX(var(--tilt-x))
+      rotateY(var(--tilt-y))
+      scale(1.05);
   }
 }
 
@@ -195,6 +457,27 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .kinetic-trust-row .kinetic-trust-feature,
+  .kinetic-trust-row[data-motion-ready='true']:not([data-visible='true']) .kinetic-trust-feature {
+    opacity: 1;
+    transform: none;
+    transition-delay: 0ms;
+  }
+
+  .kinetic-trust-feature:hover,
+  .kinetic-trust-feature:focus-visible {
+    color: white;
+  }
+
+  .kinetic-trust-feature:hover .kinetic-trust-icon,
+  .kinetic-trust-feature:hover .kinetic-trust-label,
+  .kinetic-trust-feature:hover .kinetic-trust-segment,
+  .kinetic-trust-feature:focus-visible .kinetic-trust-icon,
+  .kinetic-trust-feature:focus-visible .kinetic-trust-label,
+  .kinetic-trust-feature:focus-visible .kinetic-trust-segment {
+    transform: none;
   }
 }
 

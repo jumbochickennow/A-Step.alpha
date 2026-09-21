@@ -26,7 +26,7 @@ const SIZES: Record<ButtonSize, string> = {
 };
 
 const BASE_STYLES =
-  'inline-flex max-w-full select-none items-center justify-center gap-2 whitespace-normal rounded-md text-center font-semibold leading-snug transition-all duration-200 ease-out active:scale-[0.98] [&_svg]:shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:pointer-events-none disabled:opacity-50 motion-reduce:hover:transform-none motion-reduce:active:scale-100';
+  'press-sheen inline-flex max-w-full select-none items-center justify-center gap-2 whitespace-normal rounded-md text-center font-semibold leading-snug transition-all duration-200 ease-out active:scale-[0.98] [&_svg]:shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:pointer-events-none disabled:opacity-50 motion-reduce:hover:transform-none motion-reduce:active:scale-100';
 
 export function buttonStyles(variant: ButtonVariant = 'primary', className?: string, size: ButtonSize = 'md') {
   return cn(BASE_STYLES, VARIANTS[variant], SIZES[size], className);

@@ -9,13 +9,10 @@
   --text-subtle: #7a8699;
   --blue: #0e7be5;
   --blue-text: #4da3f5;
-  --blue-dim: rgb(14 123 229 / 12%);
   --coral: #ff5e59;
   --coral-btn: #cc3a35;
-  --coral-dim: rgb(255 94 89 / 12%);
   --success: #34d399;
   --danger: #f87171;
-  --warning: #fbbf24;
   --r-sm: 8px;
   --r-md: 12px;
   --r-lg: 16px;
@@ -27,9 +24,20 @@
   --font-brand: "A-Step Latin", "A-Step Latin Fallback", Inter, system-ui, sans-serif;
   /* Cairo variable face used across RTL locales (see [dir='rtl'] rules in globals.css). */
   --font-cairo: "A-Step Arabic", "A-Step Arabic Fallback", "Cairo", Tahoma, sans-serif;
-  /* Focus ring + elevation tokens for the interactive design system. */
-  --focus-ring: var(--blue-text);
-  --shadow-elevated: 0 12px 32px rgb(0 0 0 / 32%), 0 4px 12px rgb(0 0 0 / 24%);
+  /*
+   * Focus-ring variants by surface: --ring-dark (== --blue-text, ~6.7:1 on
+   * --bg) is the default for this app's dark backgrounds; --ring-light
+   * (== --blue, ~4.2:1 on white) is swapped in on light/white sections in
+   * globals.css so the ring clears WCAG 2.2 SC 1.4.11's 3:1 non-text
+   * contrast minimum everywhere, not just on --bg. (There used to be a
+   * separate --focus-ring token holding the same value as --ring-dark —
+   * removed as a duplicate; --ring-dark is now the single source.)
+   */
+  --ring-dark: var(--blue-text);
+  --ring-light: var(--blue);
+  /* Restrained glow accents — hover/focus/urgency states only, never at rest. */
+  --glow-blue: 0 0 24px -6px rgb(77 163 245 / 0.50);
+  --glow-coral: 0 0 24px -6px rgb(255 94 89 / 0.50);
 }
 
 [lang='ar'],

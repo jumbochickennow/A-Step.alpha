@@ -9,9 +9,8 @@ const IMAGE_DIMENSIONS = {
   '/assets/opportunities/shenzhen.jpg': [268, 180],
 } as const;
 
-export function OpportunityVisual({ country, imagePath, priority = false, slug }: { country: string; imagePath: string | null; priority?: boolean; slug?: string }) {
+export function OpportunityVisual({ country, imagePath, priority = false }: { country: string; imagePath: string | null; priority?: boolean }) {
   const { t } = useTranslation();
-  void slug;
 
   const designImages: Record<string, string> = {
     Europe: '/assets/opportunities/spain.jpg',

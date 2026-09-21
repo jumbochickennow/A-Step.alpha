@@ -3,8 +3,6 @@ import { MAX_UPLOAD_BYTES } from './upload-limits';
 
 export const PUBLIC_BODY_LIMIT = 64 * 1024;
 export const ADMIN_BODY_LIMIT = 512 * 1024;
-export const ADMIN_PDF_BODY_LIMIT = MAX_UPLOAD_BYTES;
-
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 export function isAdminGuidePdfUpload(request: Request): boolean {
@@ -14,7 +12,7 @@ export function isAdminGuidePdfUpload(request: Request): boolean {
 
 export function isAdminOpportunityImageUpload(request: Request): boolean {
   return request.method === 'PUT'
-    && /^\/api\/v1\/admin\/opportunities\/[^/]+\/image$/.test(new URL(request.url).pathname);
+    && /^\/api\/v1\/admin\/(?:opportunities|resources)\/[^/]+\/image$/.test(new URL(request.url).pathname);
 }
 
 export function enforceRequestEnvelope(request: Request): void {
