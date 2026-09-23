@@ -1,7 +1,9 @@
+import { applyD1Migrations } from 'cloudflare:test';
 import { env } from 'cloudflare:workers';
 import { describe, expect, it } from 'vitest';
 import { sendContactEmail } from '../worker/integrations/contact-email';
-import { verifyAdminPassword } from '../worker/auth/auth-api';
+import { signIn, verifyAdminPassword } from '../worker/auth/auth-api';
+import type { Env } from '../worker/env';
 
 const HASH = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 const PASSWORD_PEPPER = 'BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc';
@@ -11,6 +13,36 @@ describe('password hashing', () => {
   it('verifies the keyed password MAC in the Workers runtime', async () => {
     expect(await verifyAdminPassword('worker-test-password', PASSWORD_HASH, PASSWORD_PEPPER)).toBe(true);
     expect(await verifyAdminPassword('wrong-password', PASSWORD_HASH, PASSWORD_PEPPER)).toBe(false);
+  });
+});
+
+describe('administrator sign-in lockout', () => {
+  it('throttles wrong passwords across IPs without locking out the correct password', async () => {
+    await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
+    const stub = env.ADMIN_SECURITY.getByName(`sign-in-${crypto.randomUUID()}`);
+    const authEnv = {
+      ADMIN_SECURITY: { getByName: () => stub },
+      ADMIN_PASSWORD_HASH: PASSWORD_HASH,
+      ADMIN_PASSWORD_PEPPER: PASSWORD_PEPPER,
+      DB: env.DB,
+    } as unknown as Env;
+    const request = (passkey: string, ip: string) => new Request('https://www.astepimmigration.space/api/v1/auth/sign-in', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip },
+      body: JSON.stringify({ passkey }),
+    });
+
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      await expect(signIn(request('wrong-password', `192.0.2.${attempt + 1}`), authEnv))
+        .rejects.toMatchObject({ status: 401, code: 'invalid_passkey' });
+    }
+    expect((await signIn(request('wrong-password', '192.0.2.9'), authEnv)).status).toBe(429);
+
+    const correct = await signIn(request('worker-test-password', '192.0.2.10'), authEnv);
+    expect(correct.status).toBe(200);
+    expect(correct.headers.get('Set-Cookie')).toContain('astep_admin_session=');
+    await expect(signIn(request('wrong-password', '192.0.2.11'), authEnv))
+      .rejects.toMatchObject({ status: 401, code: 'invalid_passkey' });
   });
 });
 

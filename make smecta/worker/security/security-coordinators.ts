@@ -31,8 +31,8 @@ function lockDuration(level: number): number {
 
 /**
  * Single, globally addressable coordinator for the password-only administrator.
- * Every attempt is durably reserved before password verification, preventing
- * concurrent or cross-colo requests from bypassing account/IP lockouts.
+ * Every incorrect password is durably counted, preventing concurrent or
+ * cross-colo wrong guesses from bypassing account/IP throttling.
  */
 export class AdminSecurityCoordinator extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {

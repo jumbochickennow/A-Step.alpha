@@ -109,26 +109,25 @@ export async function signIn(request: Request, env: Env): Promise<Response> {
     throw new HttpError(400, 'invalid_sign_in_request');
   }
 
+  // A lock caused by wrong guesses must never reject the correct password.
+  const valid = await verifyAdminPassword(body.passkey, env.ADMIN_PASSWORD_HASH, env.ADMIN_PASSWORD_PEPPER);
   const now = Math.floor(Date.now() / 1000);
   const ipHash = await sha256(clientIp(request));
   const coordinator = securityStub(env);
-  let permit: LoginPermit;
-  try {
-    permit = await coordinator.beginLogin(ipHash, now);
-  } catch {
-    throw new HttpError(503, 'authentication_unavailable');
-  }
-  if (!permit.allowed) {
-    return json(
-      { error: 'Too many sign-in attempts' },
-      429,
-      { 'Retry-After': String(permit.retryAfter), 'RateLimit-Remaining': '0' },
-    );
-  }
-
-  const valid = await verifyAdminPassword(body.passkey, env.ADMIN_PASSWORD_HASH, env.ADMIN_PASSWORD_PEPPER);
   if (!valid) {
-    await coordinator.completeLogin(ipHash, false, null, null, null, now);
+    let permit: LoginPermit;
+    try {
+      permit = await coordinator.beginLogin(ipHash, now);
+    } catch {
+      throw new HttpError(503, 'authentication_unavailable');
+    }
+    if (!permit.allowed) {
+      return json(
+        { error: 'Too many sign-in attempts' },
+        429,
+        { 'Retry-After': String(permit.retryAfter), 'RateLimit-Remaining': '0' },
+      );
+    }
     throw new HttpError(401, 'invalid_passkey');
   }
 

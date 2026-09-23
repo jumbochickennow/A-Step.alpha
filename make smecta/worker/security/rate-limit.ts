@@ -24,7 +24,7 @@ export function resolveRateLimitPolicy(request: Request): RateLimitPolicy | null
   if (request.method === 'POST' && pathname === '/api/v1/leads') return { name: 'leads', limit: 5, windowSeconds: 600 };
   if (request.method === 'POST' && pathname === '/api/v1/newsletter') return { name: 'newsletter', limit: 3, windowSeconds: 600 };
   if (request.method === 'POST' && pathname === '/api/v1/newsletter/unsubscribe') return { name: 'unsubscribe', limit: 5, windowSeconds: 600 };
-  // Sign-in is governed by the stricter account-wide coordinator before password verification.
+  // Failed sign-ins are governed by the account-wide coordinator after password verification.
   if (request.method === 'POST' && pathname === '/api/v1/auth/sign-in') return null;
   if (pathname.startsWith('/api/v1/auth/')) return { name: 'admin-authenticated-auth', limit: 30, windowSeconds: 60 };
   if (pathname.startsWith('/api/v1/admin/')) {
