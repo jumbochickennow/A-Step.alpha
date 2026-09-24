@@ -4,6 +4,20 @@ export interface AdminMetrics {
   downloads: number;
   emails: number;
   prospectRatio: number;
+  reviewDue: number;
+}
+
+export interface ReviewDuePage {
+  items: {
+    id: string;
+    recordType: 'contact' | 'lead' | 'newsletter';
+    submittedAt: string;
+    email: string;
+    message: string | null;
+    guideSlug: string | null;
+    unsubscribedAt: string | null;
+  }[];
+  hasMore: boolean;
 }
 
 export interface ChartData {
@@ -18,4 +32,8 @@ export async function fetchAdminMetrics(): Promise<AdminMetrics> {
 
 export async function fetchChartData(): Promise<ChartData> {
   return apiJson<ChartData>('/api/v1/admin/charts');
+}
+
+export async function fetchReviewDue(offset = 0): Promise<ReviewDuePage> {
+  return apiJson<ReviewDuePage>(`/api/v1/admin/records/review-due?offset=${offset}`);
 }

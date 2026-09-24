@@ -24,6 +24,8 @@ const nullableGuidePath = z.string().trim().max(512).regex(/^[a-z0-9][a-z0-9._/-
 const resourceRefSchema = z.string().min(64).max(768).regex(/^r2\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
 const CONTENT_ROLES = new Set<AdminIdentity['role']>(['superadmin', 'admin', 'owner', 'editor']);
 const DATA_ROLES = new Set<AdminIdentity['role']>(['superadmin', 'admin', 'owner', 'analyst']);
+const REVIEW_PAGE_SIZE = 20;
+const REVIEW_DUE = "datetime(created_at) <= datetime('now', '-24 months')";
 
 function requireRole(identity: AdminIdentity, allowed: ReadonlySet<AdminIdentity['role']>): void {
   if (!allowed.has(identity.role)) throw new HttpError(403, 'forbidden');
@@ -445,7 +447,46 @@ async function uploadOpportunityImage(
   return json({ success: true, imagePath });
 }
 
-async function adminRecords(env: Env, identity: AdminIdentity, table: string): Promise<Response> {
+interface ReviewDueRow {
+  id: string;
+  record_type: 'contact' | 'lead' | 'newsletter';
+  created_at: string;
+  email_ciphertext: string;
+  message_ciphertext: string | null;
+  guide_slug: string | null;
+  unsubscribed_at: string | null;
+}
+
+async function adminRecords(request: Request, env: Env, identity: AdminIdentity, table: string): Promise<Response> {
+  if (table === 'review-due') {
+    const offsetParam = new URL(request.url).searchParams.get('offset') ?? '0';
+    if (!/^\d{1,7}$/.test(offsetParam)) throw new HttpError(400, 'invalid_offset');
+    const offset = Number(offsetParam);
+    const { results } = await env.DB.prepare(
+      `SELECT record_type, id, created_at, email_ciphertext, message_ciphertext,
+        guide_slug, unsubscribed_at FROM (
+         SELECT 'contact' AS record_type, id, created_at, email_ciphertext,
+           message_ciphertext, NULL AS guide_slug, NULL AS unsubscribed_at
+           FROM contact_submissions WHERE ${REVIEW_DUE}
+         UNION ALL
+         SELECT 'lead', id, created_at, email_ciphertext,
+           NULL, guide_slug, NULL FROM guide_download_leads WHERE ${REVIEW_DUE}
+         UNION ALL
+         SELECT 'newsletter', id, created_at, email_ciphertext,
+           NULL, NULL, unsubscribed_at FROM newsletter_subscribers WHERE ${REVIEW_DUE}
+       ) ORDER BY created_at ASC, record_type ASC, id ASC LIMIT ?1 OFFSET ?2`,
+    ).bind(REVIEW_PAGE_SIZE + 1, offset).all<ReviewDueRow>();
+    const items = await Promise.all(results.slice(0, REVIEW_PAGE_SIZE).map(async (row) => ({
+      id: await createResourceRef(row.id, row.record_type, identity.id, env.RESOURCE_REF_SECRET),
+      recordType: row.record_type,
+      submittedAt: row.created_at,
+      email: await decryptPii(row.email_ciphertext, env.PII_ENCRYPTION_KEY_V1),
+      message: row.message_ciphertext ? await decryptPii(row.message_ciphertext, env.PII_ENCRYPTION_KEY_V1) : null,
+      guideSlug: row.guide_slug,
+      unsubscribedAt: row.unsubscribed_at,
+    })));
+    return json({ items, hasMore: results.length > REVIEW_PAGE_SIZE });
+  }
   if (table === 'guide_download_leads') {
     const { results } = await env.DB.prepare(
       `SELECT id, full_name_ciphertext, email_ciphertext, guide_slug, guide_language,
@@ -510,13 +551,20 @@ async function adminRecords(env: Env, identity: AdminIdentity, table: string): P
 }
 
 async function metrics(env: Env): Promise<Response> {
-  const [downloadRow, emailRow] = await Promise.all([
+  const [downloadRow, emailRow, reviewRow] = await Promise.all([
     env.DB.prepare('SELECT COUNT(*) AS total FROM guide_download_leads').first<{ total: number }>(),
     env.DB.prepare('SELECT COUNT(*) AS total FROM newsletter_subscribers WHERE unsubscribed_at IS NULL').first<{ total: number }>(),
+    env.DB.prepare(
+      `SELECT
+        (SELECT COUNT(*) FROM contact_submissions WHERE ${REVIEW_DUE}) +
+        (SELECT COUNT(*) FROM guide_download_leads WHERE ${REVIEW_DUE}) +
+        (SELECT COUNT(*) FROM newsletter_subscribers WHERE ${REVIEW_DUE}) AS total`,
+    ).first<{ total: number }>(),
   ]);
   const downloads = downloadRow?.total ?? 0;
   const emails = emailRow?.total ?? 0;
-  return json({ downloads, emails, prospectRatio: emails ? Math.round((downloads / emails) * 100) : 0 });
+  return json({ downloads, emails, prospectRatio: emails ? Math.round((downloads / emails) * 100) : 0,
+    reviewDue: reviewRow?.total ?? 0 });
 }
 
 async function charts(env: Env): Promise<Response> {
@@ -572,7 +620,7 @@ export async function adminApi(request: Request, env: Env, identity: AdminIdenti
   if (path[0] === 'records' && path.length === 2) {
     requireMethod(request, ['GET']);
     requireRole(identity, DATA_ROLES);
-    return adminRecords(env, identity, path[1]);
+    return adminRecords(request, env, identity, path[1]);
   }
   if (path[0] === 'metrics' && path.length === 1) {
     requireMethod(request, ['GET']);
