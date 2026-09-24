@@ -14,6 +14,7 @@ import {
 
 const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60;
 const GRANT_TTL_SECONDS = 5 * 60;
+const CONTACT_COOLDOWN_SECONDS = 15 * 60;
 
 interface StoredResponse { response: string | null }
 interface GuideAsset {
@@ -217,6 +218,23 @@ export async function createContact(request: Request, env: Env, ctx: ExecutionCo
   await verifyTurnstile(request, env, input.turnstileToken, 'contact');
 
   const now = Math.floor(Date.now() / 1000);
+  const emailBlindIndex = await createBlindIndex(input.email, env.BLIND_INDEX_SECRET);
+  let cooldown;
+  try {
+    cooldown = await env.RATE_LIMITER.getByName(`contact-email:${emailBlindIndex}`)
+      .check(1, CONTACT_COOLDOWN_SECONDS, now);
+  } catch {
+    throw new HttpError(503, 'rate_limiter_unavailable');
+  }
+  if (!cooldown.allowed) {
+    const previous = await storedResponse<unknown>(env, `contact:${idempotencyKey}`, 'contact', now);
+    if (previous) return json(previous, 202);
+    return json(
+      { error: { code: 'contact_cooldown', message: 'Please wait before sending another message.' } },
+      429,
+      { 'Retry-After': String(cooldown.retryAfter) },
+    );
+  }
   const createdAt = new Date(now * 1000).toISOString();
   const contactId = crypto.randomUUID();
   const eventId = crypto.randomUUID();
@@ -235,7 +253,7 @@ export async function createContact(request: Request, env: Env, ctx: ExecutionCo
       contactId,
       await pii(input.name, env),
       await pii(input.email, env),
-      await createBlindIndex(input.email, env.BLIND_INDEX_SECRET),
+      emailBlindIndex,
       await pii(input.phone, env),
       await pii(input.serviceInterest, env),
       await pii(input.message, env),

@@ -15,6 +15,7 @@ import {
   type ContactFormInputs,
 } from '../lib/validation';
 import { track } from '../services/analytics';
+import { ApiError } from '../services/api-client';
 import { sendContactMessage } from '../services/email.service';
 
 const EMPTY_FORM: ContactFormInputs = { fullName: '', email: '', phone: '', serviceInterest: '', message: '' };
@@ -34,7 +35,7 @@ export function Contact() {
   const { toast } = useToast();
   const [values, setValues] = useState<ContactFormInputs>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof ContactFormInputs, string>>>({});
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'cooldown'>('idle');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState('');
@@ -119,8 +120,8 @@ export function Contact() {
       setValues(EMPTY_FORM);
       setHoneypot('');
       renderedAt.current = Date.now();
-    } catch {
-      setStatus('error');
+    } catch (error) {
+      setStatus(error instanceof ApiError && error.status === 429 ? 'cooldown' : 'error');
     } finally {
       setTurnstileToken('');
       if (turnstileEnabled) setChallengeVersion((version) => version + 1);
@@ -261,6 +262,7 @@ export function Contact() {
             <div className="mt-4 min-h-[3.25rem]">
               {status === 'success' ? <p role="status" className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">{t('contact.success')}</p> : null}
               {status === 'error' ? <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{navigator.onLine ? t('contact.error') : t('common.offline')}</p> : null}
+              {status === 'cooldown' ? <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{t('contact.cooldown')}</p> : null}
             </div>
             {turnstileEnabled ? (
               <div className="mt-5">

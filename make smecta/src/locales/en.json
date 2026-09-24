@@ -260,6 +260,7 @@
     "sending": "Sending…",
     "success": "Thanks — we've received your message and will reply within 48 hours.",
     "error": "We couldn't send your message. Please try again, or reach us on WhatsApp.",
+    "cooldown": "Please wait before sending another message, or contact us on WhatsApp if it is urgent.",
     "whatsappTitle": "Prefer a direct conversation?",
     "whatsappBody": "Start a WhatsApp chat for consultations and time-sensitive questions.",
     "whatsapp": "Message us on WhatsApp",
