@@ -296,8 +296,8 @@ export async function createNewsletterSubscription(request: Request, env: Env, c
        ON CONFLICT(email_blind_index) DO UPDATE SET
          email_ciphertext = excluded.email_ciphertext,
          locale = excluded.locale,
-         unsubscribe_token = excluded.unsubscribe_token,
-         unsubscribed_at = NULL`,
+         unsubscribe_token = excluded.unsubscribe_token
+       WHERE newsletter_subscribers.unsubscribed_at IS NULL`,
     ).bind(
       subscriberId,
       await pii(input.email, env),
