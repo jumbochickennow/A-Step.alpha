@@ -27,6 +27,8 @@ import {
 } from './public-api';
 export { AdminSecurityCoordinator, AtomicRateLimiter } from './security/security-coordinators';
 
+const BLOCKED_COUNTRIES = new Set(['IN', 'RU', 'UA', 'IL', 'PK', 'MA', 'NG']);
+
 async function authenticateAdminRequest(request: Request, env: Env): Promise<AdminIdentity> {
   const session = await readAdminSession(request, env);
   if (session) return session;
@@ -65,6 +67,13 @@ export default {
     const requestId = crypto.randomUUID();
     let originContext: OriginContext | null = null;
     try {
+      const country = request.cf?.country;
+      if (typeof country === 'string' && BLOCKED_COUNTRIES.has(country)) {
+        return applySecurityHeaders(attachRequestId(new Response(null, {
+          status: 403,
+          headers: { 'Cache-Control': 'no-store' },
+        }), requestId));
+      }
       assertRuntimeEnv(env);
       const redirect = httpsRedirect(request);
       if (redirect) return applySecurityHeaders(attachRequestId(redirect, requestId));
