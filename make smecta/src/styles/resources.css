@@ -1,4 +1,4 @@
-@font-face { font-family:ResourcePoppins; src:url('/assets/prices/poppins-bold.ttf') format('truetype'); font-weight:700; font-display:swap; }
+@font-face { font-family:ResourcePoppins; src:url('/assets/prices/poppins-bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
 .resources-page { background:#fff; color:#141821; padding-top:170px; }
 .resources-container { width:min(1248px, calc(100% - 64px)); margin-inline:auto; }
 .resources-featured h1 { display:flex; align-items:center; justify-content:center; gap:24px; margin:0 0 94px; font:700 clamp(32px,4.7vw,66px)/1.2 ResourcePoppins,sans-serif; }

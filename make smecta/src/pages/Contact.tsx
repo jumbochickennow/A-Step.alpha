@@ -286,7 +286,7 @@ export function Contact() {
           </form>
           <div className="pointer-events-none relative z-0 flex min-w-0 justify-center">
             <img
-              src="/assets/contact/bluephone-speaker.png"
+              src="/assets/contact/bluephone-speaker.webp"
               width="736"
               height="946"
               alt=""

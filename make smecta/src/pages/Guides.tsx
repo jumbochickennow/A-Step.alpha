@@ -105,7 +105,7 @@ export function Guides() {
           {/* Illustration: negative vertical margins let the enlarged mousetrap bleed past the short white band into the dark sections, like the approved design. */}
           <div className="relative z-10 -my-4 flex min-w-0 items-center justify-center md:-my-14 lg:col-span-5 lg:-my-28 lg:justify-end">
             <img
-              src="/assets/home/passport-trap.webp"
+              src="/assets/home/passport-trap-optimized.webp"
               width={700}
               height={900}
               sizes="(min-width: 1024px) 480px, (min-width: 768px) 420px, 80vw"

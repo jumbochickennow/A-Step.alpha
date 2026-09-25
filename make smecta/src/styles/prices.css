@@ -1,4 +1,4 @@
-@font-face { font-family:"Prices Poppins"; font-style:normal; font-weight:700; font-display:swap; src:url('/assets/prices/poppins-bold.ttf') format('truetype'); }
+@font-face { font-family:"Prices Poppins"; font-style:normal; font-weight:700; font-display:swap; src:url('/assets/prices/poppins-bold.woff2') format('woff2'); }
 /* Prices is isolated from the site's dark theme. Motion uses CSS only. */
 .prices-page { --price-ink:#171b27; --price-muted:#748093; --price-blue:#0e80e9; --price-coral:#ff5a5d; --price-line:#e0e7f1; background:#fff; color:var(--price-ink); font-family:var(--font-brand); font-size:14px; line-height:1.65; }
 .prices-page *, .prices-page *::before, .prices-page *::after { box-sizing:border-box; }

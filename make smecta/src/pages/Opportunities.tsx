@@ -87,7 +87,7 @@ export function Opportunities() {
     {/* Alarm visual column: centered in-column with an inward leftward nudge on desktop */}
     <div className="relative z-10 flex min-w-0 items-center justify-center overflow-visible lg:col-span-5 lg:justify-center">
       <img
-        src="/assets/home/alarm.webp"
+        src="/assets/home/alarm-optimized.webp"
         width={736}
         height={946}
         alt={t('opportunities.ctaAlt')}

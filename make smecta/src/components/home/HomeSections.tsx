@@ -46,7 +46,7 @@ export function StorySection() {
           <p className="eyebrow text-brand-coral">{t('home.aboutFeatures.eyebrow')}</p>
           <h2 className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-3xl font-extrabold leading-tight tracking-[-0.02em] text-slate-900 md:text-4xl">
             <span>{t('home.aboutFeatures.headingPrefix')}</span>
-            <img src="/assets/logo/logo-blue.png" width="3020" height="1021" alt={t('home.aboutFeatures.brandName')} decoding="async" className="aspect-[3020/1021] h-auto w-[min(42vw,156px)] object-contain" />
+            <img src="/assets/logo/logo-blue.webp" width="640" height="216" alt={t('home.aboutFeatures.brandName')} decoding="async" className="aspect-[640/216] h-auto w-[min(42vw,156px)] object-contain" />
           </h2>
           <p className="mx-auto mt-7 max-w-[78ch] text-sm leading-7 text-slate-600 md:text-base md:leading-8">{t('home.aboutFeatures.intro')}</p>
         </header>
@@ -152,7 +152,7 @@ export function ConsultationBand() {
         {/* NOTEBOOK */}
         <div className="relative z-10 flex min-w-0 justify-center lg:z-30 lg:h-full">
           <img
-            src="/assets/home/steps-notepad.webp"
+            src="/assets/home/steps-notepad-optimized.webp"
             width="736"
             height="946"
             alt={t('home.cta.imageAlt')}

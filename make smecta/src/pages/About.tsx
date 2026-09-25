@@ -33,7 +33,7 @@ export function About() {
           />
         </div>
         <div className="relative min-h-[340px] overflow-hidden rounded-xl border border-border bg-[radial-gradient(circle_at_70%_30%,rgb(77_163_245/0.22),transparent_45%),linear-gradient(145deg,#1a2130,#10151e)] p-6 md:min-h-[420px] md:p-8">
-          <img src="/assets/about/laptop.png" width="1254" height="1254" alt={t('home.story.imageAlt')} decoding="async" className="absolute inset-x-0 bottom-0 mx-auto aspect-square h-auto w-[min(100%,340px)] object-contain md:w-[min(100%,420px)]" />
+          <img src="/assets/about/laptop.webp" width="840" height="840" alt={t('home.story.imageAlt')} decoding="async" className="absolute inset-x-0 bottom-0 mx-auto aspect-square h-auto w-[min(100%,340px)] object-contain md:w-[min(100%,420px)]" />
         </div>
       </header>
 
