@@ -7,8 +7,6 @@ import { WhatsAppCTA } from '../components/common/WhatsAppCTA';
 import { ConsultationBand, IntroSection, ServicesSection, StorySection } from '../components/home/HomeSections';
 import { KineticTrustRow } from '../components/home/KineticTrustRow';
 import { localizedPath, useLocale } from '../hooks/useLocale';
-import { whatsappHref } from '../lib/constants';
-import { track } from '../services/analytics';
 
 export function Home() {
   const { t } = useTranslation();
@@ -38,20 +36,7 @@ export function Home() {
             <span className="inline-flex items-center gap-1.5"><Check size={15} strokeWidth={3} />{t('home.hero.freeGuides')}</span>
             <span className="inline-flex items-center gap-1.5"><Check size={15} strokeWidth={3} />{t('home.hero.consultationServices')}</span>
           </div>
-          <div className="flex min-h-[7.5rem] flex-col items-center">
-            <WhatsAppCTA label={t('home.hero.primary')} source="home_hero" className="mt-7 rounded-full px-6 [&_svg]:order-2 [&_svg]:rounded-full [&_svg]:bg-white [&_svg]:p-1 [&_svg]:text-brand-blue" />
-            {/* Subtle pricing/offers intake link directly beneath the primary CTA. */}
-            <a
-              href={whatsappHref('Hello A-Step, I would like to receive the latest prices and offers')}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`${t('home.hero.pricingNote')} — ${t('common.whatsappLabel')}`}
-              onClick={() => track('whatsapp_click', { source: 'home_hero_pricing_note' })}
-              className="mt-4 inline-flex max-w-full items-center justify-center gap-1.5 rounded-md px-2 py-1 text-center text-xs leading-relaxed text-ink-muted transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 md:text-sm"
-            >
-              {t('home.hero.pricingNote')}
-            </a>
-          </div>
+          <WhatsAppCTA label={t('home.hero.primary')} source="home_hero" className="mt-7 rounded-full px-6 [&_svg]:order-2 [&_svg]:rounded-full [&_svg]:bg-white [&_svg]:p-1 [&_svg]:text-brand-blue" />
 
           <KineticTrustRow items={trust} />
         </div>
