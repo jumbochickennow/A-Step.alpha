@@ -7,7 +7,6 @@
     "home": "Accueil",
     "guides": "Guides gratuits",
     "opportunities": "Opportunités",
-    "about": "À propos",
     "contact": "Contact",
     "resources": "Ressources",
     "prices": "Consultation",
@@ -220,19 +219,6 @@
     "error": "Impossible de charger les opportunités. Vérifiez votre connexion et réessayez."
   },
   "about": {
-    "metaTitle": "À propos d’A-Step Immigration Space",
-    "metaDescription": "Pourquoi A-Step existe et comment nous aidons les étudiants algériens à prendre des décisions éclairées.",
-    "eyebrow": "Créé pour les étudiants",
-    "title": "Un accompagnement qui respecte votre ambition et votre réalité",
-    "intro": "A-Step est une plateforme algérienne indépendante d’orientation pour les études et l’immigration. Nous aidons les étudiants et jeunes diplômés à comprendre leurs options et à se préparer avec confiance.",
-    "storyTitle": "Pourquoi une information fiable est essentielle",
-    "storyBody": "Une décision de candidature peut influencer plusieurs années de votre vie. Les conseils doivent être actuels, transparents et assez précis pour agir. A-Step simplifie les procédures sans faire de promesses que personne ne peut honnêtement garantir.",
-    "whoTitle": "À qui s’adresse A-Step",
-    "whoBody": "Aux étudiants et jeunes diplômés en Algérie qui explorent les études internationales, les bourses, les visas et les voies d’immigration structurées.",
-    "benefitsEyebrow": "Une consultation centrée sur vous",
-    "benefitsTitle": "Une manière plus claire de se préparer",
-    "faqEyebrow": "Transparent dès le départ",
-    "faqTitle": "Questions fréquentes",
     "faq": {
       "agency": { "q": "A-Step est-elle une agence ?", "a": "Non. A-Step est une plateforme indépendante d’orientation. Nous vous aidons à comprendre les options, les documents et les démarches ; nous ne sommes ni une université, ni une ambassade, ni une administration." },
       "located": { "q": "Où se trouve A-Step ?", "a": "A-Step est basée en Algérie et accompagne principalement les étudiants en ligne, où qu’ils se trouvent dans le pays." },

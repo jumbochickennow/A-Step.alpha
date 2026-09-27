@@ -13,7 +13,6 @@ import '../../styles/navbar.css';
 const links = [
   ['nav.opportunities', '/opportunities'],
   ['nav.guides', '/guides'],
-  ['nav.about', '/about'],
   ['nav.contact', '/contact'],
   ['nav.resources', '/resources'],
   ['nav.prices', '/consultation'],

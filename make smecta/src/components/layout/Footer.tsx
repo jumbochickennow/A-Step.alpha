@@ -157,7 +157,6 @@ export function Footer() {
           <div>
             <h2 className="text-sm font-bold">{t('footer.company')}</h2>
             <div className="mt-4 flex flex-col gap-3 text-xs text-white/75">
-              <Link to={link('/about')} className="hover:text-white">{t('nav.about')}</Link>
               <Link to={link('/guides')} className="hover:text-white">{t('nav.guides')}</Link>
               <Link to={link('/opportunities')} className="hover:text-white">{t('nav.opportunities')}</Link>
               <Link to={link('/contact')} className="hover:text-white">{t('nav.contact')}</Link>

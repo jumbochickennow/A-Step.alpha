@@ -7,7 +7,7 @@ try {
   const page = await browser.newPage({ locale: 'en-US', reducedMotion: 'no-preference' });
   page.on('pageerror', error => errors.push(error.message));
   for (const locale of ['en', 'fr', 'ar']) {
-    for (const route of ['', '/opportunities', '/guides', '/about', '/contact', '/consultation', '/resources']) {
+    for (const route of ['', '/opportunities', '/guides', '/contact', '/consultation', '/resources']) {
       await page.goto(`${origin}${locale === 'en' ? '' : '/' + locale}${route || '/'}`);
       await page.locator('main h1').waitFor();
       for (const width of [1440, 1024, 768, 390, 320]) {
@@ -54,5 +54,5 @@ try {
   await page.locator('header .navbar-languages button').filter({ hasText: /^EN$/ }).click();
   await page.waitForURL(`${origin}/consultation`);
   assert.deepEqual(errors, []);
-  console.log('NAVBAR PASS: 7 pages × 3 languages × 5 widths; shared styling, RTL slide, reduced motion, focus return, mobile navigation and language switching.');
+  console.log('NAVBAR PASS: 6 pages × 3 languages × 5 widths; shared styling, RTL slide, reduced motion, focus return, mobile navigation and language switching.');
 } finally { await browser.close(); }

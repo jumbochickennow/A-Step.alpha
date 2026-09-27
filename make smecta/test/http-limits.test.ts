@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readJson } from '../worker/http';
-import { applySecurityHeaders, consultationRedirect } from '../worker/security/headers';
+import { aboutRedirect, applySecurityHeaders, consultationRedirect } from '../worker/security/headers';
 
 describe('bounded JSON input', () => {
   it('cancels oversized streaming bodies without buffering the remaining input', async () => {
@@ -43,5 +43,18 @@ describe('bounded JSON input', () => {
     }
     expect(consultationRedirect(new Request('https://www.astepimmigration.space/consultation'))).toBeNull();
     expect(consultationRedirect(new Request('https://www.astepimmigration.space/prices', { method: 'POST' }))).toBeNull();
+  });
+  it('redirects old About URLs to the matching homepage story section', () => {
+    for (const [path, destination] of [
+      ['/about', '/?ref=bookmark#about'],
+      ['/fr/about/', '/fr/?ref=bookmark#about'],
+      ['/ar/about', '/ar/?ref=bookmark#about'],
+    ]) {
+      const response = aboutRedirect(new Request(`https://www.astepimmigration.space${path}?ref=bookmark`));
+      expect(response?.status).toBe(308);
+      expect(response?.headers.get('Location')).toBe(`https://www.astepimmigration.space${destination}`);
+    }
+    expect(aboutRedirect(new Request('https://www.astepimmigration.space/about-us'))).toBeNull();
+    expect(aboutRedirect(new Request('https://www.astepimmigration.space/about', { method: 'POST' }))).toBeNull();
   });
 });

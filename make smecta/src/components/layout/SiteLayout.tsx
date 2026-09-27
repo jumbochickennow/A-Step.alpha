@@ -8,8 +8,10 @@ import { FloatingWhatsApp } from './FloatingWhatsApp';
 import { Navbar } from './Navbar';
 
 function ScrollToTop() {
-  const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'auto' }); }, [pathname]);
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (!hash) window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [pathname, hash]);
   return null;
 }
 

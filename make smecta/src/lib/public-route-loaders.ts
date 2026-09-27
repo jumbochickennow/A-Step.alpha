@@ -2,7 +2,6 @@
 export const publicRouteLoaders = {
   '/opportunities': () => import('../pages/Opportunities'),
   '/guides': () => import('../pages/Guides'),
-  '/about': () => import('../pages/About'),
   '/contact': () => import('../pages/Contact'),
   '/resources': () => import('../pages/Resources'),
   '/consultation': () => import('../pages/Prices'),

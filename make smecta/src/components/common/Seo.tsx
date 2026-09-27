@@ -21,7 +21,6 @@ interface SeoProps {
 const SEGMENT_LABEL_KEYS: Record<string, string> = {
   guides: 'nav.guides',
   opportunities: 'nav.opportunities',
-  about: 'nav.about',
   contact: 'nav.contact',
   consultation: 'nav.prices',
   privacy: 'footer.privacy',

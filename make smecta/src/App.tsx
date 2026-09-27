@@ -14,7 +14,6 @@ if (typeof document !== 'undefined') {
 const Home = lazy(() => import('./pages/Home').then((module) => ({ default: module.Home })));
 const Guides = lazy(() => publicRouteLoaders['/guides']().then((module) => ({ default: module.Guides })));
 const Opportunities = lazy(() => publicRouteLoaders['/opportunities']().then((module) => ({ default: module.Opportunities })));
-const About = lazy(() => publicRouteLoaders['/about']().then((module) => ({ default: module.About })));
 const Contact = lazy(() => publicRouteLoaders['/contact']().then((module) => ({ default: module.Contact })));
 const Prices = lazy(() => publicRouteLoaders['/consultation']().then((module) => ({ default: module.Prices })));
 const Resources = lazy(() => publicRouteLoaders['/resources']().then((module) => ({ default: module.Resources })));
@@ -29,7 +28,6 @@ const children = [
   { index: true, element: <Home /> },
   { path: 'guides', element: <Guides /> },
   { path: 'opportunities', element: <Opportunities /> },
-  { path: 'about', element: <About /> },
   { path: 'contact', element: <Contact /> },
   { path: 'consultation', element: <Prices /> },
   { path: 'resources', element: <Resources /> },

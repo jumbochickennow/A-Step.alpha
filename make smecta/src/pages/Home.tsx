@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BadgeCheck, CalendarClock, Check, Clock3, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -11,6 +12,11 @@ import { localizedPath, useLocale } from '../hooks/useLocale';
 export function Home() {
   const { t } = useTranslation();
   const { locale } = useLocale();
+  useEffect(() => {
+    if (window.location.hash === '#about') {
+      document.getElementById('about')?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+  }, []);
   const trust = [
     [BadgeCheck, t('home.hero.trust.certified')],
     [Clock3, t('home.hero.trust.tracking')],
@@ -53,7 +59,7 @@ export function Home() {
             <h2 className="max-w-[14ch] text-3xl font-bold leading-tight md:text-4xl">{t('home.faq.title')}</h2>
             <p className="mt-4 text-sm text-ink-muted">{t('home.faq.prompt')} <Link to={localizedPath('/contact', locale)} className="font-semibold text-brand-blue-text">{t('home.faq.contact')}</Link></p>
           </div>
-          <FaqList limit={5} design />
+          <FaqList design />
         </div>
       </section>
     </>

@@ -63,3 +63,12 @@ export function consultationRedirect(request: Request): Response | null {
   url.pathname = url.pathname.replace(/prices\/?$/, 'consultation');
   return Response.redirect(url.toString(), 308);
 }
+
+export function aboutRedirect(request: Request): Response | null {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return null;
+  const url = new URL(request.url);
+  if (!/^\/(?:fr\/|ar\/)?about\/?$/.test(url.pathname)) return null;
+  url.pathname = url.pathname.replace(/about\/?$/, '');
+  url.hash = 'about';
+  return Response.redirect(url.toString(), 308);
+}

@@ -39,7 +39,7 @@ export function StorySection() {
   return (
     <section
       id="about"
-      className="reveal bg-slate-50 py-20 text-slate-900 md:py-28"
+      className="reveal scroll-mt-20 bg-slate-50 py-20 text-slate-900 md:py-28"
     >
       <div className="container-shell min-w-0">
         <header className="mx-auto min-h-[14rem] max-w-4xl text-center">

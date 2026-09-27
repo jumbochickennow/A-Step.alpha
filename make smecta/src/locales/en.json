@@ -7,7 +7,6 @@
     "home": "Home",
     "guides": "Free Guides",
     "opportunities": "Opportunities",
-    "about": "About",
     "contact": "Contact",
     "resources": "Resources",
     "prices": "Consultation",
@@ -220,19 +219,6 @@
     "error": "We could not load opportunities. Check your connection and try again."
   },
   "about": {
-    "metaTitle": "About A-Step Immigration Space",
-    "metaDescription": "Why A-Step exists and how we help Algerian students make informed international decisions.",
-    "eyebrow": "Built for students",
-    "title": "Guidance that respects your ambition and your reality",
-    "intro": "A-Step is an independent Algerian education and immigration guidance platform. We help students and recent graduates understand their options and prepare with confidence.",
-    "storyTitle": "Why reliable information matters",
-    "storyBody": "An application decision can shape years of your life. Advice should be current, transparent and specific enough to act on. A-Step makes complicated procedures easier to understand without making promises nobody can honestly guarantee.",
-    "whoTitle": "Who we serve",
-    "whoBody": "Students and recent graduates in Algeria who are exploring international study, scholarships, visas and structured immigration routes.",
-    "benefitsEyebrow": "Consultation built around you",
-    "benefitsTitle": "A clearer way to prepare",
-    "faqEyebrow": "Transparent from the start",
-    "faqTitle": "Frequently asked questions",
     "faq": {
       "agency": { "q": "Is A-Step an agency?", "a": "No. A-Step is an independent guidance platform. We help you understand options, documents and processes; we do not act as a university, embassy or government office." },
       "located": { "q": "Where is A-Step located?", "a": "A-Step is based in Algeria and serves students primarily online, which makes support accessible regardless of your wilaya." },

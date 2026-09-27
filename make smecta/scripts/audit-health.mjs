@@ -137,7 +137,7 @@ if (missing.length) {
 /* 3. Route ↔ sitemap parity                                           */
 /* ------------------------------------------------------------------ */
 
-const PUBLIC_PAGES = ['', 'guides', 'opportunities', 'about', 'contact', 'privacy', 'terms'];
+const PUBLIC_PAGES = ['', 'guides', 'opportunities', 'contact', 'privacy', 'terms'];
 const PUBLIC_PREFIXES = ['', 'fr/', 'ar/'];
 const expectedRoutes = new Set(
   PUBLIC_PREFIXES.flatMap((prefix) => PUBLIC_PAGES.map((page) => `/${prefix}${page}`.replace(/\/+$/, '/') || '/')),

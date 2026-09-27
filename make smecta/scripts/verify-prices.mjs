@@ -78,13 +78,13 @@ try {
  assert.equal(await page.locator('.price-closing a[href^="mailto:"]').getAttribute('href'),'mailto:contact@astepimmigration.space');
  results.push('Guides, Terms and email destinations: passed');
  // Scoped header/footer classes must disappear on existing routes after visiting Consultation.
- for (const route of ['/resources','/contact','/about','/']) {
+ for (const route of ['/resources','/contact','/']) {
   await page.goto(origin+route); await page.locator('footer#astep-footer').waitFor();
   assert.equal(await page.locator('header.prices-navbar').count(),0);
   assert.equal(await page.locator('footer#astep-footer').count(),1);
   if(route==='/resources') await page.locator('.resources-page').waitFor();
  }
- results.push('Resources implemented; shared header/footer present on Resources, Contact, About and Home: passed');
+ results.push('Resources implemented; shared header/footer present on Resources, Contact and Home: passed');
  for (const [lang,copy] of ['en','fr','ar'].map((lang,i)=>[lang,copies[i]])) {
   const path=lang==='en'?'/consultation':`/${lang}/consultation`;
   await page.goto(origin+path); await page.locator('.prices-page').waitFor();
