@@ -1,12 +1,4 @@
 import type { Env, ExecutionContextLike } from './env';
-import {
-  readAdminSession,
-  sessionStatus,
-  signIn,
-  signOut,
-  type AdminIdentity,
-} from './auth/auth-api';
-import { adminApi } from './admin-api';
 import { attachRequestId, errorResponse, HttpError, json } from './http';
 import { downloadGrant } from './routes/download-grant';
 import { opportunityImage } from './routes/opportunity-image';
@@ -29,12 +21,6 @@ export { AdminSecurityCoordinator, AtomicRateLimiter } from './security/security
 
 const BLOCKED_COUNTRIES = new Set(['IN', 'RU', 'UA', 'IL', 'PK', 'MA', 'NG']);
 
-async function authenticateAdminRequest(request: Request, env: Env): Promise<AdminIdentity> {
-  const session = await readAdminSession(request, env);
-  if (session) return session;
-  throw new HttpError(401, 'unauthorized');
-}
-
 async function routeApi(request: Request, env: Env, ctx: ExecutionContextLike): Promise<Response> {
   const { pathname } = new URL(request.url);
   if (pathname === '/api/v1/contact') return createContact(request, env, ctx);
@@ -46,20 +32,7 @@ async function routeApi(request: Request, env: Env, ctx: ExecutionContextLike): 
   if (pathname === '/api/v1/newsletter') return createNewsletterSubscription(request, env, ctx);
   if (pathname === '/api/v1/newsletter/unsubscribe') return unsubscribeNewsletter(request, env);
   if (pathname.startsWith('/api/v1/download/')) return downloadGrant(request, env);
-  if (pathname === '/api/v1/auth/sign-in') {
-    return signIn(request, env);
-  }
-  if (pathname.startsWith('/api/v1/admin/') || pathname.startsWith('/api/v1/auth/')) {
-    if (pathname === '/api/v1/auth/sign-out') return signOut(request, env);
-    const identity = await authenticateAdminRequest(request, env);
-    if (pathname.startsWith('/api/v1/admin/')) return adminApi(request, env, identity);
-    if (pathname === '/api/v1/auth/session') return sessionStatus(request, identity);
-  }
   throw new HttpError(404, 'not_found');
-}
-
-function isAdminPage(pathname: string): boolean {
-  return pathname === '/admin/dashboard' || pathname.startsWith('/admin/dashboard/');
 }
 
 export default {
@@ -97,9 +70,7 @@ export default {
         const response = attachRateLimitHeaders(await routeApi(request, env, ctx), rateLimit);
         return applySecurityHeaders(attachRequestId(applyCorsHeaders(response, originContext), requestId));
       }
-      if (isAdminPage(url.pathname)) {
-        await authenticateAdminRequest(request, env);
-      }
+      if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) throw new HttpError(404, 'not_found');
       if (url.pathname === '/astep-control-vault' || url.pathname.startsWith('/astep-control-vault/')) {
         throw new HttpError(404, 'not_found');
       }
@@ -108,7 +79,7 @@ export default {
       if (response.headers.get('Content-Type')?.includes('text/html')) {
         response.headers.set(
           'Cache-Control',
-          url.pathname.startsWith('/admin') ? 'no-store' : 'public, max-age=0, must-revalidate',
+          'public, max-age=0, must-revalidate',
         );
       } else if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/fonts/')) {
         response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');

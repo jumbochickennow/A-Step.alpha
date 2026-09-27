@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/common/Button';
 import { Seo } from '../../components/common/Seo';
 import { Brand } from '../../components/layout/Brand';
@@ -45,7 +45,7 @@ export function AdminLogin() {
           {error ? <p role="alert" className="mt-5 text-sm text-[var(--danger)]">{error}</p> : null}
           <Button type="submit" disabled={loading} className="mt-6 w-full">{loading ? t('admin.signingIn') : t('admin.signIn')}</Button>
         </form>
-        <Link to="/" className="mt-6 inline-flex min-h-11 items-center text-sm font-semibold text-brand-blue-text">← {t('admin.back')}</Link>
+        <a href="https://astepimmigration.space/" className="mt-6 inline-flex min-h-11 items-center text-sm font-semibold text-brand-blue-text">← {t('admin.back')}</a>
       </div>
     </main>
   );

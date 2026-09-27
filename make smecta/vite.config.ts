@@ -2,9 +2,10 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ command, mode }) => {
+  const isAdmin = mode === 'admin';
   if (command === 'build') {
     const environment = loadEnv(mode, process.cwd(), 'VITE_');
-    const siteUrl = (process.env.VITE_SITE_URL || environment.VITE_SITE_URL || '').trim().replace(/\/+$/, '');
+    const siteUrl = (isAdmin ? 'https://admin.astepimmigration.space' : process.env.VITE_SITE_URL || environment.VITE_SITE_URL || '').trim().replace(/\/+$/, '');
     let site: URL;
     try { site = new URL(siteUrl); } catch { throw new Error('VITE_SITE_URL must be configured for production builds'); }
     const isLocalhost = /^(?:localhost|127\.0\.0\.1|\[::1\])$/.test(site.hostname);
@@ -17,6 +18,7 @@ export default defineConfig(({ command, mode }) => {
     process.env.VITE_SITE_URL = siteUrl;
   }
   return ({
+  publicDir: isAdmin ? 'public-admin' : 'public',
   plugins: [react(), {
     name: 'protect-local-api',
     configureServer(server) {
@@ -55,11 +57,13 @@ export default defineConfig(({ command, mode }) => {
     },
   },
   build: {
+    outDir: isAdmin ? 'dist-admin' : 'dist',
     target: 'es2020',
     cssCodeSplit: true,
     sourcemap: false,
     chunkSizeWarningLimit: 600,
     rollupOptions: {
+      input: isAdmin ? 'admin.html' : 'index.html',
       output: {
         manualChunks(id) {
           // Administrative portal code — including its heavy charting deps —

@@ -1,7 +1,6 @@
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { SiteLayout } from './components/layout/SiteLayout';
-import { PageLoadingFallback } from './components/common/States';
 import { publicRouteLoaders } from './lib/public-route-loaders';
 
 if (typeof document !== 'undefined') {
@@ -21,8 +20,6 @@ const Privacy = lazy(() => import('./pages/Privacy').then((module) => ({ default
 const Terms = lazy(() => import('./pages/Terms').then((module) => ({ default: module.Terms })));
 const Unsubscribe = lazy(() => import('./pages/Unsubscribe').then((module) => ({ default: module.Unsubscribe })));
 const NotFound = lazy(() => import('./pages/NotFound').then((module) => ({ default: module.NotFound })));
-const AdminLogin = lazy(() => import('./pages/admin/AdminLogin').then((module) => ({ default: module.AdminLogin })));
-const AdminDashboardRoute = lazy(() => import('./pages/admin/AdminDashboard').then((module) => ({ default: module.AdminDashboardRoute })));
 
 const children = [
   { index: true, element: <Home /> },
@@ -41,7 +38,4 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
   { path: '/', element: <SiteLayout />, children },
   { path: '/fr', element: <SiteLayout />, children },
   { path: '/ar', element: <SiteLayout />, children },
-  // Isolated administrative bundles load behind the branded page fallback.
-  { path: '/admin', element: <Suspense fallback={<PageLoadingFallback shape="form" />}><AdminLogin /></Suspense> },
-  { path: '/admin/dashboard', element: <Suspense fallback={<PageLoadingFallback shape="cards" />}><AdminDashboardRoute /></Suspense> },
 ]);

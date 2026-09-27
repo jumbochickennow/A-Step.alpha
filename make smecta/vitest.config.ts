@@ -27,5 +27,6 @@ export default defineConfig({
   })],
   test: {
     include: ['test/**/*.test.ts'],
+    exclude: ['test/security-coordinators.test.ts', 'test/admin-worker.test.ts'],
   },
 });

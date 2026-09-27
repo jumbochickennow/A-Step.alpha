@@ -61,7 +61,7 @@ if (process.argv.includes('--self-test')) {
   function sourceFiles(directory = '.') {
     return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
       if (entry.isSymbolicLink()) return [];
-      if (entry.isDirectory() && ['node_modules', 'dist', 'artifacts', 'graft', '.git', '.wrangler', '.unlazy'].includes(entry.name)) return [];
+      if (entry.isDirectory() && ['node_modules', 'dist', 'dist-admin', 'artifacts', 'graft', '.git', '.wrangler', '.unlazy'].includes(entry.name)) return [];
       if (/^(?:\.dev\.vars(?:\..*)?|wrangler\.local\.json)$/.test(entry.name) && entry.name !== '.dev.vars.example') return [];
       if (/^\.env(?:\..*)?$/.test(entry.name) && !['.env.example', '.env.production'].includes(entry.name)) return [];
       const name = directory === '.' ? entry.name : `${directory}/${entry.name}`;

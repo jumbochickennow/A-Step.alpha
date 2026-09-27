@@ -33,17 +33,11 @@
 			"ALLOWED_ORIGINS",
 			"PII_ENCRYPTION_KEY_V1",
 			"BLIND_INDEX_SECRET",
-			"ADMIN_PASSWORD_HASH",
-			"ADMIN_PASSWORD_PEPPER",
 			"RESOURCE_REF_SECRET"
 		]
 	},
 	"durable_objects": {
 		"bindings": [
-			{
-				"name": "ADMIN_SECURITY",
-				"class_name": "AdminSecurityCoordinator"
-			},
 			{
 				"name": "RATE_LIMITER",
 				"class_name": "AtomicRateLimiter"
@@ -111,6 +105,7 @@
 		]
 	},
 	"observability": {
-		"enabled": true
+		"enabled": true,
+		"traces": { "enabled": true }
 	}
 }

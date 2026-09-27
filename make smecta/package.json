@@ -7,6 +7,7 @@
     "dev": "vite",
     "prebuild": "npm run check:i18n",
     "build": "tsc -b && vite build",
+    "build:admin": "npm run check && vite build --mode admin && node scripts/prepare-admin-dist.mjs",
     "preview": "vite preview",
     "check:i18n": "node scripts/check-translations.mjs",
     "check": "npm run check:i18n && tsc -b --pretty false",
@@ -19,12 +20,14 @@
     "scan:secrets:all": "node scripts/scan-staged-secrets.mjs --working-tree",
     "check:assets": "node scripts/check-public-assets.mjs",
     "test:security": "esbuild scripts/phase3-security-assertions.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/security-assertions.mjs --log-level=error && node node_modules/.cache/security-assertions.mjs",
-    "test:workers": "vitest run --config vitest.config.ts",
+    "test:workers": "vitest run --config vitest.config.ts && vitest run --config vitest.admin.config.ts",
     "verify:dist": "node scripts/verify-dist.mjs",
+    "verify:admin-dist": "node scripts/verify-dist.mjs --admin",
     "audit:health": "node scripts/audit-health.mjs",
     "audit:all": "npm run audit:health && npm run check:i18n && tsc -b",
     "preview:cf": "npm run build && wrangler dev",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:admin": "npm run build:admin && wrangler deploy --config wrangler.admin.json"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -35,6 +38,7 @@
     "clsx": "^2.1.1",
     "i18next": "^25.3.2",
     "i18next-browser-languagedetector": "^8.2.1",
+    "jose": "^6.2.12",
     "lucide-react": "^0.468.0",
     "pdf-lib": "^1.17.1",
     "react": "^18.3.1",

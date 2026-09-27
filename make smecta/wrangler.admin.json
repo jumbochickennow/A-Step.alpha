@@ -1,0 +1,60 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "a-step-admin",
+  "compatibility_date": "2026-09-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "worker/admin-entry.ts",
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "admin.astepimmigration.space", "custom_domain": true }
+  ],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist-admin",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/*"]
+  },
+  "vars": {
+    "ADMIN_ACCESS_EMAIL": "belabbesbadibac@gmail.com",
+    "ADMIN_ACCESS_AUD": "5d52011ccba77edc3f46bbb7cac12c1d6a1f0d8210c2c339545ba2ce6ed11eee,48f6556e8e36459ff0bffec8c969811d415ce43b5dac1846b732079800b0b5e5",
+    "ALLOWED_ORIGINS": "https://admin.astepimmigration.space"
+  },
+  "secrets": {
+    "required": [
+      "PII_ENCRYPTION_KEY_V1",
+      "BLIND_INDEX_SECRET",
+      "RESOURCE_REF_SECRET",
+      "ADMIN_PASSWORD_HASH",
+      "ADMIN_PASSWORD_PEPPER"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "astep-production-db",
+      "database_id": "b9f6f42a-2b44-4429-9865-a4cfc7a2febd",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    { "binding": "GUIDES_BUCKET", "bucket_name": "a-step-guides" },
+    { "binding": "OPPORTUNITY_IMAGES_BUCKET", "bucket_name": "a-step-opportunity-images" }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "ADMIN_SECURITY", "class_name": "AdminSecurityCoordinator" },
+      { "name": "RATE_LIMITER", "class_name": "AtomicRateLimiter" }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1-admin-security-coordinators",
+      "new_sqlite_classes": ["AdminSecurityCoordinator", "AtomicRateLimiter"]
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "traces": { "enabled": true }
+  }
+}
