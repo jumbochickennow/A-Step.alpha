@@ -26,13 +26,19 @@ const config = JSON.parse(readFileSync('wrangler.json', 'utf8')) as Record<strin
   secrets?: { required?: string[] };
   send_email?: Array<Record<string, unknown>>;
 };
+const adminConfig = JSON.parse(readFileSync('wrangler.admin.json', 'utf8')) as {
+  secrets?: { required?: string[] };
+};
 assert.equal(config.workers_dev, false);
 assert.deepEqual(config.routes, [
   { pattern: 'www.astepimmigration.space/*', zone_name: 'astepimmigration.space' },
   { pattern: 'astepimmigration.space/*', zone_name: 'astepimmigration.space' },
 ]);
 assert.deepEqual(config.assets?.run_worker_first, ['/*']);
-assert.ok(config.secrets?.required?.includes('ADMIN_PASSWORD_HASH'));
+assert.ok(adminConfig.secrets?.required?.includes('ADMIN_PASSWORD_HASH'));
+assert.ok(adminConfig.secrets?.required?.includes('ADMIN_PASSWORD_PEPPER'));
+assert.ok(!config.secrets?.required?.includes('ADMIN_PASSWORD_HASH'));
+assert.ok(!config.secrets?.required?.includes('ADMIN_PASSWORD_PEPPER'));
 assert.ok(config.secrets?.required?.includes('RESOURCE_REF_SECRET'));
 assert.ok(!config.secrets?.required?.includes('ADMIN_PASSWORD'));
 assert.deepEqual(config.send_email?.[0]?.destination_address, 'contact@astepimmigration.space');
