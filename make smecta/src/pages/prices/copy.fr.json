@@ -1,5 +1,5 @@
 {
-  "metaTitle": "Tarifs et offres | A-Step Immigration Space",
+  "metaTitle": "Consultation | A-Step Immigration Space",
   "metaDescription": "Comparez les offres de consultation et d’accompagnement A-Step. Des tarifs clairs en dinars algériens pour préparer votre projet à l’étranger.",
   "heroTitle": "Comment réserver une consultation avec A-Step",
   "heroSubtitle": "Depuis le confort de votre domicile",
@@ -17,7 +17,7 @@
       "body": "Nous acceptons Baridimob, CCP et le virement bancaire. Après le paiement, vous recevez un contrat à signer."
     }
   ],
-  "packagesTitle": "Nos tarifs et formules",
+  "packagesTitle": "Nos consultations et formules",
   "offeredCountries": ["Italie", "Chine", "Pologne", "France"],
   "countries": "Pays proposés",
   "upfront": "100 % à l’avance",
@@ -271,5 +271,5 @@
   "closingNote": "Votre temps de candidature est précieux. Ne le perdez pas avec de fausses informations.",
   "inquiryMessage": "Bonjour A-Step, je souhaite demander un créneau pour la formule {{tier}} ({{price}} DA).",
   "generalMessage": "Bonjour A-Step, je souhaite demander un créneau de consultation.",
-  "scrollOffers": "Explorer nos tarifs et formules"
+  "scrollOffers": "Découvrir nos formules de consultation"
 }

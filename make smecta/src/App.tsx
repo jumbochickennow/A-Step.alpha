@@ -30,7 +30,7 @@ const children = [
   { path: 'opportunities', element: <Opportunities /> },
   { path: 'about', element: <About /> },
   { path: 'contact', element: <Contact /> },
-  { path: 'prices', element: <Prices /> },
+  { path: 'consultation', element: <Prices /> },
   { path: 'resources', element: <Resources /> },
   { path: 'privacy', element: <Privacy /> },
   { path: 'terms', element: <Terms /> },

@@ -10,7 +10,7 @@ const origin = process.env.PRICES_ORIGIN || 'http://127.0.0.1:4173';
 const copies = await Promise.all(['en','fr','ar'].map(async lang => JSON.parse(await readFile(`src/pages/prices/copy.${lang}.json`,'utf8'))));
 function shape(value) { return Array.isArray(value) ? value.map(shape) : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).map(([key,child])=>[key,shape(child)])) : typeof value; }
 for (const copy of copies) {
- assert.deepEqual(shape(copy), shape(copies[0]), 'Every locale must contain the same complete Prices content');
+ assert.deepEqual(shape(copy), shape(copies[0]), 'Every locale must contain the same complete Consultation content');
  assert.equal(copy.tiers.length,3); assert.equal(copy.refunds.length,5); assert.equal(copy.faqs.length,7);
  assert.match(copy.inquiryMessage,/\{\{tier\}\}/); assert.match(copy.inquiryMessage,/\{\{price\}\}/);
 }
@@ -23,7 +23,7 @@ try {
  await context.addInitScript(()=>localStorage.setItem('astep-locale','en'));
  const page=await context.newPage();
  page.on('pageerror',error=>errors.push(error.message));
- await page.goto(`${origin}/prices`);
+ await page.goto(`${origin}/consultation`);
  await page.locator('.price-closing').waitFor(); await page.evaluate(()=>document.fonts.ready);
  assert.equal(await page.locator('h1').count(),1);
  assert.equal(await page.locator('.price-tier').count(),3);
@@ -64,7 +64,7 @@ try {
  assert.equal(await faqs.nth(0).getAttribute('open'),null);
  await faqs.nth(0).locator('summary').click();
  await page.locator('.price-hero-art').click();
- await page.waitForURL('**/prices#packages');
+ await page.waitForURL('**/consultation#packages');
  assert.ok(Math.abs(await page.locator('#packages').evaluate(el=>el.getBoundingClientRect().top)-100)<3);
  assert.equal(await page.locator('.price-hero-art img').evaluate(el=>getComputedStyle(el).animationName),'none');
  assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).scrollBehavior),'auto');
@@ -73,11 +73,11 @@ try {
  assert.equal(header.background,'rgba(0, 0, 0, 0)');
  results.push('Accordions (mouse/keyboard), package anchor, transparent scrolled header with blue links and reduced motion: passed');
  await page.locator('.price-guide a').first().click(); await page.waitForURL('**/guides');
- await page.goto(`${origin}/prices`); await page.locator('.price-terms-note a').click(); await page.waitForURL('**/terms');
- await page.goto(`${origin}/prices`); await page.locator('.price-closing').waitFor();
+ await page.goto(`${origin}/consultation`); await page.locator('.price-terms-note a').click(); await page.waitForURL('**/terms');
+ await page.goto(`${origin}/consultation`); await page.locator('.price-closing').waitFor();
  assert.equal(await page.locator('.price-closing a[href^="mailto:"]').getAttribute('href'),'mailto:contact@astepimmigration.space');
  results.push('Guides, Terms and email destinations: passed');
- // Scoped header/footer classes must disappear on existing routes after visiting Prices.
+ // Scoped header/footer classes must disappear on existing routes after visiting Consultation.
  for (const route of ['/resources','/contact','/about','/']) {
   await page.goto(origin+route); await page.locator('footer#astep-footer').waitFor();
   assert.equal(await page.locator('header.prices-navbar').count(),0);
@@ -86,7 +86,7 @@ try {
  }
  results.push('Resources implemented; shared header/footer present on Resources, Contact, About and Home: passed');
  for (const [lang,copy] of ['en','fr','ar'].map((lang,i)=>[lang,copies[i]])) {
-  const path=lang==='en'?'/prices':`/${lang}/prices`;
+  const path=lang==='en'?'/consultation':`/${lang}/consultation`;
   await page.goto(origin+path); await page.locator('.prices-page').waitFor();
   assert.equal(await page.locator('h1').textContent(),copy.heroTitle);
   assert.equal(await page.locator('html').getAttribute('dir'),lang==='ar'?'rtl':'ltr');
@@ -107,15 +107,15 @@ try {
   }
  }
  results.push('All three locales refresh, translate, retain destinations and fit 1440/1024/768/390/320px: passed');
- await page.setViewportSize({width:390,height:844}); await page.goto(`${origin}/prices`);
+ await page.setViewportSize({width:390,height:844}); await page.goto(`${origin}/consultation`);
  await page.getByRole('button',{name:'Open navigation menu'}).click();
  await page.getByRole('dialog').waitFor(); await page.keyboard.press('Escape');
  assert.equal(await page.getByRole('dialog').count(),0);
- await page.getByRole('button',{name:'Change language: FR',exact:true}).click(); await page.waitForURL('**/fr/prices');
+ await page.getByRole('button',{name:'Change language: FR',exact:true}).click(); await page.waitForURL('**/fr/consultation');
  await page.getByRole('heading',{level:1,name:copies[1].heroTitle,exact:true}).waitFor();
  assert.equal(await page.locator('h1').textContent(),copies[1].heroTitle);
- results.push('Mobile drawer opens/closes and language switch preserves Prices: passed');
- await page.setViewportSize({width:1440,height:1000}); await page.emulateMedia({reducedMotion:'no-preference'}); await page.goto(`${origin}/prices`);
+ results.push('Mobile drawer opens/closes and language switch preserves Consultation: passed');
+ await page.setViewportSize({width:1440,height:1000}); await page.emulateMedia({reducedMotion:'no-preference'}); await page.goto(`${origin}/consultation`);
  assert.equal(await page.locator('.price-hero-art img').evaluate(el=>getComputedStyle(el).animationName),'price-float');
  for (let index=0; index<3; index++) {
   const step=page.locator('.price-booking-steps li').nth(index);

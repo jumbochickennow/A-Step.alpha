@@ -1,5 +1,5 @@
 {
-  "metaTitle": "Prices & offers | A-Step Immigration Space",
+  "metaTitle": "Consultation | A-Step Immigration Space",
   "metaDescription": "Compare A-Step consultation, profile support and application packages. Clear prices in Algerian dinar and a practical plan for your next step abroad.",
   "heroTitle": "How To Book A Consultation With A-Step",
   "heroSubtitle": "From the comfort of your home",
@@ -17,7 +17,7 @@
       "body": "We accept payments from Baridimob, CCP, Bank Transfer, after paying the client gets a contract to sign."
     }
   ],
-  "packagesTitle": "Our Prices And Packages",
+  "packagesTitle": "Consultation Plans And Packages",
   "offeredCountries": ["Italy", "China", "Poland", "France"],
   "countries": "Countries offered",
   "upfront": "100% upfront",
@@ -271,5 +271,5 @@
   "closingNote": "Your application time is valuable, don’t waste it on misinformation.",
   "inquiryMessage": "Hello A-Step, I would like to request a slot for the {{tier}} package ({{price}} DA).",
   "generalMessage": "Hello A-Step, I would like to request a consultation slot.",
-  "scrollOffers": "Explore our prices and packages"
+  "scrollOffers": "Explore our consultation packages"
 }

@@ -10,7 +10,7 @@
     "about": "À propos",
     "contact": "Contact",
     "resources": "Ressources",
-    "prices": "Tarifs",
+    "prices": "Consultation",
     "consultation": "Réserver une consultation",
     "menuOpen": "Ouvrir le menu de navigation",
     "menuClose": "Fermer le menu de navigation",
@@ -167,7 +167,7 @@
     "ctaTitle": "Une mauvaise information peut compromettre votre projet à l’étranger, ne prenez pas ce risque !",
     "freeQuotes": "Devis gratuits",
     "pricingCta": {
-      "button": "Tarifs et offres",
+      "button": "Consultation",
       "banner": "Envie de découvrir nos formules ?"
     },
     "ctaButton": "Réserver un rendez-vous",

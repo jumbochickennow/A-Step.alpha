@@ -23,6 +23,7 @@ const SEGMENT_LABEL_KEYS: Record<string, string> = {
   opportunities: 'nav.opportunities',
   about: 'nav.about',
   contact: 'nav.contact',
+  consultation: 'nav.prices',
   privacy: 'footer.privacy',
   terms: 'footer.terms',
 };

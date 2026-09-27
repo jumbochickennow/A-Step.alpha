@@ -12,13 +12,11 @@ export const WHATSAPP_MESSAGES: Record<Locale, string> = {
   ar: 'مرحبًا، أرغب في حجز استشارة مع A-Step.',
 };
 
-// Pre-filled WhatsApp intake message for pricing/offers requests.
-// The English value intentionally produces:
-// https://wa.me/213783145805?text=Hello%20A-Step,%20I%20would%20like%20to%20know%20more%20about%20your%20prices%20and%20offers
+// Pre-filled WhatsApp intake message for consultation-package requests.
 export const PRICING_WHATSAPP_MESSAGES: Record<Locale, string> = {
-  en: 'Hello A-Step, I would like to know more about your prices and offers',
-  fr: 'Bonjour A-Step, je souhaite en savoir plus sur vos tarifs et offres',
-  ar: 'مرحبًا A-Step، أرغب في معرفة المزيد عن أسعاركم وعروضكم',
+  en: 'Hello A-Step, I would like to know more about your consultation packages',
+  fr: 'Bonjour A-Step, je souhaite en savoir plus sur vos formules de consultation',
+  ar: 'مرحبًا A-Step، أود معرفة المزيد عن باقات الاستشارة لديكم',
 };
 
 export const localeNames: Record<Locale, string> = {

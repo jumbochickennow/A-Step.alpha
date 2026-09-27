@@ -16,7 +16,7 @@ function ScrollToTop() {
 export function SiteLayout() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const hideFloatingContact = /\/(prices|resources)\/?$/.test(pathname);
+  const hideFloatingContact = /\/(consultation|resources)\/?$/.test(pathname);
   useLocale();
   return (
     <>

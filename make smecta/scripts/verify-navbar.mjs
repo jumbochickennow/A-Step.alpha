@@ -7,7 +7,7 @@ try {
   const page = await browser.newPage({ locale: 'en-US', reducedMotion: 'no-preference' });
   page.on('pageerror', error => errors.push(error.message));
   for (const locale of ['en', 'fr', 'ar']) {
-    for (const route of ['', '/opportunities', '/guides', '/about', '/contact', '/prices', '/resources']) {
+    for (const route of ['', '/opportunities', '/guides', '/about', '/contact', '/consultation', '/resources']) {
       await page.goto(`${origin}${locale === 'en' ? '' : '/' + locale}${route || '/'}`);
       await page.locator('main h1').waitFor();
       for (const width of [1440, 1024, 768, 390, 320]) {
@@ -46,13 +46,13 @@ try {
     await page.locator('header button[aria-haspopup="dialog"]').click();
     await drawer.waitFor();
     assert.equal(await drawer.evaluate(el => getComputedStyle(el).animationName), 'none');
-    await drawer.locator('nav a').filter({ hasText: locale === 'ar' ? 'الأسعار' : locale === 'fr' ? 'Tarifs' : 'Prices' }).click();
-    await page.waitForURL('**/prices');
+    await drawer.locator('nav a').filter({ hasText: locale === 'ar' ? 'الاستشارة' : 'Consultation' }).click();
+    await page.waitForURL('**/consultation');
     await drawer.waitFor({ state: 'hidden' });
     await page.emulateMedia({ reducedMotion: 'no-preference' });
   }
   await page.locator('header .navbar-languages button').filter({ hasText: /^EN$/ }).click();
-  await page.waitForURL(`${origin}/prices`);
+  await page.waitForURL(`${origin}/consultation`);
   assert.deepEqual(errors, []);
   console.log('NAVBAR PASS: 7 pages × 3 languages × 5 widths; shared styling, RTL slide, reduced motion, focus return, mobile navigation and language switching.');
 } finally { await browser.close(); }

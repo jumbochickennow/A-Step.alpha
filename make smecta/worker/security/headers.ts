@@ -55,3 +55,11 @@ export function httpsRedirect(request: Request): Response | null {
   if (isApex) url.hostname = CANONICAL_HOST;
   return Response.redirect(url.toString(), 308);
 }
+
+export function consultationRedirect(request: Request): Response | null {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return null;
+  const url = new URL(request.url);
+  if (!/^\/(?:fr\/|ar\/)?prices\/?$/.test(url.pathname)) return null;
+  url.pathname = url.pathname.replace(/prices\/?$/, 'consultation');
+  return Response.redirect(url.toString(), 308);
+}

@@ -42,7 +42,7 @@ export function Resources() {
           <h2 id="resources-journey-title">{copy.journey[0]}<br />{copy.journey[1]}</h2>
           <p>{copy.journeyBody}</p>
           <ul>{copy.benefits.map(benefit => <li key={benefit}><Check size={17} aria-hidden="true" />{benefit}</li>)}</ul>
-          <Link className="resources-prices" to={localizedPath('/prices', locale)}>{copy.explore}</Link>
+          <Link className="resources-prices" to={localizedPath('/consultation', locale)}>{copy.explore}</Link>
         </div>
         <img className="resources-calendar" src="/assets/resources/journey-calendar.webp" alt="" width="670" height="640" loading="lazy" />
       </section></>}

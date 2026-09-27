@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readJson } from '../worker/http';
-import { applySecurityHeaders } from '../worker/security/headers';
+import { applySecurityHeaders, consultationRedirect } from '../worker/security/headers';
 
 describe('bounded JSON input', () => {
   it('cancels oversized streaming bodies without buffering the remaining input', async () => {
@@ -33,5 +33,15 @@ describe('bounded JSON input', () => {
   });
   it('preserves the stricter download referrer policy', () => {
     expect(applySecurityHeaders(new Response('', { headers: { 'Referrer-Policy': 'no-referrer' } })).headers.get('Referrer-Policy')).toBe('no-referrer');
+  });
+  it('redirects old prices URLs to consultation without losing locale or query', () => {
+    for (const path of ['/prices', '/fr/prices/', '/ar/prices']) {
+      const oldUrl = `https://www.astepimmigration.space${path}?ref=bookmark`;
+      const response = consultationRedirect(new Request(oldUrl));
+      expect(response?.status).toBe(308);
+      expect(response?.headers.get('Location')).toBe(oldUrl.replace(/prices\/?\?/, 'consultation?'));
+    }
+    expect(consultationRedirect(new Request('https://www.astepimmigration.space/consultation'))).toBeNull();
+    expect(consultationRedirect(new Request('https://www.astepimmigration.space/prices', { method: 'POST' }))).toBeNull();
   });
 });

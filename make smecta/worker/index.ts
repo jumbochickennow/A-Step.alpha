@@ -13,7 +13,7 @@ import { opportunityImage } from './routes/opportunity-image';
 import { enforceUploadBoundary } from './security/upload-defense';
 import { attachRateLimitHeaders, checkRateLimit, rateLimitResponse } from './security/rate-limit';
 import { enforceRequestEnvelope } from './security/request-guard';
-import { applySecurityHeaders, httpsRedirect } from './security/headers';
+import { applySecurityHeaders, consultationRedirect, httpsRedirect } from './security/headers';
 import { applyCorsHeaders, preflightResponse, verifyApiOrigin, type OriginContext } from './security/origin';
 import { assertRuntimeEnv } from './security/env-validator';
 import { consumeOutbox, drainOutbox, type QueueBatchLike } from './queue/outbox-consumer';
@@ -77,6 +77,8 @@ export default {
       assertRuntimeEnv(env);
       const redirect = httpsRedirect(request);
       if (redirect) return applySecurityHeaders(attachRequestId(redirect, requestId));
+      const legacyRedirect = consultationRedirect(request);
+      if (legacyRedirect) return applySecurityHeaders(attachRequestId(legacyRedirect, requestId));
       const url = new URL(request.url);
       if (url.pathname.startsWith('/api/v1/')) {
         originContext = verifyApiOrigin(request, env);

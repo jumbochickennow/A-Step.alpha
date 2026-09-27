@@ -10,7 +10,7 @@
     "about": "About",
     "contact": "Contact",
     "resources": "Resources",
-    "prices": "Prices",
+    "prices": "Consultation",
     "consultation": "Book a consultation",
     "menuOpen": "Open navigation menu",
     "menuClose": "Close navigation menu",
@@ -167,7 +167,7 @@
     "ctaTitle": "One wrong information can cost your journey abroad, don’t risk it!",
     "freeQuotes": "Free Quotes",
     "pricingCta": {
-      "button": "Prices and Offers",
+      "button": "Consultation",
       "banner": "Curious about our packages?"
     },
     "ctaButton": "Book an Appointment",

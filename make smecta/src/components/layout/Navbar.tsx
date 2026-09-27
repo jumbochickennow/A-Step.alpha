@@ -15,7 +15,7 @@ const links = [
   ['nav.about', '/about'],
   ['nav.contact', '/contact'],
   ['nav.resources', '/resources'],
-  ['nav.prices', '/prices'],
+  ['nav.prices', '/consultation'],
 ] as const;
 
 function DesktopLinks() {

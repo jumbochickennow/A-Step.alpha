@@ -22,7 +22,7 @@ try {
   assert.equal(await page.locator('.resource-card').count(), 4);
   assert.equal(await page.locator('html').getAttribute('lang'), locale);
   assert.equal(await page.locator('html').getAttribute('dir'), locale === 'ar' ? 'rtl' : 'ltr');
-  assert.equal(await page.locator('.resources-prices').getAttribute('href'), `${prefix}/prices`);
+  assert.equal(await page.locator('.resources-prices').getAttribute('href'), `${prefix}/consultation`);
   assert.equal(await page.locator('footer').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(14, 123, 229)');
   for (const link of await page.locator('.resource-register').all()) {
    assert.equal(await link.getAttribute('href'), 'https://erasmus-plus.ec.europa.eu/opportunities/individuals');
@@ -83,9 +83,9 @@ try {
  await page.keyboard.press('Escape');
  await page.locator('[role=dialog]').waitFor({state:'hidden'});
  await page.locator('.resources-prices').click();
- await page.waitForURL('**/prices');
+ await page.waitForURL('**/consultation');
  await page.waitForSelector('.price-closing');
  assert.equal(await page.locator('footer#astep-footer').count(), 1);
  assert.deepEqual(errors, []);
- console.log('RESOURCES PASS: 3 locales × 4 widths, assets, links, popup redirect, menu, newsletter preview, reduced motion and Prices regression');
+ console.log('RESOURCES PASS: 3 locales × 4 widths, assets, links, popup redirect, menu, newsletter preview, reduced motion and Consultation regression');
 } finally { await browser.close(); }

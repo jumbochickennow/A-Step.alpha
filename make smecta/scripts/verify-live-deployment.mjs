@@ -25,20 +25,20 @@ async function get(path) {
   return response;
 }
 
-const [home, prices, api] = await Promise.all([
+const [home, consultation, api] = await Promise.all([
   get('/'),
-  get('/prices'),
+  get('/consultation'),
   get('/api/v1/resources'),
 ]);
-const [homeHtml, pricesHtml, apiBody] = await Promise.all([
+const [homeHtml, consultationHtml, apiBody] = await Promise.all([
   home.text(),
-  prices.text(),
+  consultation.text(),
   api.text(),
 ]);
 
 for (const asset of builtAssets) {
   assert.ok(homeHtml.includes(asset), `Live home is missing built asset ${asset}`);
-  assert.ok(pricesHtml.includes(asset), `Live prices route is missing built asset ${asset}`);
+  assert.ok(consultationHtml.includes(asset), `Live consultation route is missing built asset ${asset}`);
 }
 
 for (const name of bundles) {

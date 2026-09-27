@@ -10,7 +10,7 @@ const en = {
   ],
   journey: ['Don’t just sit and watch,', 'Start your Journey now!'],
   journeyBody: 'Book a Clarity Call. In 60 minutes, you’ll have the exact next steps—no jargon, no pressure',
-  benefits: ['Multiple Offers', 'Flexible Appointments'], explore: 'Explore Packages and Offers',
+  benefits: ['Multiple Offers', 'Flexible Appointments'], explore: 'Explore Consultation Services',
 };
 const fr: typeof en = {
   title: 'À la une cette semaine',
@@ -24,7 +24,7 @@ const fr: typeof en = {
   ],
   journey: ['Ne restez pas à regarder,', 'Commencez votre parcours !'],
   journeyBody: 'Réservez un appel Clarté. En 60 minutes, vous connaîtrez les prochaines étapes précises — sans jargon, sans pression.',
-  benefits: ['Plusieurs offres', 'Rendez-vous flexibles'], explore: 'Découvrir les forfaits et offres',
+  benefits: ['Plusieurs offres', 'Rendez-vous flexibles'], explore: 'Découvrir les consultations',
 };
 const ar: typeof en = {
   title: 'أبرز فعاليات هذا الأسبوع',
@@ -38,7 +38,7 @@ const ar: typeof en = {
   ],
   journey: ['لا تكتفِ بالمشاهدة،', 'ابدأ رحلتك الآن!'],
   journeyBody: 'احجز مكالمة وضوح. خلال 60 دقيقة ستعرف خطواتك التالية بدقة، دون مصطلحات معقدة أو ضغط.',
-  benefits: ['عروض متعددة', 'مواعيد مرنة'], explore: 'اكتشف الباقات والعروض',
+  benefits: ['عروض متعددة', 'مواعيد مرنة'], explore: 'اكتشف خدمات الاستشارة',
 };
 export const resourcesCopy = { en, fr, ar };
 export const emptyResourcesCopy = {

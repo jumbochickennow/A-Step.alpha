@@ -115,9 +115,9 @@ export function Footer() {
   const { t } = useTranslation();
   const { locale } = useLocale();
   const { pathname } = useLocation();
-  const isPrices = /\/prices\/?$/.test(pathname);
+  const isPrices = /\/consultation\/?$/.test(pathname);
   const isResources = /\/resources\/?$/.test(pathname);
-  const blue = /\/(contact|prices|resources)\/?$/.test(pathname);
+  const blue = /\/(contact|consultation|resources)\/?$/.test(pathname);
   const link = (path: string) => localizedPath(path, locale);
 
   return (
