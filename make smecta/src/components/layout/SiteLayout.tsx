@@ -17,6 +17,8 @@ export function SiteLayout() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const hideFloatingContact = /\/(consultation|resources)\/?$/.test(pathname);
+  const lightRoute = /\/(contact|consultation|resources)\/?$/.test(pathname);
+  const loadingShape = /\/contact\/?$/.test(pathname) ? 'form' : /\/(guides|opportunities|resources)\/?$/.test(pathname) ? 'cards' : 'content';
   useLocale();
   return (
     <>
@@ -26,7 +28,7 @@ export function SiteLayout() {
       <ScrollToTop />
       <Navbar />
       <main id="main-content">
-        <Suspense fallback={<PageLoadingFallback />}>
+        <Suspense fallback={<PageLoadingFallback tone={lightRoute ? 'light' : 'dark'} shape={loadingShape} />}>
           <Outlet />
         </Suspense>
       </main>

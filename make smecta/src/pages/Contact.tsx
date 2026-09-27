@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../components/common/Button';
 import { Seo } from '../components/common/Seo';
@@ -32,9 +32,11 @@ export function Contact() {
   const isArabic = locale === 'ar';
   const renderedAt = useRef(Date.now());
   const lastSubmitAt = useRef(0);
+  const errorSummaryRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [values, setValues] = useState<ContactFormInputs>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof ContactFormInputs, string>>>({});
+  const [errorSubmission, setErrorSubmission] = useState(0);
   const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'cooldown'>('idle');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
@@ -43,6 +45,11 @@ export function Contact() {
   const [turnstileError, setTurnstileError] = useState(false);
   const [challengeVersion, setChallengeVersion] = useState(0);
   const turnstileEnabled = isTurnstileEnabled();
+  const invalidFields = FIELD_ORDER.filter((field) => errors[field]);
+
+  useEffect(() => {
+    if (errorSubmission > 0) errorSummaryRef.current?.focus();
+  }, [errorSubmission]);
 
   const update =
     (field: keyof ContactFormInputs) =>
@@ -67,17 +74,17 @@ export function Contact() {
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setStatus('idle');
 
     // Submission cooldown: block rapid multi-clicks and re-entries while a
     // previous submission is still processing.
     const now = Date.now();
     if (isSubmitting || now - lastSubmitAt.current < SUBMIT_COOLDOWN_MS) return;
-    lastSubmitAt.current = now;
+    setStatus('idle');
 
     // Honeypot trap: a filled invisible field means an automated client.
     // Simulate a delayed success without dispatching anything (silent rejection).
     if (honeypot.trim().length > 0) {
+      lastSubmitAt.current = now;
       setIsSubmitting(true);
       await new Promise((resolve) => setTimeout(resolve, BOT_REJECT_DELAY_MS));
       setStatus('success');
@@ -91,10 +98,10 @@ export function Contact() {
     const result = validateContactForm(sanitizedInputs(), t);
     setErrors(result.errors);
     if (!result.isValid) {
-      const firstInvalid = FIELD_ORDER.find((field) => result.errors[field]);
-      if (firstInvalid) document.getElementById(`contact-${firstInvalid}`)?.focus();
+      setErrorSubmission((count) => count + 1);
       return;
     }
+    setErrorSubmission(0);
 
     // Require a fresh Turnstile token before accepting the submission.
     if (turnstileEnabled && !turnstileToken) {
@@ -103,6 +110,7 @@ export function Contact() {
     }
     setTurnstileError(false);
 
+    lastSubmitAt.current = Date.now();
     setIsSubmitting(true);
     try {
       await sendContactMessage({
@@ -131,7 +139,7 @@ export function Contact() {
 
   const inputClass = (field: keyof ContactFormInputs) => {
     const hasError = Boolean(errors[field]);
-    return `h-12 w-full rounded-md border bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 ${
+    return `h-12 w-full scroll-mt-28 rounded-md border bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 ${
       hasError ? 'border-red-400 focus:border-red-500' : 'border-slate-200'
     }`;
   };
@@ -156,6 +164,16 @@ export function Contact() {
 
         <div className="relative mx-auto mt-8 max-w-[640px]">
           <form onSubmit={submit} noValidate className="relative z-10 rounded-lg bg-[#f7f7f7] p-6 shadow-[0_16px_36px_rgb(15_23_42/0.1)] md:p-9">
+            {errorSubmission > 0 && invalidFields.length > 0 ? (
+              <div ref={errorSummaryRef} id="contact-error-summary" role="alert" tabIndex={-1} aria-labelledby="contact-error-title" className="mb-6 rounded-md border border-red-300 bg-red-50 p-4 text-sm text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
+                <h2 id="contact-error-title" className="font-bold">{t('contact.errorSummary')}</h2>
+                <ul className="mt-2 list-inside list-disc space-y-1">
+                  {invalidFields.map((field) => (
+                    <li key={field}><a href={`#contact-${field}`} className="text-red-800 underline underline-offset-2">{t(`contact.${field === 'fullName' ? 'name' : field}`)}: {errors[field]}</a></li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
             <div className="opacity-0 absolute -z-50 h-0 w-0 pointer-events-none select-none" aria-hidden="true">
               <label htmlFor="contact-hp-company">Company</label>
               <input
@@ -247,7 +265,7 @@ export function Contact() {
                   id="contact-message"
                   rows={4}
                   placeholder={t('contact.messagePlaceholder')}
-                  className={`w-full resize-y rounded-md border bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 ${errors.message ? 'border-red-400 focus:border-red-500' : 'border-slate-200'}`}
+                  className={`w-full scroll-mt-28 resize-y rounded-md border bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 ${errors.message ? 'border-red-400 focus:border-red-500' : 'border-slate-200'}`}
                   maxLength={2000}
                   value={values.message}
                   onChange={update('message')}
@@ -258,9 +276,9 @@ export function Contact() {
                 {errorText('message')}
               </div>
             </div>
-            <p className="mt-8 text-center text-sm text-slate-600">{t('contact.responseOneHour')}</p>
+            <p className="mt-8 text-center text-sm text-slate-600">{t('contact.responseBody')}</p>
             <div className="mt-4 min-h-[3.25rem]">
-              {status === 'success' ? <p role="status" className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">{t('contact.success')}</p> : null}
+              {status === 'success' ? <p role="status" className="form-success-enter rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">{t('contact.success')}</p> : null}
               {status === 'error' ? <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{navigator.onLine ? t('contact.error') : t('common.offline')}</p> : null}
               {status === 'cooldown' ? <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{t('contact.cooldown')}</p> : null}
             </div>
@@ -283,6 +301,7 @@ export function Contact() {
               </div>
             ) : null}
             <Button type="submit" disabled={isSubmitting} className="mt-8 w-full">{isSubmitting ? t('contact.sending') : t('contact.send')}</Button>
+            <p className="mt-3 text-center text-xs leading-relaxed text-slate-600">{t('contact.emailCooldownNote')}</p>
           </form>
           <div className="pointer-events-none relative z-0 flex min-w-0 justify-center">
             <img

@@ -63,13 +63,16 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
   const turnstileEnabled = isTurnstileEnabled();
   const { toast } = useToast();
   const availableLanguages = guide.availableLanguages ?? { en: true, fr: false, ar: false };
+  const preferredLanguage = availableLanguages[locale]
+    ? locale
+    : GUIDE_LANGUAGES.find(({ value }) => availableLanguages[value])?.value ?? 'en';
 
   // DialogContent owns the body lock; Escape dismisses this controlled dialog.
   useEscapeToClose(open, () => setOpen(false));
 
   /** Clears errors and form state (including honeypot + Turnstile token) when the dialog closes or completes. */
   const resetForm = () => {
-    setValues(EMPTY_FORM);
+    setValues({ ...EMPTY_FORM, guideLanguage: preferredLanguage });
     setErrors({});
     setStatus('idle');
     setSuggestion(null);
@@ -104,15 +107,15 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setStatus('idle');
 
     // Submission cooldown: block rapid multi-clicks while processing.
     const now = Date.now();
     if (isSubmitting || now - lastSubmitAt.current < SUBMIT_COOLDOWN_MS) return;
-    lastSubmitAt.current = now;
+    setStatus('idle');
 
     // Honeypot trap: silently close without recording any lead or download.
     if (honeypot.trim().length > 0) {
+      lastSubmitAt.current = now;
       setIsSubmitting(true);
       await new Promise((resolve) => setTimeout(resolve, BOT_REJECT_DELAY_MS));
       setIsSubmitting(false);
@@ -136,6 +139,7 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
     }
     setTurnstileError(false);
 
+    lastSubmitAt.current = Date.now();
     setIsSubmitting(true);
     try {
       const downloadUrl = await submitGuideLead({
@@ -166,6 +170,7 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
       onOpenChange={(nextOpen: boolean) => {
         setOpen(nextOpen);
         if (nextOpen) {
+          setValues({ ...EMPTY_FORM, guideLanguage: preferredLanguage });
           renderedAt.current = Date.now();
           track('guide_download_start', { guide: guide.slug });
         } else {

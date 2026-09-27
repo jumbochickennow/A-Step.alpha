@@ -45,10 +45,10 @@ export function useBodyScrollLock(active: boolean): void {
   }, [active]);
 }
 
-function ScrollLockedOverlay() {
+function ScrollLockedOverlay({ className }: { className?: string }) {
   // This component mounts inside Radix Presence, so it only locks while open.
   useBodyScrollLock(true);
-  return <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-200 data-[state=closed]:pointer-events-none" />;
+  return <DialogPrimitive.Overlay className={cn('fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-[state=closed]:pointer-events-none', className)} />;
 }
 
 /**
@@ -68,11 +68,11 @@ export function useEscapeToClose(active: boolean, onClose: () => void): void {
   }, [active]);
 }
 
-export const DialogContent = forwardRef<ElementRef<typeof DialogPrimitive.Content>, ComponentPropsWithoutRef<typeof DialogPrimitive.Content>>(
-  ({ className, children, ...props }, ref) => {
+export const DialogContent = forwardRef<ElementRef<typeof DialogPrimitive.Content>, ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { overlayClassName?: string }>(
+  ({ className, overlayClassName, children, ...props }, ref) => {
     const { t } = useTranslation();
     return <DialogPrimitive.Portal>
-      <ScrollLockedOverlay />
+      <ScrollLockedOverlay className={overlayClassName} />
       <DialogPrimitive.Content
         ref={ref}
         className={cn('fixed start-1/2 top-1/2 z-50 max-h-[90dvh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-xl border border-border bg-surface-1 p-6 shadow-modal rtl:translate-x-1/2 md:p-8', className)}

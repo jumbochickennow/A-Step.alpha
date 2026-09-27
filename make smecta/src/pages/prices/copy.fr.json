@@ -22,9 +22,9 @@
   "countries": "Pays proposés",
   "upfront": "100 % à l’avance",
   "installments": "3 versements",
-  "inquire": "Se renseigner",
-  "request": "Demander un créneau",
-  "bookingNote": "Tarifs en dinars algériens. Il s’agit d’une demande de réservation, pas d’un achat — aucun paiement sur cette page.",
+  "inquire": "Écrire sur WhatsApp",
+  "request": "Demander un créneau sur WhatsApp",
+  "bookingNote": "Tarifs en dinars algériens. Le choix d’une formule ouvre WhatsApp avec un message préparé. Nous vous répondons avec les créneaux disponibles ; aucun paiement sur cette page.",
   "tiers": [
     {
       "name": "Standard",
@@ -183,7 +183,7 @@
   "notCovered": "NON INCLUS",
   "guidance": "CONSEILS UNIQUEMENT",
   "included": "INCLUS",
-  "requestNote": "Une demande de réservation, pas un achat.",
+  "requestNote": "WhatsApp s’ouvre avec cette formule. Nous vous répondons avec les créneaux disponibles ; aucun paiement n’est demandé ici.",
   "promiseEyebrow": "À LIRE AVANT DE PAYER QUI QUE CE SOIT",
   "promiseTitle": "Ce que nous ne pouvons pas promettre",
   "promiseIntro": "Personne ne peut vous garantir un visa ou une admission. Quiconque prétend le contraire vous ment.",

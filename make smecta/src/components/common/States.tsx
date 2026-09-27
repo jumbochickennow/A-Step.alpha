@@ -101,18 +101,65 @@ export function EmptyState({ title, message, action, icon }: { title?: string; m
   );
 }
 
-/** Branded full-page spinner shown while lazy route chunks download. */
-export function PageLoadingFallback({ minHeight = 'min-h-[70vh]' }: { minHeight?: string }) {
+/** Small page-shaped placeholder while a lazy route chunk downloads. */
+export function PageLoadingFallback({
+  minHeight = 'min-h-[70vh]',
+  tone = 'dark',
+  shape = 'content',
+}: {
+  minHeight?: string;
+  tone?: 'dark' | 'light';
+  shape?: 'content' | 'cards' | 'form';
+}) {
+  const { t } = useTranslation();
+  const light = tone === 'light';
+  const block = light ? 'bg-slate-200' : 'bg-surface-2';
+  const panel = light ? 'border-slate-200 bg-slate-50' : 'border-border bg-surface-1';
+
   return (
     <div
-      className={`w-full ${minHeight} flex flex-col items-center justify-center p-8 transition-opacity duration-200`}
+      className={cn('w-full', minHeight, light ? 'bg-white' : 'bg-bg')}
       role="status"
-      aria-label="Loading page content"
     >
-      <div className="relative flex items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
+      <span className="sr-only">{t('common.loading')}</span>
+      <div aria-hidden="true" className="container-shell motion-safe:animate-pulse pb-20 pt-36 md:pt-44">
+        <div className={cn('h-3 w-24 rounded-full bg-brand-coral/70', shape !== 'content' && 'mx-auto')} />
+        <div className={cn('mt-5 h-10 w-3/4 max-w-lg rounded-lg', block, shape !== 'content' && 'mx-auto')} />
+        <div className={cn('mt-5 h-4 w-5/6 max-w-xl rounded', block, shape !== 'content' && 'mx-auto')} />
+        <div className={cn('mt-2 h-4 w-2/3 max-w-md rounded', block, shape !== 'content' && 'mx-auto')} />
+
+        {shape === 'form' ? (
+          <div className={cn('mx-auto mt-10 max-w-[640px] space-y-5 rounded-xl border p-6 md:p-9', panel)}>
+            {[0, 1, 2, 3].map((item) => (
+              <div key={item}>
+                <div className={cn('mb-2 h-3 w-28 rounded', block)} />
+                <div className={cn('h-12 w-full rounded-md', block)} />
+              </div>
+            ))}
+            <div className="h-12 w-full rounded-md bg-brand-blue/35" />
+          </div>
+        ) : shape === 'cards' ? (
+          <div className="mt-12 grid gap-6 md:grid-cols-2">
+            {[0, 1].map((item) => (
+              <div key={item} className={cn('rounded-xl border p-6', panel)}>
+                <div className={cn('h-28 w-full rounded-lg', block)} />
+                <div className={cn('mt-6 h-5 w-2/3 rounded', block)} />
+                <div className={cn('mt-3 h-4 w-5/6 rounded', block)} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-12 grid items-start gap-8 lg:grid-cols-2">
+            <div className="space-y-4">
+              <div className={cn('h-4 w-full rounded', block)} />
+              <div className={cn('h-4 w-5/6 rounded', block)} />
+              <div className={cn('h-4 w-2/3 rounded', block)} />
+              <div className="mt-8 h-11 w-40 rounded-full bg-brand-blue/35" />
+            </div>
+            <div className={cn('h-52 rounded-xl border md:h-64', panel)} />
+          </div>
+        )}
       </div>
-      <span className="sr-only">Loading...</span>
     </div>
   );
 }

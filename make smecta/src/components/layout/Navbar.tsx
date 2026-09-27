@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router-dom';
 import { localizedPath, useLocale } from '../../hooks/useLocale';
 import { cn } from '../../lib/utils';
+import { preloadPublicRoute, type PreloadablePublicRoute } from '../../lib/public-route-loaders';
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger, useEscapeToClose } from '../ui/Dialog';
 import { Brand } from './Brand';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -16,7 +17,7 @@ const links = [
   ['nav.contact', '/contact'],
   ['nav.resources', '/resources'],
   ['nav.prices', '/consultation'],
-] as const;
+] as const satisfies ReadonlyArray<readonly [string, PreloadablePublicRoute]>;
 
 function DesktopLinks() {
   const { t } = useTranslation();
@@ -27,12 +28,14 @@ function DesktopLinks() {
         <NavLink
           key={path}
           to={localizedPath(path, locale)}
+          onMouseEnter={() => preloadPublicRoute(path)}
+          onFocus={() => preloadPublicRoute(path)}
           className={({ isActive }: { isActive: boolean }) => cn(
             'navbar-link relative py-3 text-sm font-bold after:absolute after:inset-x-0 after:bottom-1 after:h-0.5 after:origin-center after:scale-x-0 after:bg-brand-coral after:transition-transform hover:after:scale-x-100 focus-visible:after:scale-x-100',
             isActive && 'after:scale-x-100',
           )}
         >
-          {path === '/guides' ? ({ en: 'Guides', fr: 'Guides', ar: 'الأدلة' }[locale]) : t(key)}
+          {t(key)}
         </NavLink>
       ))}
     </nav>
@@ -63,13 +66,13 @@ function MobileMenu() {
         </button>
       </DialogTrigger>
       {/* Drawer slides from the logical end; the Radix overlay behind it dismisses on tap-outside. */}
-      <DialogContent className="navbar-drawer start-auto end-0 top-0 h-dvh max-h-none w-[min(88vw,360px)] max-w-none translate-x-0 translate-y-0 overflow-y-auto overscroll-contain rounded-none border-y-0 border-e-0 p-6 rtl:translate-x-0">
+      <DialogContent overlayClassName="navbar-overlay backdrop-blur-none" className="navbar-drawer start-auto end-0 top-0 h-dvh max-h-none w-[min(88vw,360px)] max-w-none translate-x-0 translate-y-0 overflow-y-auto overscroll-contain rounded-none border-y-0 border-e-0 p-6 rtl:translate-x-0">
         <DialogTitle className="sr-only">{t('nav.menuOpen')}</DialogTitle>
         <nav className="mt-14 flex flex-col" aria-label="Mobile">
           {links.map(([key, path]) => (
             <DialogClose asChild key={path}>
-              <NavLink to={localizedPath(path, locale)} className="navbar-link flex min-h-11 items-center border-b border-brand-blue/10 px-4 py-3 text-lg font-semibold">
-                {path === '/guides' ? ({ en: 'Guides', fr: 'Guides', ar: 'الأدلة' }[locale]) : t(key)}
+              <NavLink to={localizedPath(path, locale)} onMouseEnter={() => preloadPublicRoute(path)} onFocus={() => preloadPublicRoute(path)} className="navbar-link flex min-h-11 items-center border-b border-brand-blue/10 px-4 py-3 text-lg font-semibold">
+                {t(key)}
               </NavLink>
             </DialogClose>
           ))}

@@ -89,7 +89,7 @@ function NewsletterForm({ blue }: { blue: boolean }) {
         </div>
       ) : null}
       <div className="mt-2 min-h-4">
-        {status === 'success' ? <p className="text-xs text-emerald-200" role="status">{t('footer.success')}</p> : null}
+        {status === 'success' ? <p className="form-success-enter text-xs text-emerald-200" role="status">{t('footer.success')}</p> : null}
         {status === 'error' ? <p className="text-xs text-red-200" role="alert">{navigator.onLine ? t('footer.error') : t('common.offline')}</p> : null}
       </div>
     </form>

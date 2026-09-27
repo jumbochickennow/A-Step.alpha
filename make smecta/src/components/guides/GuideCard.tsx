@@ -20,7 +20,7 @@ export function GuideCard({ guide }: { guide: LocalizedGuide }) {
           <span className="block">{guide.fileType} {guide.pageCount}P</span>
           <span className="block"><bdi>{t('guides.updated', { date: formatMonthYear(guide.contentUpdatedAt, locale) })}</bdi></span>
         </div>
-        <GuideDownloadDialog guide={guide} triggerClassName="mt-0 min-h-10 shrink-0 rounded-md border border-white/35 bg-transparent px-5 py-2 text-sm text-white shadow-none hover:bg-white/10" />
+        <GuideDownloadDialog guide={guide} triggerClassName="mt-0 min-h-11 shrink-0 rounded-md border border-white/35 bg-transparent px-5 py-2 text-sm text-white shadow-none hover:bg-white/10" />
       </div>
     </article>
   );

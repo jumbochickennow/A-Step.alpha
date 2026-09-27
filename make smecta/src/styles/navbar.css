@@ -15,10 +15,14 @@
 .navbar-drawer[role='dialog'] > button { color:var(--blue); }
 .navbar-drawer .navbar-link[aria-current='page'] { background:#0e7be50d; box-shadow:inset 3px 0 var(--coral); }
 [dir='rtl'] .navbar-drawer .navbar-link[aria-current='page'] { box-shadow:inset -3px 0 var(--coral); }
-.navbar-drawer[data-state='open'] { animation:navbar-slide-in 220ms ease-out; }
-.navbar-drawer[data-state='closed'] { animation:navbar-slide-out 180ms ease-in; }
-@keyframes navbar-slide-in { from { opacity:0; transform:translateX(var(--drawer-entry)); } to { opacity:1; transform:translateX(0); } }
-@keyframes navbar-slide-out { from { opacity:1; transform:translateX(0); } to { opacity:0; transform:translateX(var(--drawer-entry)); } }
+.navbar-drawer[data-state='open'] { animation:navbar-slide-in 190ms cubic-bezier(.16,1,.3,1); }
+.navbar-drawer[data-state='closed'] { animation:navbar-slide-out 150ms ease-in; }
+.navbar-overlay[data-state='open'] { animation:navbar-overlay-in 190ms ease-out; }
+.navbar-overlay[data-state='closed'] { animation:navbar-overlay-out 150ms ease-in; }
+@keyframes navbar-slide-in { from { opacity:.85; transform:translateX(var(--drawer-entry)); } to { opacity:1; transform:translateX(0); } }
+@keyframes navbar-slide-out { from { opacity:1; transform:translateX(0); } to { opacity:.85; transform:translateX(var(--drawer-entry)); } }
+@keyframes navbar-overlay-in { from { opacity:0; } to { opacity:1; } }
+@keyframes navbar-overlay-out { from { opacity:1; } to { opacity:0; } }
 @media (hover:hover) {
   .navbar-link:hover,.navbar-menu-trigger:hover,.navbar-languages button:hover { transform:translateY(-2px); }
   .navbar-menu-trigger:hover,.navbar-drawer .navbar-link:hover { background:#0e7be50d; }
@@ -26,6 +30,6 @@
 }
 .navbar-link:active,.navbar-menu-trigger:active,.navbar-languages button:active { transform:scale(.97); }
 @media (prefers-reduced-motion:reduce) {
-  .navbar-drawer { animation:none!important; }
+  .navbar-drawer,.navbar-overlay { animation:none!important; }
   .navbar-link,.navbar-link::after,.navbar-menu-trigger,.navbar-languages button,.navbar-drawer > button { transition:none; transform:none!important; }
 }

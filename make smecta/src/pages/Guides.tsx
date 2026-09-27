@@ -64,12 +64,15 @@ export function Guides() {
             className="min-h-11 shrink-0 gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white transition-all hover:translate-y-0 hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.98] active:translate-y-0"
           />
         </div>
-        <p className="sr-only" aria-live="polite">{t('guides.results', { count: filtered.length })}</p>
+        <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 text-sm text-ink-muted">
+          <p aria-live="polite">{query.isSuccess ? t('guides.results', { count: filtered.length }) : query.isLoading ? t('common.loading') : ''}</p>
+          <p>{t('guides.nextStep')}</p>
+        </div>
         <div>
           {query.isLoading ? <CardGridSkeleton /> : query.isError ? <ErrorState message={t('guides.error')} retry={() => void query.refetch()} /> : filtered.length === 0 ? (
             <EmptyState message={t('guides.empty')} action={<Button variant="ghost" onClick={() => setCategory('')}>{t('common.clearFilter')}</Button>} />
           ) : (
-            <div key={category} className="grid grid-cols-1 gap-7 md:grid-cols-2 animate-fade-rise">{filtered.map((guide) => <GuideCard key={guide.id} guide={guide} />)}</div>
+            <div key={category} className="filter-results grid grid-cols-1 gap-7 md:grid-cols-2">{filtered.map((guide) => <GuideCard key={guide.id} guide={guide} />)}</div>
           )}
         </div>
       </section>

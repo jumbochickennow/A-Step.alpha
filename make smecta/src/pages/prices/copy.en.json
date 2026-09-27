@@ -22,9 +22,9 @@
   "countries": "Countries offered",
   "upfront": "100% upfront",
   "installments": "3 installments",
-  "inquire": "Inquire Now",
-  "request": "Request a slot",
-  "bookingNote": "Prices in Algerian dinar. A request is a booking request, not a purchase — nothing is charged on this page.",
+  "inquire": "Ask on WhatsApp",
+  "request": "Request a slot on WhatsApp",
+  "bookingNote": "Prices are in Algerian dinars. Choosing a plan opens WhatsApp with a prepared message. We reply with available slots; no payment is taken on this page.",
   "tiers": [
     {
       "name": "Standard",
@@ -183,7 +183,7 @@
   "notCovered": "NOT COVERED",
   "guidance": "GUIDANCE ONLY",
   "included": "INCLUDED",
-  "requestNote": "A booking request, not a purchase.",
+  "requestNote": "WhatsApp opens with this plan selected. We reply with available slots; no payment is taken here.",
   "promiseEyebrow": "READ THIS BEFORE YOU PAY ANYONE",
   "promiseTitle": "What we cannot promise",
   "promiseIntro": "No one can guarantee you a visa or an admission. Anyone who tells you otherwise is lying to you.",

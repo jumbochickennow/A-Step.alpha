@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { SiteLayout } from './components/layout/SiteLayout';
 import { PageLoadingFallback } from './components/common/States';
+import { publicRouteLoaders } from './lib/public-route-loaders';
 
 if (typeof document !== 'undefined') {
   document.body.classList.remove('overflow-locked');
@@ -11,12 +12,12 @@ if (typeof document !== 'undefined') {
 }
 
 const Home = lazy(() => import('./pages/Home').then((module) => ({ default: module.Home })));
-const Guides = lazy(() => import('./pages/Guides').then((module) => ({ default: module.Guides })));
-const Opportunities = lazy(() => import('./pages/Opportunities').then((module) => ({ default: module.Opportunities })));
-const About = lazy(() => import('./pages/About').then((module) => ({ default: module.About })));
-const Contact = lazy(() => import('./pages/Contact').then((module) => ({ default: module.Contact })));
-const Prices = lazy(() => import('./pages/Prices').then((module) => ({ default: module.Prices })));
-const Resources = lazy(() => import('./pages/Resources').then((module) => ({ default: module.Resources })));
+const Guides = lazy(() => publicRouteLoaders['/guides']().then((module) => ({ default: module.Guides })));
+const Opportunities = lazy(() => publicRouteLoaders['/opportunities']().then((module) => ({ default: module.Opportunities })));
+const About = lazy(() => publicRouteLoaders['/about']().then((module) => ({ default: module.About })));
+const Contact = lazy(() => publicRouteLoaders['/contact']().then((module) => ({ default: module.Contact })));
+const Prices = lazy(() => publicRouteLoaders['/consultation']().then((module) => ({ default: module.Prices })));
+const Resources = lazy(() => publicRouteLoaders['/resources']().then((module) => ({ default: module.Resources })));
 const Privacy = lazy(() => import('./pages/Privacy').then((module) => ({ default: module.Privacy })));
 const Terms = lazy(() => import('./pages/Terms').then((module) => ({ default: module.Terms })));
 const Unsubscribe = lazy(() => import('./pages/Unsubscribe').then((module) => ({ default: module.Unsubscribe })));
@@ -43,6 +44,6 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
   { path: '/fr', element: <SiteLayout />, children },
   { path: '/ar', element: <SiteLayout />, children },
   // Isolated administrative bundles load behind the branded page fallback.
-  { path: '/admin', element: <Suspense fallback={<PageLoadingFallback />}><AdminLogin /></Suspense> },
-  { path: '/admin/dashboard', element: <Suspense fallback={<PageLoadingFallback />}><AdminDashboardRoute /></Suspense> },
+  { path: '/admin', element: <Suspense fallback={<PageLoadingFallback shape="form" />}><AdminLogin /></Suspense> },
+  { path: '/admin/dashboard', element: <Suspense fallback={<PageLoadingFallback shape="cards" />}><AdminDashboardRoute /></Suspense> },
 ]);

@@ -150,6 +150,18 @@
 }
 
 @layer components {
+  @keyframes feedback-enter {
+    from { opacity: .82; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .filter-results,
+    .form-success-enter {
+      animation: feedback-enter 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  }
+
   /*
    * Progressive-enhancement scroll reveal — replaces the old useScrollReveal
    * hook (removed). Base state is deliberately empty: content is fully
