@@ -8,6 +8,7 @@ import { imageExtensionForRequest, validatedImageBody } from './security/image-u
 import { validatedPdfBytes } from './security/pdf-upload';
 import { seedAdminCatalog } from './catalog-seed';
 import { resourceExpiry } from '../src/lib/resource-expiry';
+import { galleryForOpportunities } from './opportunity-gallery';
 
 type CardTable = 'opportunities' | 'resources';
 const cardType = (table: CardTable) => table === 'resources' ? 'resource' : 'opportunity';
@@ -110,6 +111,16 @@ async function mutate(statement: D1PreparedStatement): Promise<void> {
   }
 }
 
+async function deleteWithCascade(statement: D1PreparedStatement): Promise<void> {
+  try {
+    const result = await statement.run();
+    if (result.meta.changes < 1) throw new HttpError(404, 'not_found');
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
+    throw new HttpError(503, 'service_unavailable');
+  }
+}
+
 async function deterministicUploadId(scope: string, idempotencyKey: string): Promise<string> {
   const digest = new Uint8Array(await crypto.subtle.digest(
     'SHA-256',
@@ -141,13 +152,14 @@ async function guideFromRow(row: GuideRow, env: Env, identity: AdminIdentity) {
   };
 }
 
-async function opportunityFromRow(row: OpportunityRow, env: Env, identity: AdminIdentity, table: CardTable = 'opportunities') {
+async function opportunityFromRow(row: OpportunityRow, env: Env, identity: AdminIdentity, table: CardTable = 'opportunities', galleryImages: { slot: number; imagePath: string }[] = []) {
   return {
     id: await createResourceRef(row.id, cardType(table), identity.id, env.RESOURCE_REF_SECRET),
     slug: row.slug,
     country: row.country,
     categories: parsedJson(row.categories, z.array(z.string())),
     imagePath: row.image_path,
+    ...(table === 'opportunities' ? { galleryImages } : {}),
     applyUrl: row.apply_url,
     opensAt: row.opens_at,
     deadline: row.deadline,
@@ -319,7 +331,10 @@ async function opportunities(request: Request, env: Env, identity: AdminIdentity
        featured, published, translations FROM ${table}
        ORDER BY deadline IS NULL ASC, deadline ASC LIMIT 100`,
     ).all<OpportunityRow>();
-    return json({ items: await Promise.all(results.map((row) => opportunityFromRow(row, env, identity, table))) });
+    const gallery = table === 'opportunities'
+      ? await galleryForOpportunities(env.DB, results.map((row) => row.id))
+      : new Map<string, { slot: number; imagePath: string }[]>();
+    return json({ items: await Promise.all(results.map((row) => opportunityFromRow(row, env, identity, table, gallery.get(row.id)))) });
   }
   if (id && !resourceRefSchema.safeParse(id).success) throw new HttpError(404, 'not_found');
   if (request.method === 'POST' && !id) {
@@ -368,9 +383,14 @@ async function opportunities(request: Request, env: Env, identity: AdminIdentity
     const current = await env.DB.prepare(`SELECT image_path FROM ${table} WHERE id = ?1 LIMIT 1`)
       .bind(databaseId).first<{ image_path: string | null }>();
     if (!current) throw new HttpError(404, 'not_found');
-    await mutate(env.DB.prepare(`DELETE FROM ${table} WHERE id = ?1`).bind(databaseId));
-    const objectKey = opportunityObjectKey(current.image_path);
-    if (objectKey) await env.OPPORTUNITY_IMAGES_BUCKET.delete(objectKey);
+    const gallery = table === 'opportunities'
+      ? await galleryForOpportunities(env.DB, [databaseId])
+      : new Map<string, { slot: number; imagePath: string }[]>();
+    await deleteWithCascade(env.DB.prepare(`DELETE FROM ${table} WHERE id = ?1`).bind(databaseId));
+    for (const imagePath of [current.image_path, ...(gallery.get(databaseId) ?? []).map((image) => image.imagePath)]) {
+      const objectKey = opportunityObjectKey(imagePath);
+      if (objectKey) await env.OPPORTUNITY_IMAGES_BUCKET.delete(objectKey);
+    }
     return json({ success: true });
   }
   throw new HttpError(405, 'method_not_allowed');
@@ -387,25 +407,29 @@ async function uploadOpportunityImage(
   identity: AdminIdentity,
   id: string,
   table: CardTable = 'opportunities',
+  slot?: number,
 ): Promise<Response> {
   requireMethod(request, ['PUT']);
   if (!resourceRefSchema.safeParse(id).success) throw new HttpError(404, 'not_found');
   const databaseId = await resolveResourceRef(id, cardType(table), identity.id, env.RESOURCE_REF_SECRET);
   const idempotencyKey = requireIdempotencyKey(request);
-  const current = await env.DB.prepare(
-    `SELECT image_path FROM ${table} WHERE id = ?1 LIMIT 1`,
-  ).bind(databaseId).first<{ image_path: string | null }>();
+  const current = slot
+    ? await env.DB.prepare(`SELECT (SELECT image_path FROM opportunity_gallery_images
+        WHERE opportunity_id = ?1 AND slot = ?2) AS image_path FROM opportunities WHERE id = ?1 LIMIT 1`)
+      .bind(databaseId, slot).first<{ image_path: string | null }>()
+    : await env.DB.prepare(`SELECT image_path FROM ${table} WHERE id = ?1 LIMIT 1`)
+      .bind(databaseId).first<{ image_path: string | null }>();
   if (!current) throw new HttpError(404, 'not_found');
 
   const extension = imageExtensionForRequest(request);
-  const objectId = await deterministicUploadId(`${cardType(table)}:${databaseId}`, idempotencyKey);
+  const objectId = await deterministicUploadId(`${cardType(table)}:${databaseId}${slot ? `:gallery:${slot}` : ''}`, idempotencyKey);
   const objectName = `${objectId}.${extension}`;
   const objectKey = `opportunity-images/${objectName}`;
   const imagePath = `/api/v1/opportunity-images/${objectName}`;
   const contentType = request.headers.get('Content-Type')!.toLowerCase();
   let createdObject = false;
   try {
-    const validated = await validatedImageBody(request);
+    const validated = await validatedImageBody(request, slot ? 5 * 1024 * 1024 : undefined);
     const [storageResult, validationResult] = await Promise.allSettled([
       env.OPPORTUNITY_IMAGES_BUCKET.put(objectKey, validated.body, {
         onlyIf: { etagDoesNotMatch: '*' },
@@ -432,9 +456,17 @@ async function uploadOpportunityImage(
   }
 
   try {
-    await mutate(env.DB.prepare(
-      `UPDATE ${table} SET image_path = ?1, updated_at = ?2 WHERE id = ?3 AND image_path IS ?4`,
-    ).bind(imagePath, new Date().toISOString(), databaseId, current.image_path));
+    if (slot) {
+      await mutate(env.DB.prepare(
+        `INSERT INTO opportunity_gallery_images (opportunity_id, slot, image_path) VALUES (?1, ?2, ?3)
+         ON CONFLICT(opportunity_id, slot) DO UPDATE SET image_path = excluded.image_path
+         WHERE opportunity_gallery_images.image_path IS ?4`,
+      ).bind(databaseId, slot, imagePath, current.image_path));
+    } else {
+      await mutate(env.DB.prepare(
+        `UPDATE ${table} SET image_path = ?1, updated_at = ?2 WHERE id = ?3 AND image_path IS ?4`,
+      ).bind(imagePath, new Date().toISOString(), databaseId, current.image_path));
+    }
   } catch (error) {
     if (createdObject) await env.OPPORTUNITY_IMAGES_BUCKET.delete(objectKey);
     if (error instanceof HttpError && error.status === 404) throw new HttpError(409, 'upload_conflict');
@@ -445,6 +477,22 @@ async function uploadOpportunityImage(
   const oldObjectKey = opportunityObjectKey(current.image_path);
   if (oldObjectKey && oldObjectKey !== objectKey) await env.OPPORTUNITY_IMAGES_BUCKET.delete(oldObjectKey);
   return json({ success: true, imagePath });
+}
+
+async function removeOpportunityGalleryImage(request: Request, env: Env, identity: AdminIdentity, id: string, slot: number): Promise<Response> {
+  requireMethod(request, ['DELETE']);
+  if (!resourceRefSchema.safeParse(id).success) throw new HttpError(404, 'not_found');
+  const databaseId = await resolveResourceRef(id, 'opportunity', identity.id, env.RESOURCE_REF_SECRET);
+  const current = await env.DB.prepare(`SELECT gallery.image_path FROM opportunities AS item
+    LEFT JOIN opportunity_gallery_images AS gallery ON gallery.opportunity_id = item.id AND gallery.slot = ?2
+    WHERE item.id = ?1 LIMIT 1`).bind(databaseId, slot).first<{ image_path: string | null }>();
+  if (!current) throw new HttpError(404, 'not_found');
+  if (!current.image_path) return json({ success: true });
+  await mutate(env.DB.prepare(`DELETE FROM opportunity_gallery_images
+    WHERE opportunity_id = ?1 AND slot = ?2 AND image_path = ?3`).bind(databaseId, slot, current.image_path));
+  const objectKey = opportunityObjectKey(current.image_path);
+  if (objectKey) await env.OPPORTUNITY_IMAGES_BUCKET.delete(objectKey);
+  return json({ success: true });
 }
 
 interface ReviewDueRow {
@@ -612,6 +660,13 @@ export async function adminApi(request: Request, env: Env, identity: AdminIdenti
   if (path[0] === 'opportunities' && path[2] === 'image' && path.length === 3) {
     requireRole(identity, CONTENT_ROLES);
     return uploadOpportunityImage(request, env, identity, path[1]);
+  }
+  if (path[0] === 'opportunities' && path[2] === 'gallery' && path.length === 4) {
+    requireRole(identity, CONTENT_ROLES);
+    if (!/^[1-6]$/.test(path[3])) throw new HttpError(404, 'not_found');
+    const slot = Number(path[3]);
+    if (request.method === 'PUT') return uploadOpportunityImage(request, env, identity, path[1], 'opportunities', slot);
+    return removeOpportunityGalleryImage(request, env, identity, path[1], slot);
   }
   if (path[0] === 'opportunities' && path.length <= 2) {
     if (request.method !== 'GET') requireRole(identity, CONTENT_ROLES);

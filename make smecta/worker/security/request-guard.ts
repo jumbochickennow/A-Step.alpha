@@ -12,7 +12,7 @@ export function isAdminGuidePdfUpload(request: Request): boolean {
 
 export function isAdminOpportunityImageUpload(request: Request): boolean {
   return request.method === 'PUT'
-    && /^\/api\/v1\/admin\/(?:opportunities|resources)\/[^/]+\/image$/.test(new URL(request.url).pathname);
+    && /^\/api\/v1\/admin\/(?:opportunities|resources)\/[^/]+\/image$|^\/api\/v1\/admin\/opportunities\/[^/]+\/gallery\/[1-6]$/.test(new URL(request.url).pathname);
 }
 
 export function enforceRequestEnvelope(request: Request): void {

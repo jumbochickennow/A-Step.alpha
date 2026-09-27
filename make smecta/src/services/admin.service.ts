@@ -71,6 +71,26 @@ export async function uploadAdminOpportunityImage(
   )).imagePath;
 }
 
+export async function uploadAdminOpportunityGalleryImage(
+  opportunityId: string,
+  slot: number,
+  image: File,
+  onProgress?: (percent: number) => void,
+): Promise<string> {
+  return (await apiUpload<{ success: true; imagePath: string }>(
+    `/api/v1/admin/opportunities/${encodeURIComponent(opportunityId)}/gallery/${slot}`,
+    image,
+    image.type,
+    onProgress,
+  )).imagePath;
+}
+
+export async function removeAdminOpportunityGalleryImage(opportunityId: string, slot: number): Promise<void> {
+  await apiJson(`/api/v1/admin/opportunities/${encodeURIComponent(opportunityId)}/gallery/${slot}`, {
+    method: 'DELETE', body: '{}',
+  });
+}
+
 export async function deleteAdminGuide(id: string): Promise<void> {
   await apiJson(`/api/v1/admin/guides/${encodeURIComponent(id)}`, { method: 'DELETE', body: '{}' });
 }

@@ -34,6 +34,7 @@ export interface Opportunity {
   country: string;
   categories: string[];
   imagePath: string | null;
+  galleryImages?: { slot: number; imagePath: string }[];
   applyUrl: string | null;
   opensAt: string | null;
   deadline: string | null;

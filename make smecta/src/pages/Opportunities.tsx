@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
 import { Seo } from '../components/common/Seo';
@@ -5,14 +6,25 @@ import { CardGridSkeleton, EmptyState, ErrorState } from '../components/common/S
 import { WhatsAppCTA } from '../components/common/WhatsAppCTA';
 import { FeaturedOpportunity } from '../components/opportunities/FeaturedOpportunity';
 import { OpportunityCard } from '../components/opportunities/OpportunityCard';
+import { OpportunityDetail } from '../components/opportunities/OpportunityDetail';
 import { useOpportunities } from '../hooks/useContent';
 import { useLocale } from '../hooks/useLocale';
 import { isPast } from '../lib/format';
+import type { LocalizedOpportunity } from '../types/content';
 
 export function Opportunities() {
   const { t } = useTranslation();
   const { locale } = useLocale();
   const query = useOpportunities(locale);
+  const [selected, setSelected] = useState<LocalizedOpportunity | null>(null);
+  const opener = useRef<HTMLButtonElement | null>(null);
+  const openDetails = (item: LocalizedOpportunity, trigger: HTMLButtonElement) => {
+    opener.current = trigger;
+    setSelected(item);
+  };
+  const closeDetails = () => {
+    setSelected(null);
+  };
   const active = query.data?.filter((item) => !isPast(item.deadline)) ?? [];
   const featured = active.find((item) => item.featured) ?? active[3] ?? active[0];
   const regular = featured ? active.filter((item) => item.id !== featured.id) : active;
@@ -35,17 +47,19 @@ export function Opportunities() {
         ) : (
           <div className="mx-auto min-w-0 max-w-5xl">
             <div className="grid gap-x-8 gap-y-16 md:grid-cols-2 lg:grid-cols-3">
-              {firstRow.map((item) => <OpportunityCard key={item.id} opportunity={item} />)}
+              {firstRow.map((item) => <OpportunityCard key={item.id} opportunity={item} onOpen={(trigger) => openDetails(item, trigger)} />)}
             </div>
-            <div className="mt-24"><FeaturedOpportunity opportunity={featured} /></div>
+            <div className="mt-24"><FeaturedOpportunity opportunity={featured} onOpen={(trigger) => openDetails(featured, trigger)} /></div>
             {remaining.length ? (
               <div className="mt-24 grid gap-x-8 gap-y-20 md:grid-cols-2 lg:grid-cols-3">
-                {remaining.map((item) => <OpportunityCard key={item.id} opportunity={item} />)}
+                {remaining.map((item) => <OpportunityCard key={item.id} opportunity={item} onOpen={(trigger) => openDetails(item, trigger)} />)}
               </div>
             ) : null}
           </div>
         )}
       </section>
+
+      <OpportunityDetail opportunity={selected} onClose={closeDetails} onReturnFocus={() => opener.current?.focus()} />
 
       <section className="relative z-20 w-full overflow-x-clip text-bg">
   {/* White banner band, inset within the dark page frame; the top-left notch is cut into

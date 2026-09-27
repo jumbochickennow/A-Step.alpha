@@ -37,13 +37,13 @@ export interface ValidatedImageBody {
 }
 
 /** Validates the signature before R2 sees bytes, then streams through a fixed-length size cap. */
-export async function validatedImageBody(request: Request): Promise<ValidatedImageBody> {
+export async function validatedImageBody(request: Request, maxBytes = MAX_UPLOAD_BYTES): Promise<ValidatedImageBody> {
   const type = mediaType(request);
   const declaredHeader = request.headers.get('Content-Length');
   if (declaredHeader === null) throw new HttpError(411, 'content_length_required');
   const declared = Number(declaredHeader);
   if (!Number.isSafeInteger(declared) || declared < 0) throw new HttpError(400, 'invalid_content_length');
-  if (declared > MAX_UPLOAD_BYTES) throw new HttpError(413, 'payload_too_large');
+  if (declared > maxBytes) throw new HttpError(413, 'payload_too_large');
   if (!request.body) throw new HttpError(400, 'empty_upload');
 
   const reader = request.body.getReader();
@@ -56,7 +56,7 @@ export async function validatedImageBody(request: Request): Promise<ValidatedIma
     const chunk = result.value;
     buffered.push(chunk);
     total += chunk.byteLength;
-    if (total > MAX_UPLOAD_BYTES) {
+    if (total > maxBytes) {
       await reader.cancel('payload_too_large').catch(() => undefined);
       throw new HttpError(413, 'payload_too_large');
     }
@@ -79,7 +79,7 @@ export async function validatedImageBody(request: Request): Promise<ValidatedIma
       }
       const chunk = result.value;
       total += chunk.byteLength;
-      if (total > MAX_UPLOAD_BYTES) {
+      if (total > maxBytes) {
         controller.error(new HttpError(413, 'payload_too_large'));
         await reader.cancel('payload_too_large').catch(() => undefined);
         return;

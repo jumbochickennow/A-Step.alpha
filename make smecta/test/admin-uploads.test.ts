@@ -3,8 +3,11 @@ import { applyD1Migrations } from 'cloudflare:test';
 import { PDFDocument, PDFName, PDFString } from 'pdf-lib';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { adminApi } from '../worker/admin-api';
+import { listPublishedOpportunities } from '../worker/public-api';
 import type { AdminIdentity } from '../worker/auth/auth-api';
 import { HttpError } from '../worker/http';
+import { enforceRequestEnvelope } from '../worker/security/request-guard';
+import { enforceUploadBoundary } from '../worker/security/upload-defense';
 
 const ORIGIN = 'https://www.astepimmigration.space';
 const RESOURCE_REF_SECRET = 'AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM'; // secret-scan: allow-test-fixture
@@ -352,6 +355,67 @@ describe('admin opportunity image uploads', () => {
     expect((await env.DB.prepare('SELECT image_path FROM opportunities WHERE user_id = ?1 ORDER BY updated_at DESC LIMIT 1')
       .bind(identity.id).first<{ image_path: string }>())?.image_path).toBe(firstPath);
     expect((await env.OPPORTUNITY_IMAGES_BUCKET.list({ prefix: 'opportunity-images/' })).objects).toHaveLength(1);
+    await adminApi(request(`/api/v1/admin/opportunities/${encodeURIComponent(ref)}`, 'DELETE', '{}', 'application/json'), env, identity);
+  });
+
+  it('manages six ordered gallery images across admin, public, replacement, and deletion', async () => {
+    const slug = `opportunity-gallery-${crypto.randomUUID()}`;
+    const ref = await createOpportunity(slug);
+    const galleryPath = (slot: number) => `/api/v1/admin/opportunities/${encodeURIComponent(ref)}/gallery/${slot}`;
+    const uploaded: string[] = [];
+    for (let slot = 1; slot <= 6; slot++) {
+      const uploadRequest = request(galleryPath(slot), 'PUT', png, 'image/png');
+      expect(() => enforceRequestEnvelope(uploadRequest)).not.toThrow();
+      expect(() => enforceUploadBoundary(uploadRequest)).not.toThrow();
+      const response = await adminApi(uploadRequest, env, identity);
+      expect(response.status).toBe(200);
+      uploaded.push((await response.json<{ imagePath: string }>()).imagePath);
+    }
+    const admin = await adminApi(new Request(`${ORIGIN}/api/v1/admin/opportunities`), env, identity);
+    expect(admin.status).toBe(200);
+    const adminItem = (await admin.json<{ items: { slug: string; galleryImages: { slot: number; imagePath: string }[] }[] }>())
+      .items.find((item) => item.slug === slug);
+    expect(adminItem?.galleryImages).toEqual(uploaded.map((imagePath, index) => ({ slot: index + 1, imagePath })));
+
+    await adminApi(request(`/api/v1/admin/opportunities/${encodeURIComponent(ref)}`, 'PUT',
+      JSON.stringify({ ...opportunityPayload(slug), id: ref, published: true }), 'application/json'), env, identity);
+    const publicResponse = await listPublishedOpportunities(new Request(`${ORIGIN}/api/v1/opportunities`), env);
+    const publicItem = (await publicResponse.json<{ items: { slug: string; galleryImages: { slot: number; imagePath: string }[] }[] }>())
+      .items.find((item) => item.slug === slug);
+    expect(publicItem?.galleryImages).toEqual(adminItem?.galleryImages);
+
+    const replacement = await adminApi(request(galleryPath(3), 'PUT', png, 'image/png'), env, identity);
+    const replacementPath = (await replacement.json<{ imagePath: string }>()).imagePath;
+    expect(replacementPath).not.toBe(uploaded[2]);
+    expect(await env.OPPORTUNITY_IMAGES_BUCKET.head(`opportunity-images/${uploaded[2].split('/').at(-1)}`)).toBeNull();
+    await expect(adminApi(request(galleryPath(7), 'PUT', png, 'image/png'), env, identity))
+      .rejects.toMatchObject({ status: 404 } satisfies Partial<HttpError>);
+    await expect(adminApi(request(galleryPath(1), 'PUT', png, 'image/png'), env, { ...identity, role: 'analyst' }))
+      .rejects.toMatchObject({ status: 403 } satisfies Partial<HttpError>);
+    const oversized = new Uint8Array(5 * 1024 * 1024 + 1);
+    oversized.set(png);
+    await expect(adminApi(request(galleryPath(1), 'PUT', oversized, 'image/png'), env, identity))
+      .rejects.toMatchObject({ status: 413 } satisfies Partial<HttpError>);
+
+    await adminApi(request(galleryPath(2), 'DELETE', '{}', 'application/json'), env, identity);
+    expect(await env.OPPORTUNITY_IMAGES_BUCKET.head(`opportunity-images/${uploaded[1].split('/').at(-1)}`)).toBeNull();
+    const refreshed = await listPublishedOpportunities(new Request(`${ORIGIN}/api/v1/opportunities`), env);
+    const refreshedItem = (await refreshed.json<{ items: { slug: string; galleryImages: { slot: number; imagePath: string }[] }[] }>())
+      .items.find((item) => item.slug === slug);
+    expect(refreshedItem?.galleryImages.map((image) => image.slot)).toEqual([1, 3, 4, 5, 6]);
+    expect(refreshedItem?.galleryImages.find((image) => image.slot === 3)?.imagePath).toBe(replacementPath);
+    await adminApi(request(`/api/v1/admin/opportunities/${encodeURIComponent(ref)}`, 'DELETE', '{}', 'application/json'), env, identity);
+    expect((await env.OPPORTUNITY_IMAGES_BUCKET.list({ prefix: 'opportunity-images/' })).objects).toHaveLength(0);
+  });
+
+  it('rolls back a gallery R2 upload when its D1 slot update fails', async () => {
+    const ref = await createOpportunity(`opportunity-gallery-rollback-${crypto.randomUUID()}`);
+    await env.DB.prepare(`CREATE TRIGGER fail_gallery_upload BEFORE INSERT ON opportunity_gallery_images
+      BEGIN SELECT RAISE(FAIL, 'forced gallery metadata failure'); END`).run();
+    const path = `/api/v1/admin/opportunities/${encodeURIComponent(ref)}/gallery/1`;
+    await expect(adminApi(request(path, 'PUT', png, 'image/png'), env, identity))
+      .rejects.toMatchObject({ code: 'upload_metadata_failed' } satisfies Partial<HttpError>);
+    expect((await env.OPPORTUNITY_IMAGES_BUCKET.list({ prefix: 'opportunity-images/' })).objects).toHaveLength(0);
     await adminApi(request(`/api/v1/admin/opportunities/${encodeURIComponent(ref)}`, 'DELETE', '{}', 'application/json'), env, identity);
   });
 });

@@ -10,6 +10,7 @@ import { ApiError } from '../../services/api-client';
 import type { Locale, Opportunity } from '../../types/content';
 import { Button } from '../common/Button';
 import { TranslationFields } from './TranslationFields';
+import { OpportunityGalleryEditor } from './OpportunityGalleryEditor';
 import { resourceExpiry } from '../../lib/resource-expiry';
 
 const emptyTranslations = { en: { title: '', description: '' }, fr: { title: '', description: '' }, ar: { title: '', description: '' } };
@@ -29,11 +30,13 @@ export function OpportunityEditor({ opportunity, onCancel, onSaved, resourceMode
   const [categories, setCategories] = useState(opportunity?.categories.join(', ') ?? (resourceMode ? 'Resources' : 'Scholarships'));
   const [value, setValue] = useState<EditorValue>({
     id: opportunity?.id, slug: opportunity?.slug ?? '', country: opportunity?.country ?? (resourceMode ? 'Resource' : 'France'), categories: opportunity?.categories ?? [resourceMode ? 'Resources' : 'Scholarships'], imagePath: opportunity?.imagePath ?? null,
+    galleryImages: opportunity?.galleryImages ?? [],
     applyUrl: opportunity?.applyUrl ?? '', opensAt: opportunity?.opensAt ?? '', deadline: opportunity?.deadline ?? '', featured: opportunity?.featured ?? false, published: opportunity?.published ?? false,
     translations: opportunity?.translations ?? emptyTranslations,
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [galleryBusy, setGalleryBusy] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [image, setImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -91,8 +94,17 @@ export function OpportunityEditor({ opportunity, onCancel, onSaved, resourceMode
     setError(null);
   };
 
+  const ensureDraft = async (): Promise<string> => {
+    const next = normalizedValue();
+    const validationError = validateDetails(next);
+    if (validationError) { setError(validationError); throw new Error(validationError); }
+    const resourceId = await createAdminOpportunityDraft(next, collection);
+    setValue((current) => ({ ...current, id: resourceId }));
+    return resourceId;
+  };
+
   const uploadImage = async () => {
-    if (!image || uploading || saving) return;
+    if (!image || uploading || galleryBusy || saving) return;
     const next = normalizedValue();
     const validationError = validateDetails(next);
     if (validationError) { setError(validationError); return; }
@@ -102,8 +114,7 @@ export function OpportunityEditor({ opportunity, onCancel, onSaved, resourceMode
     setUploadProgress(0);
     setError(null);
     try {
-      const resourceId = await createAdminOpportunityDraft(next, collection);
-      setValue((current) => ({ ...current, id: resourceId }));
+      const resourceId = await ensureDraft();
       const imagePath = await uploadAdminOpportunityImage(resourceId, selectedImage, setUploadProgress, collection);
       setValue((current) => ({ ...current, id: resourceId, imagePath }));
       setUploadedName(selectedImage.name);
@@ -120,7 +131,7 @@ export function OpportunityEditor({ opportunity, onCancel, onSaved, resourceMode
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (uploading || image) { setError(t('admin.uploadImageFirst')); return; }
+    if (uploading || galleryBusy || image) { setError(t('admin.uploadImageFirst')); return; }
     const next = normalizedValue();
     const validationError = validateDetails(next);
     if (validationError) { setError(validationError); return; }
@@ -157,10 +168,10 @@ export function OpportunityEditor({ opportunity, onCancel, onSaved, resourceMode
               type="file"
               accept="image/avif,image/jpeg,image/png,image/webp,.avif,.jpg,.jpeg,.png,.webp"
               className="block min-w-0 flex-1 text-sm text-ink-muted file:me-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:font-semibold file:text-white"
-              disabled={saving || uploading}
+              disabled={saving || uploading || galleryBusy}
               onChange={(event) => selectImage(event.target.files?.[0])}
             />
-            <Button type="button" className="shrink-0" disabled={!image || saving || uploading} onClick={() => void uploadImage()}>
+            <Button type="button" className="shrink-0" disabled={!image || saving || uploading || galleryBusy} onClick={() => void uploadImage()}>
               {uploading ? t('admin.uploadingImage') : value.imagePath ? t('admin.replaceImage') : t('admin.uploadImage')}
             </Button>
           </div>
@@ -182,15 +193,30 @@ export function OpportunityEditor({ opportunity, onCancel, onSaved, resourceMode
           ) : !image ? <span className="text-ink-muted">{t('admin.imageNotUploaded')}</span> : null}
         </div>
       </div>
+      {!resourceMode ? <OpportunityGalleryEditor
+        images={value.galleryImages ?? []}
+        disabled={saving || uploading || galleryBusy || Boolean(image)}
+        ensureDraft={ensureDraft}
+        onChange={(slot, imagePath) => setValue((current) => ({
+          ...current,
+          galleryImages: [
+            ...(current.galleryImages ?? []).filter((item) => item.slot !== slot),
+            ...(imagePath ? [{ slot, imagePath }] : []),
+          ].sort((a, b) => a.slot - b.slot),
+        }))}
+        onBusyChange={setGalleryBusy}
+      /> : null}
       <div className="mt-5 flex flex-wrap gap-6">
         <label className="flex items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={value.published} onChange={(event) => setValue({ ...value, published: event.target.checked })} className="size-4 accent-[var(--blue)]" />{t('admin.published')}</label>
         <label className="flex items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={value.featured} onChange={(event) => setValue({ ...value, featured: event.target.checked })} className="size-4 accent-[var(--blue)]" />{t('admin.featured')}</label>
       </div>
-      <div className="mt-6"><TranslationFields value={value.translations} active={active} onActiveChange={setActive} onChange={(translations) => setValue({ ...value, translations })} /></div>
+      <div className="mt-6"><TranslationFields value={value.translations} active={active} onActiveChange={setActive} onChange={(translations) => setValue({ ...value, translations })} descriptionRows={resourceMode ? 4 : 8} />
+        {!resourceMode ? <p className="mt-2 text-xs leading-5 text-ink-muted">{t('admin.opportunityDescriptionHelp')}</p> : null}
+      </div>
       {error ? <p className="mt-4 text-sm text-[var(--danger)]" role="alert">{error}</p> : null}
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Button type="submit" disabled={saving || uploading || Boolean(image)}>{saving ? t('admin.saving') : t('admin.save')}</Button>
-        <Button type="button" variant="ghost" className="text-ink hover:bg-surface-2 hover:text-ink" disabled={saving || uploading} onClick={onCancel}>{t('admin.cancel')}</Button>
+        <Button type="submit" disabled={saving || uploading || galleryBusy || Boolean(image)}>{saving ? t('admin.saving') : t('admin.save')}</Button>
+        <Button type="button" variant="ghost" className="text-ink hover:bg-surface-2 hover:text-ink" disabled={saving || uploading || galleryBusy} onClick={onCancel}>{t('admin.cancel')}</Button>
       </div>
     </form>
   );

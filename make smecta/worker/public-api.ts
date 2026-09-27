@@ -5,6 +5,7 @@ import { createBlindIndex } from './security/blind-index';
 import { encryptPii } from './security/encryption';
 import { verifyTurnstile } from './security/turnstile';
 import { seedAdminCatalog } from './catalog-seed';
+import { galleryForOpportunities } from './opportunity-gallery';
 import {
   contactInputSchema,
   leadInputSchema,
@@ -95,12 +96,16 @@ export async function listPublishedOpportunities(request: Request, env: Env, tab
      WHERE published = 1 ${table === 'resources' ? "AND deadline >= date('now', '+1 hours')" : ''}
      ORDER BY ${table === 'resources' ? 'featured DESC,' : ''} deadline IS NULL ASC, deadline ASC LIMIT 100`,
   ).all<PublicOpportunityRow>();
+  const gallery = table === 'opportunities'
+    ? await galleryForOpportunities(env.DB, results.map((row) => row.id))
+    : new Map<string, { slot: number; imagePath: string }[]>();
   return json({ now: Date.now(), items: results.map((row) => ({
     id: row.id,
     slug: row.slug,
     country: row.country,
     categories: catalogJson(row.categories),
     imagePath: row.image_path,
+    ...(table === 'opportunities' ? { galleryImages: gallery.get(row.id) ?? [] } : {}),
     applyUrl: row.apply_url,
     opensAt: row.opens_at,
     deadline: row.deadline,

@@ -9,9 +9,10 @@ interface TranslationFieldsProps<T extends LocalizedCopy = LocalizedCopy> {
   active: Locale;
   onActiveChange: (locale: Locale) => void;
   onChange: (value: Record<Locale, T>) => void;
+  descriptionRows?: number;
 }
 
-export function TranslationFields<T extends LocalizedCopy = LocalizedCopy>({ value, active, onActiveChange, onChange }: TranslationFieldsProps<T>) {
+export function TranslationFields<T extends LocalizedCopy = LocalizedCopy>({ value, active, onActiveChange, onChange, descriptionRows = 4 }: TranslationFieldsProps<T>) {
   const { t } = useTranslation();
   const update = (field: keyof T, text: string) => onChange({
     ...value,
@@ -27,7 +28,7 @@ export function TranslationFields<T extends LocalizedCopy = LocalizedCopy>({ val
         <label className="mb-2 block text-sm font-semibold" htmlFor={`translation-title-${active}`}>{t('admin.titleLabel')}</label>
         <input id={`translation-title-${active}`} className="field" value={value[active].title} onChange={(event) => update('title', event.target.value)} required />
         <label className="mb-2 mt-4 block text-sm font-semibold" htmlFor={`translation-description-${active}`}>{t('admin.descriptionLabel')}</label>
-        <textarea id={`translation-description-${active}`} className="field min-h-28" value={value[active].description} onChange={(event) => update('description', event.target.value)} required />
+        <textarea id={`translation-description-${active}`} className="field min-h-28" rows={descriptionRows} maxLength={4000} value={value[active].description} onChange={(event) => update('description', event.target.value)} required />
       </div>
     </fieldset>
   );
