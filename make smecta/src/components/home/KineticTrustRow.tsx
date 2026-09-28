@@ -57,6 +57,14 @@ export function KineticTrustRow({ items }: KineticTrustRowProps) {
       observer.observe(row);
     }
 
+    const revealAfterResume = () => {
+      if (document.visibilityState !== 'visible') return;
+      const bounds = row.getBoundingClientRect();
+      if (bounds.bottom > 0 && bounds.top < window.innerHeight) reveal();
+    };
+    document.addEventListener('visibilitychange', revealAfterResume);
+    window.addEventListener('pageshow', revealAfterResume);
+
     const resetFeature = (feature: HTMLElement) => {
       feature.style.removeProperty('--pointer-x');
       feature.style.removeProperty('--pointer-y');
@@ -118,6 +126,8 @@ export function KineticTrustRow({ items }: KineticTrustRowProps) {
 
     return () => {
       observer?.disconnect();
+      document.removeEventListener('visibilitychange', revealAfterResume);
+      window.removeEventListener('pageshow', revealAfterResume);
       finePointer.removeEventListener('change', syncPointerListeners);
       reducedMotion.removeEventListener('change', handleMotionPreference);
       features.forEach((feature) => {

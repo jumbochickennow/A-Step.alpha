@@ -86,8 +86,32 @@ function MobileMenu() {
 }
 
 export function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    let resumeFrame = 0;
+    const sync = () => setScrolled(window.scrollY > 12);
+    const resume = () => {
+      if (document.visibilityState === 'visible') {
+        sync();
+        if (resumeFrame) window.cancelAnimationFrame(resumeFrame);
+        resumeFrame = window.requestAnimationFrame(() => { resumeFrame = 0; sync(); });
+      }
+    };
+    sync();
+    window.addEventListener('scroll', sync, { passive: true });
+    window.addEventListener('pageshow', resume);
+    document.addEventListener('visibilitychange', resume);
+    return () => {
+      if (resumeFrame) window.cancelAnimationFrame(resumeFrame);
+      window.removeEventListener('scroll', sync);
+      window.removeEventListener('pageshow', resume);
+      document.removeEventListener('visibilitychange', resume);
+    };
+  }, []);
+
   return (
-    <header className="astep-navbar fixed inset-x-0 top-0 z-40">
+    <header className="astep-navbar fixed inset-x-0 top-0 z-40" data-scrolled={scrolled}>
       <div className="navbar-inner grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 xs:gap-4 lg:grid-cols-[1fr_auto_1fr]">
         <Brand />
         <DesktopLinks />

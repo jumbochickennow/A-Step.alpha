@@ -26,3 +26,4 @@ Keep the current A-Step identity: dark navy public pages, blue and coral accents
 - 2026-09-27: Added brief action feedback for the mobile drawer, consultation tabs, guide filtering, and form success; reduced-motion users see the final state immediately.
 - 2026-09-27: Clarified the guide, consultation, and contact journeys in English, French, and Arabic; guide downloads prefer the available language matching the page.
 - 2026-09-27: Added compact opportunity details and a six-image admin gallery while preserving the existing card layout and palette.
+- 2026-09-28: Give the fixed navbar an opaque light surface after scrolling; resync it after tab restoration. Keep entrance content readable while observer and scroll animations wait for a resumed tab.
