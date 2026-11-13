@@ -20,6 +20,7 @@ export const leadInputSchema = z.object({
   guideId: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/),
   guideLanguage: z.enum(['en', 'fr', 'ar']),
   targetCountry: z.string().trim().min(1).max(80).optional(),
+  marketingOptIn: z.boolean().optional(),
   locale,
   turnstileToken,
 }).strict();

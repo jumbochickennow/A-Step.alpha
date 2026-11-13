@@ -16,12 +16,12 @@ import { MAX_UPLOAD_BYTES } from './upload-limits';
 export const MAX_PDF_BYTES = MAX_UPLOAD_BYTES;
 const PDF_MAGIC = [0x25, 0x50, 0x44, 0x46, 0x2d];
 const DANGEROUS_KEYS = new Set([
-  'EmbeddedFiles', 'EF', 'JavaScript', 'JS', 'Launch', 'RichMedia', 'RichMediaContent',
+  'AA', 'EmbeddedFiles', 'EF', 'JavaScript', 'JS', 'Launch', 'RichMedia', 'RichMediaContent',
   'Screen', 'Sound', 'Movie', 'Rendition', 'SubmitForm', 'ResetForm', 'ImportData', 'XFA',
 ]);
 const DANGEROUS_ACTION_TYPES = new Set([
   'ImportData', 'JavaScript', 'Launch', 'Movie', 'Rendition', 'Sound', 'SubmitForm',
-  'ResetForm',
+  'ResetForm', 'GoToR', 'GoToE',
 ]);
 const DANGEROUS_OBJECT_TYPES = new Set(['EmbeddedFile', 'RichMedia', 'RichMediaContent']);
 const DANGEROUS_ANNOTATION_TYPES = new Set(['RichMedia', 'Screen', 'Sound', 'Movie']);

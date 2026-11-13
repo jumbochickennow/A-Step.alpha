@@ -33,6 +33,7 @@ export async function downloadGrant(request: Request, env: Env): Promise<Respons
        ga.r2_key_en, ga.r2_key_fr, ga.r2_key_ar
      FROM download_grants dg
      JOIN guide_assets ga ON ga.id = dg.guide_id
+     JOIN guides g ON g.id = ga.id AND g.published = 1
      WHERE dg.token = ?1 AND dg.expires_at > ?2 AND dg.consumed = 0
      LIMIT 1`,
   ).bind(tokenHash, now).first<GrantRow>();
@@ -59,7 +60,7 @@ export async function downloadGrant(request: Request, env: Env): Promise<Respons
   headers.set('Content-Disposition', `attachment; filename="${grant.guide_slug}-${grant.guide_language}.pdf"`);
   headers.set('Content-Length', String(object.size));
   headers.set('ETag', object.httpEtag);
-  headers.set('Cache-Control', 'private, no-transform, max-age=3600');
+  headers.set('Cache-Control', 'private, no-store, no-transform');
   headers.set('Referrer-Policy', 'no-referrer');
   return new Response(object.body, { status: 200, headers });
 }

@@ -11,6 +11,10 @@
 		{
 			"pattern": "www.astepimmigration.space/*",
 			"zone_name": "astepimmigration.space"
+		},
+		{
+			"pattern": "astepimmigration.space/*",
+			"zone_name": "astepimmigration.space"
 		}
 	],
 	"assets": {

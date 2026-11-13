@@ -1,0 +1,275 @@
+{
+  "metaTitle": "Tarifs et offres | A-Step Immigration Space",
+  "metaDescription": "Comparez les offres de consultation et d’accompagnement A-Step. Des tarifs clairs en dinars algériens pour préparer votre projet à l’étranger.",
+  "heroTitle": "Comment réserver une consultation avec A-Step",
+  "heroSubtitle": "Depuis le confort de votre domicile",
+  "booking": [
+    {
+      "title": "Choisissez une offre",
+      "body": "Parcourez nos offres et choisissez celle qui vous convient. Vous hésitez ? Posez-nous vos questions sur WhatsApp."
+    },
+    {
+      "title": "Contactez-nous sur WhatsApp",
+      "body": "Contactez-nous pour réserver une consultation, poser vos questions ou vous renseigner sur l’offre qui vous intéresse."
+    },
+    {
+      "title": "Payez et signez votre contrat",
+      "body": "Nous acceptons Baridimob, CCP et le virement bancaire. Après le paiement, vous recevez un contrat à signer."
+    }
+  ],
+  "packagesTitle": "Nos tarifs et formules",
+  "offeredCountries": ["Italie", "Chine", "Pologne", "France"],
+  "countries": "Pays proposés",
+  "upfront": "100 % à l’avance",
+  "installments": "3 versements",
+  "inquire": "Se renseigner",
+  "request": "Demander un créneau",
+  "bookingNote": "Tarifs en dinars algériens. Il s’agit d’une demande de réservation, pas d’un achat — aucun paiement sur cette page.",
+  "tiers": [
+    {
+      "name": "Standard",
+      "audience": "Pour qui : les candidats indécis ou hésitants, et ceux ayant un parcours académique non linéaire.",
+      "features": [
+        "1 consultation stratégique de 60 min",
+        "Liste de contrôle personnalisée",
+        "Guide rapide personnalisé",
+        "1 CV académique standardisé compatible ATS",
+        "Analyse complète de votre profil",
+        "Passage à Professional : réduction disponible"
+      ]
+    },
+    {
+      "name": "Professional",
+      "audience": "Pour qui : les candidats autonomes ayant besoin d’une préparation professionnelle de leur dossier.",
+      "features": [
+        "2 séances de stratégie et de révision des documents",
+        "5 CV personnalisés et lettres de motivation pour 5 universités choisies",
+        "Assistance étape par étape sur les portails officiels",
+        "Feuille de route personnalisée pour le visa et les justificatifs financiers"
+      ]
+    },
+    {
+      "name": "Premium",
+      "audience": "Pour qui : les candidats et parents souhaitant déléguer l’accompagnement de bout en bout.",
+      "features": [
+        "4 points de suivi aux étapes clés",
+        "2 simulations d’entretien",
+        "Rédaction complète, suivi des traductions et mise en forme",
+        "Dépôt entièrement géré (Études en France / portails universitaires)",
+        "Préparation du dossier de visa, rendez-vous TLScontact/VFS, logement CROUS et ouverture de compte",
+        "Aide à la réservation du vol, guide de préouverture d’un compte français et demande CAF"
+      ]
+    }
+  ],
+  "processTitle": "Comment ça marche",
+  "processSubtitle": "De votre premier message au dossier prêt à déposer. Six étapes, dans cet ordre.",
+  "steps": [
+    {
+      "title": "Demandez un créneau",
+      "body": "Envoyez un message en précisant l’offre qui vous intéresse. Aucun document à cette étape."
+    },
+    {
+      "title": "Premier échange",
+      "body": "Nous demandons votre destination, la rentrée visée et les documents que vous possédez déjà."
+    },
+    {
+      "title": "L’appel",
+      "body": "Un appel vidéo planifié. Votre dossier est à l’écran et nous le parcourons ensemble."
+    },
+    {
+      "title": "Votre plan écrit",
+      "body": "Vous recevez un plan écrit : quoi préparer, dans quel ordre et pour quelle date."
+    },
+    {
+      "title": "Le travail",
+      "body": "CV, lettres de motivation, traductions et démarches sur les portails, selon votre formule."
+    },
+    {
+      "title": "Vérification finale",
+      "body": "Rien n’est envoyé sans une dernière lecture au regard des exigences du programme."
+    }
+  ],
+  "coachingEyebrow": "EN TÊTE-À-TÊTE",
+  "coachingTitle": "L’espace de coaching individuel",
+  "coachingBody": "Une séance privée est un appel vidéo planifié avec un conseiller identifié. Votre dossier est à l’écran, l’ordre du jour est fixé avant l’appel et vos questions trouvent réponse en darja, français ou anglais.",
+  "coachingEmphasis": "Une séance de travail, pas un appel commercial.",
+  "arabic": "Arabe",
+  "english": "Anglais",
+  "coachingNote": "Préparez vos questions. Les documents sont échangés par le canal convenu pendant l’appel — jamais sur WhatsApp.",
+  "session": "Séance en cours",
+  "sessionTier": "STANDARD · 60 MIN",
+  "agenda": "ORDRE DU JOUR",
+  "documents": "VOS DOCUMENTS",
+  "agendaItems": [
+    "Parcourir votre dossier ensemble",
+    "Sélection : quels programmes et pourquoi",
+    "Lacunes à combler et échéances",
+    "Vos trois prochaines actions"
+  ],
+  "documentItems": [
+    "Relevés — Bac + 2 années",
+    "Brouillon de CV (v1)",
+    "Certificat de langue — en attente",
+    "Sélection de programmes"
+  ],
+  "sessionNote": "Chaque décision se retrouve dans votre plan écrit.",
+  "guidesTitle": "Des guides personnalisés selon votre profil",
+  "guidesSubtitle": "Deux travaux réels, qui répondent à des questions différentes.",
+  "freeGuide": "Guide gratuit",
+  "freeGuideLabel": "TÉLÉCHARGEABLE · SANS RÉSERVATION",
+  "freeFeatures": [
+    "Listes de contrôle par destination",
+    "Listes d’universités et de programmes",
+    "Procédures, portails et échéances",
+    "Formats de documents et règles de traduction",
+    "Mis à jour selon les procédures"
+  ],
+  "personalGuide": "Guide personnalisé",
+  "personalGuideLabel": "INCLUS DÈS LA FORMULE STANDARD",
+  "personalFeatures": [
+    "Vos notes, comparées aux critères d’admission",
+    "Vos lacunes et les moyens de les combler",
+    "Votre calendrier, établi depuis la rentrée visée",
+    "Votre rentrée cible et ses dates précises",
+    "Une sélection argumentée de programmes"
+  ],
+  "exploreGuides": "Explorer les guides gratuits",
+  "guidesNote": "Le guide gratuit explique la procédure. Le guide personnalisé vous situe dans cette procédure.",
+  "cvTitle": "Analyse du CV et du profil",
+  "cvSubtitle": "Le même profil, structuré selon les attentes d’un service d’admission international.",
+  "fictional": "PROFIL FICTIF POUR ILLUSTRATION — JAMAIS UN VRAI DOCUMENT CLIENT",
+  "before": "AVANT",
+  "after": "APRÈS",
+  "cvNotes": [
+    "Photo, date de naissance et état civil retirés. La plupart des services d’admission européens n’en veulent pas.",
+    "L’objectif devient un profil : programme, rentrée et projet réellement visé.",
+    "Les notes algériennes sont accompagnées de leur échelle et d’une équivalence pour les situer.",
+    "La rubrique « Divers » est répartie entre langues certifiées et compétences requises par le programme.",
+    "L’expérience présente des résultats, avec des dates et des volumes plutôt que des tâches."
+  ],
+  "supportTitle": "Accompagnement universitaire et visa",
+  "supportSubtitle": "Ce que les formules supérieures ajoutent. Choisissez une formule pour voir sa couverture.",
+  "tierLabel": "Comparer les formules",
+  "coverageLabels": [
+    "Lettres de motivation",
+    "Dépôt sur les portails",
+    "Justificatifs financiers et visa",
+    "Simulation d’entretien",
+    "Orientation après l’arrivée"
+  ],
+  "coverage": [
+    [
+      "La séance Standard explique comment rédiger votre lettre. Vous en assurez la rédaction.",
+      "Vous déposez vous-même, à l’aide de la liste de contrôle de votre séance.",
+      "Expliqué dans votre guide rapide personnalisé ; le dossier n’est pas préparé pour vous.",
+      "Disponible avec Premium.",
+      "Disponible avec Premium."
+    ],
+    [
+      "Lettres adaptées aux cinq universités que vous avez choisies.",
+      "Assistance étape par étape sur les portails officiels.",
+      "Une feuille de route pour le visa et les justificatifs financiers.",
+      "Disponible avec Premium.",
+      "Disponible avec Premium."
+    ],
+    [
+      "Rédaction complète, suivi des traductions et mise en forme.",
+      "Dépôt géré sur Études en France ou les portails universitaires.",
+      "Préparation du visa, rendez-vous, logement et ouverture de compte.",
+      "Deux simulations d’entretien incluses.",
+      "Aide pour le vol, guide de préouverture d’un compte français et demande CAF."
+    ]
+  ],
+  "notCovered": "NON INCLUS",
+  "guidance": "CONSEILS UNIQUEMENT",
+  "included": "INCLUS",
+  "requestNote": "Une demande de réservation, pas un achat.",
+  "promiseEyebrow": "À LIRE AVANT DE PAYER QUI QUE CE SOIT",
+  "promiseTitle": "Ce que nous ne pouvons pas promettre",
+  "promiseIntro": "Personne ne peut vous garantir un visa ou une admission. Quiconque prétend le contraire vous ment.",
+  "promises": [
+    {
+      "title": "La décision ne nous appartient jamais",
+      "body": "Les admissions relèvent des universités. Les visas relèvent des consulats et des autorités publiques. Chacun décide selon ses propres critères, sans obligation de justification."
+    },
+    {
+      "title": "Nous sommes indépendants",
+      "body": "A-Step est un prestataire privé indépendant. Nous ne sommes ni une ambassade, ni une université, ni un consulat, ni une administration, ni une agence agréée, et ne leur sommes pas affiliés."
+    },
+    {
+      "title": "Aucun passe-droit",
+      "body": "Nous ne pouvons faire passer un dossier en tête de file ni obtenir une exception par un contact. Nous proposons un dossier préparé correctement et à temps."
+    }
+  ],
+  "promiseNote": "Notre responsabilité porte sur la qualité et les délais du travail effectué sur votre dossier : documents complets, formats corrects, lettres adaptées au programme et dépôt avant l’échéance. C’est ce qui figure dans nos Conditions.",
+  "refundTitle": "Report et remboursement",
+  "refundSubtitle": "Les Conditions présentent la politique complète. Voici la version courte.",
+  "refunds": [
+    {
+      "title": "Report gratuit",
+      "badge": "24 H OU PLUS",
+      "body": "Pour une consultation sans prestation substantielle déjà réalisée, prévenez-nous au moins 24 heures à l’avance pour bénéficier d’un report gratuit, selon les disponibilités. Envoyez votre nom, le service et la date et l’heure du rendez-vous par email officiel ou WhatsApp."
+    },
+    {
+      "title": "Remboursement intégral",
+      "badge": "24 H OU PLUS",
+      "body": "Si vous annulez au moins 24 heures avant la consultation et qu’aucune prestation substantielle n’a été réalisée, vous pouvez choisir un remboursement intégral des honoraires. Les remboursements approuvés sont traités sous dix jours ouvrés après décision, sauf délai légal différent."
+    },
+    {
+      "title": "Moins de 24 h ou absence",
+      "badge": "50 % REMBOURSÉS",
+      "body": "Une annulation à moins de 24 heures ou une absence sans préavis donne droit à 50 % des honoraires de consultation selon les Conditions V4.0. Une circonstance exceptionnelle documentée peut permettre un report ou un remboursement intégral ; après une absence, la demande doit être envoyée sous sept jours calendaires."
+    },
+    {
+      "title": "Formules à plusieurs séances",
+      "badge": "AU PRORATA",
+      "body": "Si le travail a commencé, le remboursement porte sur la partie non exécutée, en tenant compte des prestations livrées, des étapes convenues et des frais non récupérables autorisés. Les frais de tiers sont exclus, sauf si A-Step les a reçus et doit les rembourser."
+    },
+    {
+      "title": "Droit de rétractation",
+      "badge": "DROITS APPLICABLES",
+      "body": "Demandez les conditions de rétractation applicables à votre réservation avant de la confirmer ou de demander le début du travail. Les droits impératifs du consommateur restent applicables ; la politique d’annulation ne les remplace pas."
+    }
+  ],
+  "termsNote": "Reports, remboursements, périmètre et responsabilité sont détaillés dans les Conditions. En cas de divergence, les Conditions s’appliquent.",
+  "termsButton": "Lire les Conditions",
+  "minorNote": "Moins de dix-neuf ans ? Les ressources gratuites et un appel d’information vous sont ouverts. Tout engagement payant implique un parent ou tuteur, qui signe avec vous.",
+  "faqTitle": "Questions fréquentes",
+  "faqs": [
+    {
+      "q": "A-Step est-elle une agence ?",
+      "a": "Non. A-Step est un prestataire privé indépendant proposant des conseils administratifs et des outils pour les candidatures internationales. Nous ne sommes ni une agence publique, ni une entreprise certifiée par une ambassade, ni une entité diplomatique."
+    },
+    {
+      "q": "Comment payer ?",
+      "a": "Le service, son périmètre et son prix sont expliqués avant votre accord. Utilisez les canaux confirmés directement par A-Step, dont Baridimob, CCP et le virement bancaire. Une facture est fournie ; les frais de tiers sont exclus sauf indication contraire. Aucun paiement sur cette page."
+    },
+    {
+      "q": "Et si je suis encore au lycée ?",
+      "a": "Vous pouvez consulter les guides gratuits et demander un appel d’information. Avant dix-neuf ans, un parent ou tuteur participe à tout engagement payant et signe avec vous."
+    },
+    {
+      "q": "Accompagnez-vous ma destination ?",
+      "a": "Indiquez votre destination, votre programme et la rentrée visée. Nous confirmerons si nous pouvons vous accompagner avant toute réservation."
+    },
+    {
+      "q": "Que se passe-t-il après l’appel ?",
+      "a": "Vous recevez un plan écrit avec les prochaines étapes, les préparatifs et les dates. La suite du travail dépend du périmètre de votre formule."
+    },
+    {
+      "q": "Mes parents peuvent-ils vous parler ?",
+      "a": "Oui. Précisez-le lors de la demande de créneau pour organiser l’échange ensemble. Un parent ou tuteur participe aux engagements payants avant dix-neuf ans."
+    },
+    {
+      "q": "Dois-je envoyer mes documents sur WhatsApp ?",
+      "a": "Non. WhatsApp sert aux questions et à l’organisation de la séance. Les documents sont transmis par le canal convenu pendant l’appel."
+    }
+  ],
+  "closingTitle": "Prêt à commencer votre parcours à l’étranger",
+  "closingBody": "Un message avec l’offre qui vous intéresse. Nous répondons avec les prochains créneaux et ce qu’il faut préparer.",
+  "email": "Écrivez-nous par email",
+  "closingNote": "Votre temps de candidature est précieux. Ne le perdez pas avec de fausses informations.",
+  "inquiryMessage": "Bonjour A-Step, je souhaite demander un créneau pour la formule {{tier}} ({{price}} DA).",
+  "generalMessage": "Bonjour A-Step, je souhaite demander un créneau de consultation.",
+  "scrollOffers": "Explorer nos tarifs et formules"
+}

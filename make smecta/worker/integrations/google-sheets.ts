@@ -66,6 +66,7 @@ async function serviceAccountToken(env: Env, fetcher: typeof fetch): Promise<str
   const assertion = `${unsigned}.${base64Url(new Uint8Array(signature))}`;
   const response = await fetcher(GOOGLE_TOKEN_URL, {
     method: 'POST',
+    signal: AbortSignal.timeout(10_000),
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
@@ -112,6 +113,7 @@ async function sheetsRequest(
   const token = await serviceAccountToken(env, fetcher);
   const response = await fetcher(`${SHEETS_API_ROOT}/${encodeURIComponent(env.GOOGLE_SHEETS_SPREADSHEET_ID)}${path}`, {
     ...init,
+    signal: AbortSignal.timeout(10_000),
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...init?.headers },
   });
   if (!response.ok) throw new Error(`google_sheets_failed:${response.status}`);

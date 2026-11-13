@@ -85,15 +85,16 @@ export async function listGuideAvailability(request: Request, env: Env): Promise
   });
 }
 
-export async function listPublishedOpportunities(request: Request, env: Env): Promise<Response> {
+export async function listPublishedOpportunities(request: Request, env: Env, table: 'opportunities' | 'resources' = 'opportunities'): Promise<Response> {
   requireMethod(request, ['GET']);
-  await seedAdminCatalog(env);
+  if (table === 'opportunities') await seedAdminCatalog(env);
   const { results } = await env.DB.prepare(
     `SELECT id, slug, country, categories, image_path, apply_url, opens_at, deadline,
-     featured, published, translations FROM opportunities
-     WHERE published = 1 ORDER BY deadline IS NULL ASC, deadline ASC LIMIT 100`,
+     featured, published, translations FROM ${table}
+     WHERE published = 1 ${table === 'resources' ? "AND deadline >= date('now', '+1 hours')" : ''}
+     ORDER BY ${table === 'resources' ? 'featured DESC,' : ''} deadline IS NULL ASC, deadline ASC LIMIT 100`,
   ).all<PublicOpportunityRow>();
-  return json({ items: results.map((row) => ({
+  return json({ now: Date.now(), items: results.map((row) => ({
     id: row.id,
     slug: row.slug,
     country: row.country,
@@ -152,8 +153,9 @@ export async function createGuideLead(request: Request, env: Env, ctx: Execution
   await verifyTurnstile(request, env, input.turnstileToken, 'lead_download');
 
   const asset = await env.DB.prepare(
-    `SELECT id, slug, object_key, r2_key_en, r2_key_fr, r2_key_ar
-     FROM guide_assets WHERE id = ?1 LIMIT 1`,
+    `SELECT ga.id, ga.slug, ga.object_key, ga.r2_key_en, ga.r2_key_fr, ga.r2_key_ar
+     FROM guide_assets ga JOIN guides g ON g.id = ga.id
+     WHERE ga.id = ?1 AND g.published = 1 LIMIT 1`,
   ).bind(input.guideId).first<GuideAsset>();
   if (!asset) throw new HttpError(404, 'guide_not_found');
   const requestedKey = input.guideLanguage === 'fr'
@@ -173,6 +175,10 @@ export async function createGuideLead(request: Request, env: Env, ctx: Execution
     success: true as const,
     downloadUrl: `/api/v1/download/${encodeURIComponent(grantToken)}`,
   };
+  // Marketing consent is separate from the download: only an explicit tick subscribes.
+  const subscription = input.marketingOptIn === true
+    ? await newsletterStatements(env, input.email, input.locale, now, createdAt)
+    : null;
   const result = await idempotentBatch(env, idempotencyKey, 'guide_lead', response, [
     env.DB.prepare(
       `INSERT INTO guide_download_leads
@@ -201,8 +207,12 @@ export async function createGuideLead(request: Request, env: Env, ctx: Execution
         (id, event_type, aggregate_id, status, attempts, available_at, created_at, updated_at)
        VALUES (?1, 'guide_lead.created', ?2, 'pending', 0, ?3, ?4, ?4)`,
     ).bind(eventId, leadId, now, createdAt),
+    ...(subscription?.statements ?? []),
   ], now);
-  if (result.created) enqueue(ctx, env, eventId);
+  if (result.created) {
+    enqueue(ctx, env, eventId);
+    if (subscription) enqueue(ctx, env, subscription.eventId);
+  }
   return json(result.value);
 }
 
@@ -260,15 +270,22 @@ export async function createNewsletterSubscription(request: Request, env: Env, c
 
   const now = Math.floor(Date.now() / 1000);
   const createdAt = new Date(now * 1000).toISOString();
-  const blindIndex = await createBlindIndex(input.email, env.BLIND_INDEX_SECRET);
+  const subscription = await newsletterStatements(env, input.email, input.locale, now, createdAt);
+  const result = await idempotentBatch(env, idempotencyKey, 'newsletter', { success: true as const }, subscription.statements, now);
+  if (result.created) enqueue(ctx, env, subscription.eventId);
+  return json(result.value, 202);
+}
+
+/** Upserts a newsletter subscriber and its outbox event; shared by the footer form and the guide opt-in. */
+async function newsletterStatements(env: Env, email: string, locale: string, now: number, createdAt: string) {
+  const blindIndex = await createBlindIndex(email, env.BLIND_INDEX_SECRET);
   const existing = await env.DB.prepare(
     'SELECT id FROM newsletter_subscribers WHERE email_blind_index = ?1 LIMIT 1',
   ).bind(blindIndex).first<Subscriber>();
   const subscriberId = existing?.id ?? crypto.randomUUID();
   const eventId = crypto.randomUUID();
   const unsubscribeToken = randomToken();
-  const response = { success: true as const };
-  const result = await idempotentBatch(env, idempotencyKey, 'newsletter', response, [
+  const statements = [
     env.DB.prepare(
       `INSERT INTO newsletter_subscribers
         (id, email_ciphertext, email_blind_index, locale, unsubscribe_token, unsubscribed_at, created_at)
@@ -280,9 +297,9 @@ export async function createNewsletterSubscription(request: Request, env: Env, c
          unsubscribed_at = NULL`,
     ).bind(
       subscriberId,
-      await pii(input.email, env),
+      await pii(email, env),
       blindIndex,
-      input.locale,
+      locale,
       await sha256(unsubscribeToken),
       createdAt,
     ),
@@ -291,9 +308,8 @@ export async function createNewsletterSubscription(request: Request, env: Env, c
         (id, event_type, aggregate_id, status, attempts, available_at, created_at, updated_at)
        VALUES (?1, 'newsletter.subscribed', ?2, 'pending', 0, ?3, ?4, ?4)`,
     ).bind(eventId, subscriberId, now, createdAt),
-  ], now);
-  if (result.created) enqueue(ctx, env, eventId);
-  return json(result.value, 202);
+  ];
+  return { statements, eventId };
 }
 
 export async function unsubscribeNewsletter(request: Request, env: Env): Promise<Response> {

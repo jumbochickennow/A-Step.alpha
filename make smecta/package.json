@@ -11,6 +11,7 @@
     "check:i18n": "node scripts/check-translations.mjs",
     "check": "npm run check:i18n && tsc -b --pretty false",
     "check:worker": "tsc -p tsconfig.worker.json --pretty false",
+    "check:migrations": "wrangler d1 migrations apply DB --local && node scripts/verify-d1.mjs",
     "verify:env": "node scripts/verify-env.mjs",
     "verify:d1": "node scripts/verify-d1.mjs",
     "verify:d1:remote": "node scripts/verify-d1.mjs --remote",
@@ -29,7 +30,6 @@
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-dialog": "^1.1.14",
-    "@radix-ui/react-select": "^2.3.7",
     "@tanstack/react-query": "^5.66.9",
     "chart.js": "^4.5.1",
     "clsx": "^2.1.1",
@@ -44,7 +44,6 @@
     "react-hook-form": "^7.54.2",
     "react-i18next": "^15.4.1",
     "react-router-dom": "7.18.3",
-    "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "zod": "^3.24.2"
   },

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { useToast } from '../../hooks/useToast';
 import { CATEGORIES, categoryLabel } from '../../lib/constants';
 import { saveAdminGuide, uploadAdminGuidePdf } from '../../services/admin.service';
 import { ApiError } from '../../services/api-client';
@@ -21,6 +21,7 @@ const MAX_PDF_BYTES = 50 * 1024 * 1024;
 
 export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCancel: () => void; onSaved: () => void }) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [active, setActive] = useState<Locale>('en');
   const [value, setValue] = useState<Omit<Guide, 'id'> & { id?: string }>({
     id: guide?.id,

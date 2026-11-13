@@ -60,7 +60,7 @@ function NewsletterForm({ blue }: { blue: boolean }) {
           autoComplete="email"
           placeholder={t('footer.email')}
           aria-invalid={Boolean(errors.email)}
-          className="h-11 w-full min-w-0 flex-1 bg-transparent px-4 text-sm text-slate-800 outline-none placeholder:text-slate-400 sm:h-auto sm:px-5 sm:rounded-s-full"
+          className="h-11 w-full min-w-0 flex-1 bg-transparent px-4 text-sm text-slate-800 placeholder:text-slate-400 sm:h-auto sm:px-5 sm:rounded-s-full"
           {...register('email')}
         />
         <button
@@ -96,22 +96,39 @@ function NewsletterForm({ blue }: { blue: boolean }) {
   );
 }
 
+function ResourcesNewsletterPreview() {
+  const { t } = useTranslation();
+  const { locale } = useLocale();
+  const [submitted, setSubmitted] = useState(false);
+  const message = { en: 'Preview only — your email has not been submitted.', fr: 'Aperçu uniquement — votre adresse e-mail n’a pas été envoyée.', ar: 'معاينة فقط — لم يتم إرسال بريدك الإلكتروني.' }[locale];
+  return <form onSubmit={event => { event.preventDefault(); setSubmitted(true); }} aria-label={t('footer.newsletterTitle')}>
+    <label htmlFor="resources-newsletter-email" className="sr-only">{t('footer.email')}</label>
+    <div className="flex flex-wrap gap-2 rounded-3xl bg-white p-1 sm:flex-nowrap">
+      <input id="resources-newsletter-email" type="email" required autoComplete="email" placeholder={t('footer.email')} onChange={() => setSubmitted(false)} className="min-h-11 min-w-0 flex-1 rounded-full px-5 text-sm text-slate-800" />
+      <button type="submit" className="min-h-11 rounded-full px-7 py-2 text-sm text-white transition-transform hover:-translate-y-0.5 active:scale-95">{t('footer.receive')}</button>
+    </div>
+    <p role="status" className="mt-2 min-h-4 text-xs text-white">{submitted ? message : ''}</p>
+  </form>;
+}
+
 export function Footer() {
   const { t } = useTranslation();
   const { locale } = useLocale();
   const { pathname } = useLocation();
-  const blue = /\/contact\/?$/.test(pathname);
+  const isPrices = /\/prices\/?$/.test(pathname);
+  const isResources = /\/resources\/?$/.test(pathname);
+  const blue = /\/(contact|prices|resources)\/?$/.test(pathname);
   const link = (path: string) => localizedPath(path, locale);
 
   return (
-    <footer id="astep-footer" className={cn('relative pt-10 text-white', blue ? 'bg-brand-blue' : 'bg-[#111722]')}>
+    <footer id="astep-footer" className={cn('relative pt-10 text-white', blue ? 'bg-brand-blue' : 'bg-[#111722]', isPrices && 'prices-footer', isResources && 'resources-footer')}>
       <div className="container-shell">
         <div className={cn('grid min-w-0 items-center gap-6 rounded-2xl px-5 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:px-8', blue ? 'bg-[#3cb0ec]' : 'bg-[#8d9188]')}>
           <div className="min-w-0">
             <h2 className="text-base font-bold md:text-lg">{t('footer.newsletterTitle')}</h2>
             <p className="mt-1 max-w-[58ch] text-xs leading-relaxed text-white/80">{t('footer.newsletterBody')}</p>
           </div>
-          <NewsletterForm blue={blue} />
+          {isResources ? <ResourcesNewsletterPreview /> : <NewsletterForm blue={blue} />}
         </div>
 
         <div className="grid gap-10 py-8 md:grid-cols-[1.5fr_0.55fr_0.45fr] md:py-10">

@@ -1,3 +1,13 @@
+function requestId(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  // LAN HTTP previews lack randomUUID; getRandomValues remains cryptographically secure.
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 15) | 64;
+  bytes[8] = (bytes[8] & 63) | 128;
+  const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -14,7 +24,7 @@ export async function apiJson<T>(path: string, init: RequestInit = {}): Promise<
   const method = (init.method ?? 'GET').toUpperCase();
   const headers = new Headers(init.headers);
   if (init.body !== undefined && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) headers.set('Idempotency-Key', crypto.randomUUID());
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) headers.set('Idempotency-Key', requestId());
 
   const response = await fetch(path, {
     ...init,
@@ -32,26 +42,6 @@ export async function apiJson<T>(path: string, init: RequestInit = {}): Promise<
   return data;
 }
 
-export async function apiBlob(path: string, init: RequestInit = {}): Promise<Blob> {
-  const method = (init.method ?? 'GET').toUpperCase();
-  const headers = new Headers(init.headers);
-  if (init.body !== undefined && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) headers.set('Idempotency-Key', crypto.randomUUID());
-  const response = await fetch(path, {
-    ...init,
-    method,
-    headers,
-    credentials: 'same-origin',
-    cache: 'no-store',
-  });
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({})) as { error?: string | { code?: string }; requestId?: string };
-    const code = typeof data.error === 'object' ? data.error?.code : undefined;
-    throw new ApiError(response.status, code ?? 'request_failed', data.requestId);
-  }
-  return response.blob();
-}
-
 /** XHR is used only for authenticated uploads so the dashboard can report progress. */
 export function apiUpload<T>(
   path: string,
@@ -65,7 +55,7 @@ export function apiUpload<T>(
     request.withCredentials = true;
     request.timeout = 120_000;
     request.setRequestHeader('Content-Type', contentType);
-    request.setRequestHeader('Idempotency-Key', crypto.randomUUID());
+    request.setRequestHeader('Idempotency-Key', requestId());
     request.upload.addEventListener('progress', (event) => {
       if (event.lengthComputable) onProgress?.(Math.min(100, Math.round((event.loaded / event.total) * 100)));
     });

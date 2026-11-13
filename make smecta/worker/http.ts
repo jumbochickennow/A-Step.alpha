@@ -78,12 +78,28 @@ export function attachRequestId(response: Response, requestId: string): Response
 export async function readJson(request: Request, maxBytes: number): Promise<unknown> {
   const contentType = request.headers.get('Content-Type')?.split(';', 1)[0].trim().toLowerCase();
   if (contentType !== 'application/json') throw new HttpError(415, 'unsupported_media_type');
-  const declared = Number(request.headers.get('Content-Length') ?? '0');
-  if (Number.isFinite(declared) && declared > maxBytes) throw new HttpError(413, 'payload_too_large');
-  const bytes = await request.arrayBuffer();
-  if (bytes.byteLength > maxBytes) throw new HttpError(413, 'payload_too_large');
+  const length = request.headers.get('Content-Length');
+  if (length !== null && !/^\d+$/.test(length)) throw new HttpError(400, 'invalid_content_length');
+  if (length !== null && Number(length) > maxBytes) throw new HttpError(413, 'payload_too_large');
+  const reader = request.body?.getReader();
+  const bytes = new Uint8Array(maxBytes);
+  let size = 0;
+  if (reader) {
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        size += value.byteLength;
+        if (size > maxBytes) {
+          await reader.cancel();
+          throw new HttpError(413, 'payload_too_large');
+        }
+        bytes.set(value, size - value.byteLength);
+      }
+    } finally { reader.releaseLock(); }
+  }
   try {
-    return JSON.parse(new TextDecoder().decode(bytes)) as unknown;
+    return JSON.parse(new TextDecoder().decode(bytes.subarray(0, size))) as unknown;
   } catch {
     throw new HttpError(400, 'invalid_json');
   }

@@ -9,7 +9,7 @@ const DEFAULT_TTL_SECONDS = 15 * 60;
 const MAX_TTL_SECONDS = 30 * 60;
 const RECORD_ID = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|[A-Za-z0-9_-]{1,64})$/i;
 
-export type ResourceType = 'guide' | 'opportunity' | 'lead' | 'contact' | 'newsletter';
+export type ResourceType = 'guide' | 'opportunity' | 'resource' | 'lead' | 'contact' | 'newsletter';
 
 interface ResourceRefPayload {
   v: 2;

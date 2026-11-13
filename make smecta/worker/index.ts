@@ -39,6 +39,7 @@ async function routeApi(request: Request, env: Env, ctx: ExecutionContextLike): 
   if (pathname.startsWith('/api/v1/opportunity-images/')) return opportunityImage(request, env);
   if (pathname === '/api/v1/guides') return listGuideAvailability(request, env);
   if (pathname === '/api/v1/opportunities') return listPublishedOpportunities(request, env);
+  if (pathname === '/api/v1/resources') return listPublishedOpportunities(request, env, 'resources');
   if (pathname === '/api/v1/leads') return createGuideLead(request, env, ctx);
   if (pathname === '/api/v1/newsletter') return createNewsletterSubscription(request, env, ctx);
   if (pathname === '/api/v1/newsletter/unsubscribe') return unsubscribeNewsletter(request, env);

@@ -69,7 +69,7 @@ export function Guides() {
           {query.isLoading ? <CardGridSkeleton /> : query.isError ? <ErrorState message={t('guides.error')} retry={() => void query.refetch()} /> : filtered.length === 0 ? (
             <EmptyState message={t('guides.empty')} action={<Button variant="ghost" onClick={() => setCategory('')}>{t('common.clearFilter')}</Button>} />
           ) : (
-            <div className="grid grid-cols-1 gap-7 md:grid-cols-2">{filtered.map((guide) => <GuideCard key={guide.id} guide={guide} />)}</div>
+            <div key={category} className="grid grid-cols-1 gap-7 md:grid-cols-2 animate-fade-rise">{filtered.map((guide) => <GuideCard key={guide.id} guide={guide} />)}</div>
           )}
         </div>
       </section>

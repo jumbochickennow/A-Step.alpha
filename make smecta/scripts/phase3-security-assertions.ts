@@ -27,7 +27,10 @@ const config = JSON.parse(readFileSync('wrangler.json', 'utf8')) as Record<strin
   send_email?: Array<Record<string, unknown>>;
 };
 assert.equal(config.workers_dev, false);
-assert.deepEqual(config.routes, [{ pattern: 'www.astepimmigration.space/*', zone_name: 'astepimmigration.space' }]);
+assert.deepEqual(config.routes, [
+  { pattern: 'www.astepimmigration.space/*', zone_name: 'astepimmigration.space' },
+  { pattern: 'astepimmigration.space/*', zone_name: 'astepimmigration.space' },
+]);
 assert.deepEqual(config.assets?.run_worker_first, ['/*']);
 assert.ok(config.secrets?.required?.includes('ADMIN_PASSWORD_HASH'));
 assert.ok(config.secrets?.required?.includes('RESOURCE_REF_SECRET'));
@@ -97,6 +100,16 @@ assert.equal(existsSync('public/_headers'), false);
 assert.equal(applySecurityHeaders(new Response()).headers.get('X-Frame-Options'), 'DENY');
 assert.equal(httpsRedirect(new Request('http://www.astepimmigration.space/path'))?.status, 308);
 assert.equal(httpsRedirect(new Request('http://localhost:5173/path')), null);
+// The bare apex must redirect to the canonical www host, preserving path + query, in one hop.
+assert.equal(
+  httpsRedirect(new Request('https://astepimmigration.space/guides?country=china'))?.headers.get('location'),
+  'https://www.astepimmigration.space/guides?country=china',
+);
+assert.equal(
+  httpsRedirect(new Request('http://astepimmigration.space/'))?.headers.get('location'),
+  'https://www.astepimmigration.space/',
+);
+assert.equal(httpsRedirect(new Request('https://www.astepimmigration.space/guides')), null);
 
 assert.deepEqual(resolveRateLimitPolicy(request), { name: 'contact', limit: 5, windowSeconds: 600 });
 assert.deepEqual(resolveRateLimitPolicy(new Request(`${productionOrigin}/api/v1/admin/guides`)),

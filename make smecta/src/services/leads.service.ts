@@ -6,6 +6,7 @@ export interface GuideLeadPayload {
   guideId: string;
   guideLanguage: 'en' | 'fr' | 'ar';
   targetCountry?: string;
+  marketingOptIn: boolean;
   locale: string;
   turnstileToken: string;
 }
@@ -20,6 +21,7 @@ export async function submitGuideLead(payload: GuideLeadPayload): Promise<string
       guideId: payload.guideId,
       guideLanguage: payload.guideLanguage,
       targetCountry: payload.targetCountry,
+      marketingOptIn: payload.marketingOptIn,
       locale: payload.locale,
       turnstileToken: payload.turnstileToken,
     }),

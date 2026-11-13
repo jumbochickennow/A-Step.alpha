@@ -58,6 +58,7 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
   const [status, setStatus] = useState<'idle' | 'error'>('idle');
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState('');
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
   const [turnstileError, setTurnstileError] = useState(false);
   const turnstileEnabled = isTurnstileEnabled();
@@ -74,6 +75,7 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
     setStatus('idle');
     setSuggestion(null);
     setHoneypot('');
+    setMarketingOptIn(false);
     setTurnstileToken('');
     setTurnstileError(false);
   };
@@ -144,6 +146,7 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
         guideId: guide.id,
         guideLanguage: result.data.guideLanguage,
         targetCountry: result.data.targetCountry,
+        marketingOptIn,
         locale,
         turnstileToken,
       });
@@ -268,6 +271,16 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
             {t('guides.modal.privacy')}{' '}
             <Link className="text-brand-blue-text underline" to={localizedPath('/privacy', locale)}>{t('guides.modal.privacyLink')}</Link>
           </p>
+          <label htmlFor={`marketingOptIn-${guide.id}`} className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed">
+            <input
+              id={`marketingOptIn-${guide.id}`}
+              type="checkbox"
+              className="mt-1 h-4 w-4 shrink-0 accent-blue-600"
+              checked={marketingOptIn}
+              onChange={(event) => setMarketingOptIn(event.target.checked)}
+            />
+            <span>{t('guides.modal.marketingOptIn')}</span>
+          </label>
           <div className="min-h-[3.25rem]">
             {status === 'error' ? <p role="alert" className="rounded-md border border-[rgb(248_113_113/0.3)] bg-[rgb(248_113_113/0.08)] p-3 text-sm text-[var(--danger)]">{navigator.onLine ? t('guides.modal.error') : t('common.offline')}</p> : null}
           </div>

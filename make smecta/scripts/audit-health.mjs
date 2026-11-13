@@ -8,7 +8,7 @@
  *
  * Exit 0 = 100% intact · Exit 1 = explicit missing/broken paths listed.
  */
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -25,10 +25,17 @@ const c = {
   bold: (t) => (supportsColor ? `\x1b[1m${t}\x1b[0m` : t),
 };
 
-/** Every quoted root-relative static asset path found in a source text. */
+/**
+ * Every quoted static asset path found in a source text — root-relative
+ * (/og/default.png) or absolute on this site's own origin
+ * (https://www.astepimmigration.space/og/default.png, as used by the
+ * static Open Graph / Twitter tags in index.html, which must be absolute
+ * for social crawlers). The optional origin prefix is stripped before the
+ * path is returned, so both forms resolve to the same public/ check.
+ */
 function extractAssetPaths(text) {
   const paths = new Set();
-  const pattern = /['"](\/(?:assets|og|fonts)\/[^'"\s)<>]+?\.(?:pdf|png|jpe?g|webp|svg|woff2?))['"]/g;
+  const pattern = /['"](?:https?:\/\/[^'"\s)<>]+)?(\/(?:assets|og|fonts)\/[^'"\s)<>]+?\.(?:pdf|png|jpe?g|webp|svg|woff2?|ttf|avif))['"]/g;
   for (const match of String(text).matchAll(pattern)) paths.add(match[1]);
   return paths;
 }
@@ -41,11 +48,12 @@ function checkExists(path) {
 /* 1. Collect referenced assets                                        */
 /* ------------------------------------------------------------------ */
 
+let readIssues = 0;
 const references = new Map(); // path → [sources]
 
 function addReference(path, source) {
   if (!path || !path.startsWith('/')) return; // external URLs & null sentinels skip
-  if (!/\.(pdf|png|jpe?g|webp|svg|woff2?)$/i.test(path)) return;
+  if (!/\.(pdf|png|jpe?g|webp|svg|woff2?|ttf|avif)$/i.test(path)) return;
   const list = references.get(path) ?? [];
   list.push(source);
   references.set(path, list);
@@ -80,6 +88,17 @@ try {
   process.exit(1);
 }
 
+async function scanSources(directory) {
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = resolve(directory, entry.name);
+    if (entry.isDirectory()) await scanSources(path);
+    else if (/\.(?:tsx?|css)$/.test(entry.name)) {
+      for (const asset of extractAssetPaths(await readFile(path, 'utf8'))) addReference(asset, path.slice(projectRoot.length + 1));
+    }
+  }
+}
+await scanSources(resolve(projectRoot, 'src'));
+
 try {
   const html = await readFile(resolve(projectRoot, 'index.html'), 'utf8');
   let index = 0;
@@ -90,6 +109,7 @@ try {
   const manifest = JSON.parse(await readFile(resolve(publicRoot, 'manifest.webmanifest'), 'utf8'));
   for (const icon of manifest.icons ?? []) addReference(icon.src, 'manifest.webmanifest');
 } catch (error) {
+  readIssues += 1;
   console.error(c.red(`✖ index.html / manifest read failed: ${error.message}`));
 }
 
@@ -159,7 +179,7 @@ if (routeIssues === 0) {
 /* Verdict                                                             */
 /* ------------------------------------------------------------------ */
 
-const totalIssues = missing.length + routeIssues;
+const totalIssues = missing.length + routeIssues + readIssues;
 console.log('');
 if (totalIssues > 0) {
   console.error(c.bold(c.red(`✖ Health audit failed with ${totalIssues} issue(s).`)));

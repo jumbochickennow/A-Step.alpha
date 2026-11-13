@@ -6,6 +6,7 @@ import {
   PRICING_WHATSAPP_MESSAGES,
   WHATSAPP_MESSAGES,
   generateWhatsAppMessage,
+  whatsappHref,
   type WhatsAppInquiryType,
 } from '../../lib/constants';
 import { track } from '../../services/analytics';
@@ -29,30 +30,18 @@ interface WhatsAppCTAProps {
 
 const ICONS = { whatsapp: MessageCircle, phone: Phone } as const;
 
-/** Fallback number used when VITE_WHATSAPP_NUMBER is missing or malformed. */
-const FALLBACK_WHATSAPP_NUMBER = '213783145805';
 /** Minimum delay between accepted clicks (blocks rapid tab-opening loops). */
 const CLICK_COOLDOWN_MS = 3000;
-
-/**
- * Normalizes a configured WhatsApp number to digits only, falling back to the
- * default A-Step number when the value is missing or unusable.
- */
-function resolveWhatsappNumber(raw: string | undefined): string {
-  const digits = raw?.replace(/\D/g, '') ?? '';
-  return digits.length >= 8 ? digits : FALLBACK_WHATSAPP_NUMBER;
-}
 
 export function WhatsAppCTA({ label, source, intent = 'consultation', inquiryType, inquiryTitle, icon = 'whatsapp', variant = 'primary', className }: WhatsAppCTAProps) {
   const { t } = useTranslation();
   const { locale } = useLocale();
   const lastClickAt = useRef(0);
-  const number = resolveWhatsappNumber(import.meta.env.VITE_WHATSAPP_NUMBER);
   // Contextual inquiry templates take precedence over the static intent copy.
   const message = inquiryType
     ? generateWhatsAppMessage({ type: inquiryType, title: inquiryTitle ?? '', locale })
     : ((intent === 'pricing' ? PRICING_WHATSAPP_MESSAGES[locale] : WHATSAPP_MESSAGES[locale]) ?? WHATSAPP_MESSAGES.en);
-  const href = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+  const href = whatsappHref(message);
   const Icon = ICONS[icon];
 
   /** Blocks rapid consecutive activations so tabs cannot be opened in a loop. */

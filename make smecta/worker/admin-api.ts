@@ -7,6 +7,13 @@ import { HttpError, json, readJson, requireIdempotencyKey, requireMethod } from 
 import { imageExtensionForRequest, validatedImageBody } from './security/image-upload';
 import { validatedPdfBytes } from './security/pdf-upload';
 import { seedAdminCatalog } from './catalog-seed';
+import { resourceExpiry } from '../src/lib/resource-expiry';
+
+type CardTable = 'opportunities' | 'resources';
+const cardType = (table: CardTable) => table === 'resources' ? 'resource' : 'opportunity';
+function validateResource(input: { deadline: string | null; applyUrl: string | null }, table: CardTable) {
+  if (table === 'resources' && (!resourceExpiry(input.deadline) || !input.applyUrl)) throw new HttpError(400, 'invalid_opportunity_details');
+}
 
 const copySchema = z.object({ title: z.string().trim().min(1).max(180), description: z.string().trim().min(1).max(4000) }).strict();
 const translationsSchema = z.object({ en: copySchema, fr: copySchema, ar: copySchema }).strict();
@@ -35,7 +42,7 @@ const guideSchema = z.object({
   coverPath: z.string().max(512).regex(/^\/assets\/[a-z0-9/_-]+\.(?:png|jpe?g|webp|avif)$/).nullable(),
   published: z.boolean(),
   sortOrder: z.number().int().min(0).max(10000),
-  contentUpdatedAt: z.string().max(10).regex(/^\d{4}-\d{2}-\d{2}$/),
+  contentUpdatedAt: z.string().max(10).refine(value => Boolean(resourceExpiry(value))),
   translations: translationsSchema,
 }).strict();
 
@@ -47,8 +54,8 @@ const opportunitySchema = z.object({
   // Legacy clients may include this server-owned pointer. It is deliberately ignored.
   imagePath: z.unknown().optional(),
   applyUrl: z.string().url().refine((value) => value.startsWith('https://')).nullable(),
-  opensAt: z.string().max(10).regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
-  deadline: z.string().max(10).regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  opensAt: z.string().max(10).refine(value => Boolean(resourceExpiry(value))).nullable(),
+  deadline: z.string().max(10).refine(value => Boolean(resourceExpiry(value))).nullable(),
   featured: z.boolean(),
   published: z.boolean(),
   translations: draftTranslationsSchema,
@@ -132,9 +139,9 @@ async function guideFromRow(row: GuideRow, env: Env, identity: AdminIdentity) {
   };
 }
 
-async function opportunityFromRow(row: OpportunityRow, env: Env, identity: AdminIdentity) {
+async function opportunityFromRow(row: OpportunityRow, env: Env, identity: AdminIdentity, table: CardTable = 'opportunities') {
   return {
-    id: await createResourceRef(row.id, 'opportunity', identity.id, env.RESOURCE_REF_SECRET),
+    id: await createResourceRef(row.id, cardType(table), identity.id, env.RESOURCE_REF_SECRET),
     slug: row.slug,
     country: row.country,
     categories: parsedJson(row.categories, z.array(z.string())),
@@ -302,15 +309,15 @@ async function uploadGuidePdf(
   return json({ success: true, objectKey });
 }
 
-async function opportunities(request: Request, env: Env, identity: AdminIdentity, id?: string): Promise<Response> {
+async function opportunities(request: Request, env: Env, identity: AdminIdentity, id?: string, table: CardTable = 'opportunities'): Promise<Response> {
   if (request.method === 'GET' && !id) {
-    await seedAdminCatalog(env);
+    if (table === 'opportunities') await seedAdminCatalog(env);
     const { results } = await env.DB.prepare(
       `SELECT id, slug, country, categories, image_path, apply_url, opens_at, deadline,
-       featured, published, translations FROM opportunities
+       featured, published, translations FROM ${table}
        ORDER BY deadline IS NULL ASC, deadline ASC LIMIT 100`,
     ).all<OpportunityRow>();
-    return json({ items: await Promise.all(results.map((row) => opportunityFromRow(row, env, identity))) });
+    return json({ items: await Promise.all(results.map((row) => opportunityFromRow(row, env, identity, table))) });
   }
   if (id && !resourceRefSchema.safeParse(id).success) throw new HttpError(404, 'not_found');
   if (request.method === 'POST' && !id) {
@@ -318,10 +325,11 @@ async function opportunities(request: Request, env: Env, identity: AdminIdentity
     if (!parsed.success) throw new HttpError(400, opportunityValidationCode(parsed.error));
     if (parsed.data.id) throw new HttpError(400, 'invalid_opportunity_details');
     const input = parsed.data;
+    validateResource(input, table);
     const databaseId = crypto.randomUUID();
     const now = new Date().toISOString();
     await mutate(env.DB.prepare(
-      `INSERT INTO opportunities
+      `INSERT INTO ${table}
         (id, user_id, slug, country, categories, image_path, apply_url, opens_at, deadline,
          featured, published, translations, created_at, updated_at)
        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?13)`,
@@ -332,7 +340,7 @@ async function opportunities(request: Request, env: Env, identity: AdminIdentity
     ));
     return json({
       success: true,
-      resourceId: await createResourceRef(databaseId, 'opportunity', identity.id, env.RESOURCE_REF_SECRET),
+      resourceId: await createResourceRef(databaseId, cardType(table), identity.id, env.RESOURCE_REF_SECRET),
     }, 201);
   }
   if (request.method === 'PUT' && id) {
@@ -340,9 +348,10 @@ async function opportunities(request: Request, env: Env, identity: AdminIdentity
     if (!parsed.success) throw new HttpError(400, opportunityValidationCode(parsed.error));
     if (parsed.data.id && parsed.data.id !== id) throw new HttpError(400, 'invalid_opportunity_details');
     const input = parsed.data;
-    const databaseId = await resolveResourceRef(id, 'opportunity', identity.id, env.RESOURCE_REF_SECRET);
+    validateResource(input, table);
+    const databaseId = await resolveResourceRef(id, cardType(table), identity.id, env.RESOURCE_REF_SECRET);
     await mutate(env.DB.prepare(
-      `UPDATE opportunities SET slug = ?1, country = ?2, categories = ?3,
+      `UPDATE ${table} SET slug = ?1, country = ?2, categories = ?3,
        apply_url = ?4, opens_at = ?5, deadline = ?6, featured = ?7, published = ?8,
        translations = ?9, updated_at = ?10 WHERE id = ?11`,
     ).bind(
@@ -353,11 +362,11 @@ async function opportunities(request: Request, env: Env, identity: AdminIdentity
     return json({ success: true });
   }
   if (request.method === 'DELETE' && id) {
-    const databaseId = await resolveResourceRef(id, 'opportunity', identity.id, env.RESOURCE_REF_SECRET);
-    const current = await env.DB.prepare('SELECT image_path FROM opportunities WHERE id = ?1 LIMIT 1')
+    const databaseId = await resolveResourceRef(id, cardType(table), identity.id, env.RESOURCE_REF_SECRET);
+    const current = await env.DB.prepare(`SELECT image_path FROM ${table} WHERE id = ?1 LIMIT 1`)
       .bind(databaseId).first<{ image_path: string | null }>();
     if (!current) throw new HttpError(404, 'not_found');
-    await mutate(env.DB.prepare('DELETE FROM opportunities WHERE id = ?1').bind(databaseId));
+    await mutate(env.DB.prepare(`DELETE FROM ${table} WHERE id = ?1`).bind(databaseId));
     const objectKey = opportunityObjectKey(current.image_path);
     if (objectKey) await env.OPPORTUNITY_IMAGES_BUCKET.delete(objectKey);
     return json({ success: true });
@@ -375,18 +384,19 @@ async function uploadOpportunityImage(
   env: Env,
   identity: AdminIdentity,
   id: string,
+  table: CardTable = 'opportunities',
 ): Promise<Response> {
   requireMethod(request, ['PUT']);
   if (!resourceRefSchema.safeParse(id).success) throw new HttpError(404, 'not_found');
-  const databaseId = await resolveResourceRef(id, 'opportunity', identity.id, env.RESOURCE_REF_SECRET);
+  const databaseId = await resolveResourceRef(id, cardType(table), identity.id, env.RESOURCE_REF_SECRET);
   const idempotencyKey = requireIdempotencyKey(request);
   const current = await env.DB.prepare(
-    'SELECT image_path FROM opportunities WHERE id = ?1 LIMIT 1',
+    `SELECT image_path FROM ${table} WHERE id = ?1 LIMIT 1`,
   ).bind(databaseId).first<{ image_path: string | null }>();
   if (!current) throw new HttpError(404, 'not_found');
 
   const extension = imageExtensionForRequest(request);
-  const objectId = await deterministicUploadId(`opportunity:${databaseId}`, idempotencyKey);
+  const objectId = await deterministicUploadId(`${cardType(table)}:${databaseId}`, idempotencyKey);
   const objectName = `${objectId}.${extension}`;
   const objectKey = `opportunity-images/${objectName}`;
   const imagePath = `/api/v1/opportunity-images/${objectName}`;
@@ -421,7 +431,7 @@ async function uploadOpportunityImage(
 
   try {
     await mutate(env.DB.prepare(
-      'UPDATE opportunities SET image_path = ?1, updated_at = ?2 WHERE id = ?3 AND image_path IS ?4',
+      `UPDATE ${table} SET image_path = ?1, updated_at = ?2 WHERE id = ?3 AND image_path IS ?4`,
     ).bind(imagePath, new Date().toISOString(), databaseId, current.image_path));
   } catch (error) {
     if (createdObject) await env.OPPORTUNITY_IMAGES_BUCKET.delete(objectKey);
@@ -535,6 +545,14 @@ async function charts(env: Env): Promise<Response> {
 
 export async function adminApi(request: Request, env: Env, identity: AdminIdentity): Promise<Response> {
   const path = new URL(request.url).pathname.slice('/api/v1/admin/'.length).split('/').filter(Boolean);
+  if (path[0] === 'resources' && path[2] === 'image' && path.length === 3) {
+    requireRole(identity, CONTENT_ROLES);
+    return uploadOpportunityImage(request, env, identity, path[1], 'resources');
+  }
+  if (path[0] === 'resources' && path.length <= 2) {
+    requireRole(identity, CONTENT_ROLES);
+    return opportunities(request, env, identity, path[1], 'resources');
+  }
   if (path[0] === 'guides' && path[2] === 'pdf' && path.length === 4) {
     requireRole(identity, CONTENT_ROLES);
     return uploadGuidePdf(request, env, identity, path[1], path[3]);

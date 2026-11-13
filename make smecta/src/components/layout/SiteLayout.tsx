@@ -15,6 +15,8 @@ function ScrollToTop() {
 
 export function SiteLayout() {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
+  const hideFloatingContact = /\/(prices|resources)\/?$/.test(pathname);
   useLocale();
   return (
     <>
@@ -28,7 +30,7 @@ export function SiteLayout() {
           <Outlet />
         </Suspense>
       </main>
-      <FloatingWhatsApp />
+      {!hideFloatingContact && <FloatingWhatsApp />}
       <Footer />
     </>
   );

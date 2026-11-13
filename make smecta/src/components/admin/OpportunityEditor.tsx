@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { useToast } from '../../hooks/useToast';
 import {
   createAdminOpportunityDraft,
   saveAdminOpportunity,
@@ -10,6 +10,7 @@ import { ApiError } from '../../services/api-client';
 import type { Locale, Opportunity } from '../../types/content';
 import { Button } from '../common/Button';
 import { TranslationFields } from './TranslationFields';
+import { resourceExpiry } from '../../lib/resource-expiry';
 
 const emptyTranslations = { en: { title: '', description: '' }, fr: { title: '', description: '' }, ar: { title: '', description: '' } };
 const MAX_IMAGE_BYTES = 50 * 1024 * 1024;
@@ -19,13 +20,15 @@ const LOCALES: Locale[] = ['en', 'fr', 'ar'];
 
 type EditorValue = Omit<Opportunity, 'id'> & { id?: string };
 
-export function OpportunityEditor({ opportunity, onCancel, onSaved }: { opportunity?: Opportunity; onCancel: () => void; onSaved: () => void }) {
+export function OpportunityEditor({ opportunity, onCancel, onSaved, resourceMode = false }: { opportunity?: Opportunity; onCancel: () => void; onSaved: () => void; resourceMode?: boolean }) {
+  const collection = resourceMode ? 'resources' : 'opportunities';
   const { t } = useTranslation();
+  const { toast } = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
   const [active, setActive] = useState<Locale>('en');
-  const [categories, setCategories] = useState(opportunity?.categories.join(', ') ?? 'Scholarships');
+  const [categories, setCategories] = useState(opportunity?.categories.join(', ') ?? (resourceMode ? 'Resources' : 'Scholarships'));
   const [value, setValue] = useState<EditorValue>({
-    id: opportunity?.id, slug: opportunity?.slug ?? '', country: opportunity?.country ?? 'France', categories: opportunity?.categories ?? ['Scholarships'], imagePath: opportunity?.imagePath ?? null,
+    id: opportunity?.id, slug: opportunity?.slug ?? '', country: opportunity?.country ?? (resourceMode ? 'Resource' : 'France'), categories: opportunity?.categories ?? [resourceMode ? 'Resources' : 'Scholarships'], imagePath: opportunity?.imagePath ?? null,
     applyUrl: opportunity?.applyUrl ?? '', opensAt: opportunity?.opensAt ?? '', deadline: opportunity?.deadline ?? '', featured: opportunity?.featured ?? false, published: opportunity?.published ?? false,
     translations: opportunity?.translations ?? emptyTranslations,
   });
@@ -63,6 +66,7 @@ export function OpportunityEditor({ opportunity, onCancel, onSaved }: { opportun
   });
 
   const validateDetails = (next: EditorValue): string | null => {
+    if (resourceMode && (!resourceExpiry(next.deadline) || !next.applyUrl)) return 'Set a valid expiry date and HTTPS registration link.';
     if (!SLUG_PATTERN.test(next.slug) || !next.country || next.categories.length === 0) {
       return t('admin.invalidOpportunityDetails');
     }
@@ -98,9 +102,9 @@ export function OpportunityEditor({ opportunity, onCancel, onSaved }: { opportun
     setUploadProgress(0);
     setError(null);
     try {
-      const resourceId = await createAdminOpportunityDraft(next);
+      const resourceId = await createAdminOpportunityDraft(next, collection);
       setValue((current) => ({ ...current, id: resourceId }));
-      const imagePath = await uploadAdminOpportunityImage(resourceId, selectedImage, setUploadProgress);
+      const imagePath = await uploadAdminOpportunityImage(resourceId, selectedImage, setUploadProgress, collection);
       setValue((current) => ({ ...current, id: resourceId, imagePath }));
       setUploadedName(selectedImage.name);
       setImage(null);
@@ -126,7 +130,7 @@ export function OpportunityEditor({ opportunity, onCancel, onSaved }: { opportun
     setSaving(true);
     setError(null);
     try {
-      await saveAdminOpportunity(next);
+      await saveAdminOpportunity(next, collection);
       toast.success(t('admin.saved'));
       onSaved();
     } catch (cause) {
@@ -140,10 +144,10 @@ export function OpportunityEditor({ opportunity, onCancel, onSaved }: { opportun
     <form onSubmit={submit} className="card p-6">
       <div className="grid gap-5 md:grid-cols-2">
         <label className="text-sm font-semibold">{t('admin.slug')}<input className="field mt-2" value={value.slug} onChange={(event) => setValue({ ...value, slug: event.target.value })} pattern="[a-z0-9-]+" required /></label>
-        <label className="text-sm font-semibold">{t('admin.country')}<input className="field mt-2" value={value.country} onChange={(event) => setValue({ ...value, country: event.target.value })} required /></label>
+        {!resourceMode && <><label className="text-sm font-semibold">{t('admin.country')}<input className="field mt-2" value={value.country} onChange={(event) => setValue({ ...value, country: event.target.value })} required /></label>
         <label className="text-sm font-semibold md:col-span-2">{t('admin.categories')}<input className="field mt-2" value={categories} onChange={(event) => setCategories(event.target.value)} required /></label>
-        <label className="text-sm font-semibold">{t('admin.opensAt')}<input type="date" className="field mt-2" value={value.opensAt ?? ''} onChange={(event) => setValue({ ...value, opensAt: event.target.value })} /></label>
-        <label className="text-sm font-semibold">{t('admin.deadline')}<input type="date" className="field mt-2" value={value.deadline ?? ''} onChange={(event) => setValue({ ...value, deadline: event.target.value })} /></label>
+        <label className="text-sm font-semibold">{t('admin.opensAt')}<input type="date" className="field mt-2" value={value.opensAt ?? ''} onChange={(event) => setValue({ ...value, opensAt: event.target.value })} /></label></>}
+        <label className="text-sm font-semibold">{resourceMode ? 'Expiry date (end of day, Algeria time)' : t('admin.deadline')}<input type="date" required={resourceMode} className="field mt-2" value={value.deadline ?? ''} onChange={(event) => setValue({ ...value, deadline: event.target.value })} /></label>
         <label className="text-sm font-semibold md:col-span-2">{t('admin.applyUrl')}<input type="url" className="field mt-2" value={value.applyUrl ?? ''} onChange={(event) => setValue({ ...value, applyUrl: event.target.value })} /></label>
         <div className="text-sm font-semibold md:col-span-2">
           <span>{t('admin.image')}</span>
@@ -186,7 +190,7 @@ export function OpportunityEditor({ opportunity, onCancel, onSaved }: { opportun
       {error ? <p className="mt-4 text-sm text-[var(--danger)]" role="alert">{error}</p> : null}
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <Button type="submit" disabled={saving || uploading || Boolean(image)}>{saving ? t('admin.saving') : t('admin.save')}</Button>
-        <Button type="button" variant="ghost" disabled={saving || uploading} onClick={onCancel}>{t('admin.cancel')}</Button>
+        <Button type="button" variant="ghost" className="text-ink hover:bg-surface-2 hover:text-ink" disabled={saving || uploading} onClick={onCancel}>{t('admin.cancel')}</Button>
       </div>
     </form>
   );

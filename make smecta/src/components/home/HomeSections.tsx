@@ -2,17 +2,15 @@ import { Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { localizedPath, useLocale } from '../../hooks/useLocale';
-import { useScrollReveal } from '../../hooks/useScrollReveal';
 import { buttonStyles } from '../common/Button';
 import { WhatsAppCTA } from '../common/WhatsAppCTA';
 
 export function IntroSection() {
   const { t } = useTranslation();
   const { locale } = useLocale();
-  const ref = useScrollReveal<HTMLElement>();
   const items = ['documents', 'database', 'college', 'route', 'consultation', 'interview'] as const;
   return (
-    <section ref={ref} className="container-shell grid min-w-0 items-center gap-10 py-8 md:gap-14 md:py-12 lg:grid-cols-[0.88fr_1.12fr] lg:py-16">
+    <section className="reveal container-shell grid min-w-0 items-center gap-10 py-8 md:gap-14 md:py-12 lg:grid-cols-[0.88fr_1.12fr] lg:py-16">
       <div className="min-w-0">
         <h2 className="max-w-[17ch] text-3xl font-extrabold leading-[1.08] md:text-4xl">{t('home.intro.title')}</h2>
         <p className="mt-5 max-w-[58ch] text-sm leading-relaxed text-brand-coral">{t('home.intro.body')}</p>
@@ -37,13 +35,11 @@ export function IntroSection() {
 export function StorySection() {
   const { t } = useTranslation();
   const { locale } = useLocale();
-  const ref = useScrollReveal<HTMLElement>();
   const features = ['consultant', 'guides', 'feedback', 'events'] as const;
   return (
     <section
       id="about"
-      ref={ref}
-      className="bg-slate-50 py-20 text-slate-900 md:py-28"
+      className="reveal bg-slate-50 py-20 text-slate-900 md:py-28"
     >
       <div className="container-shell min-w-0">
         <header className="mx-auto min-h-[14rem] max-w-4xl text-center">
@@ -168,9 +164,4 @@ export function ConsultationBand() {
       </div>
     </section>
   );
-}
-
-export function SectionLink({ to, children }: { to: string; children: string }) {
-  const { locale } = useLocale();
-  return <Link to={localizedPath(to, locale)} className={buttonStyles('ghost', 'mt-8 w-full sm:w-fit')}>{children}</Link>;
 }

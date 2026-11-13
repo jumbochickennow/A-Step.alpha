@@ -61,9 +61,10 @@ export async function uploadAdminOpportunityImage(
   opportunityId: string,
   image: File,
   onProgress?: (percent: number) => void,
+  collection: 'opportunities' | 'resources' = 'opportunities',
 ): Promise<string> {
   return (await apiUpload<{ success: true; imagePath: string }>(
-    `/api/v1/admin/opportunities/${encodeURIComponent(opportunityId)}/image`,
+    `/api/v1/admin/${collection}/${encodeURIComponent(opportunityId)}/image`,
     image,
     image.type,
     onProgress,
@@ -74,8 +75,8 @@ export async function deleteAdminGuide(id: string): Promise<void> {
   await apiJson(`/api/v1/admin/guides/${encodeURIComponent(id)}`, { method: 'DELETE', body: '{}' });
 }
 
-export async function listAdminOpportunities(): Promise<Opportunity[]> {
-  return (await apiJson<{ items: Opportunity[] }>('/api/v1/admin/opportunities')).items;
+export async function listAdminOpportunities(collection: 'opportunities' | 'resources' = 'opportunities'): Promise<Opportunity[]> {
+  return (await apiJson<{ items: Opportunity[] }>(`/api/v1/admin/${collection}`)).items;
 }
 
 type AdminOpportunityInput = Omit<Opportunity, 'id'> & { id?: string };
@@ -95,9 +96,9 @@ function opportunityPayload(opportunity: AdminOpportunityInput, published = oppo
   };
 }
 
-export async function createAdminOpportunityDraft(opportunity: AdminOpportunityInput): Promise<string> {
+export async function createAdminOpportunityDraft(opportunity: AdminOpportunityInput, collection: 'opportunities' | 'resources' = 'opportunities'): Promise<string> {
   if (opportunity.id) return opportunity.id;
-  return (await apiJson<{ success: true; resourceId: string }>('/api/v1/admin/opportunities', {
+  return (await apiJson<{ success: true; resourceId: string }>(`/api/v1/admin/${collection}`, {
     method: 'POST',
     body: JSON.stringify(opportunityPayload(opportunity, false)),
   })).resourceId;
@@ -105,31 +106,22 @@ export async function createAdminOpportunityDraft(opportunity: AdminOpportunityI
 
 export async function saveAdminOpportunity(
   opportunity: AdminOpportunityInput,
+  collection: 'opportunities' | 'resources' = 'opportunities',
 ): Promise<string> {
   const normalized = opportunityPayload(opportunity);
   if (opportunity.id) {
-    await apiJson(`/api/v1/admin/opportunities/${encodeURIComponent(opportunity.id)}`, {
+    await apiJson(`/api/v1/admin/${collection}/${encodeURIComponent(opportunity.id)}`, {
       method: 'PUT',
       body: JSON.stringify(normalized),
     });
     return opportunity.id;
   }
-  return (await apiJson<{ success: true; resourceId: string }>('/api/v1/admin/opportunities', {
+  return (await apiJson<{ success: true; resourceId: string }>(`/api/v1/admin/${collection}`, {
     method: 'POST',
     body: JSON.stringify(normalized),
   })).resourceId;
 }
 
-export async function deleteAdminOpportunity(id: string): Promise<void> {
-  await apiJson(`/api/v1/admin/opportunities/${encodeURIComponent(id)}`, { method: 'DELETE', body: '{}' });
-}
-
-export type AdminRecord = {
-  id: string;
-} & Record<string, string | number | boolean | null>;
-
-export type AdminRecordTable = 'guide_download_leads' | 'newsletter_subscribers' | 'contact_messages';
-
-export async function listAdminRecords(table: AdminRecordTable): Promise<AdminRecord[]> {
-  return (await apiJson<{ items: AdminRecord[] }>(`/api/v1/admin/records/${table}`)).items;
+export async function deleteAdminOpportunity(id: string, collection: 'opportunities' | 'resources' = 'opportunities'): Promise<void> {
+  await apiJson(`/api/v1/admin/${collection}/${encodeURIComponent(id)}`, { method: 'DELETE', body: '{}' });
 }

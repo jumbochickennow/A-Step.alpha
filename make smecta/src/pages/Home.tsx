@@ -1,4 +1,4 @@
-import { BadgeCheck, CalendarClock, Check, Clock3, MapPin, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, CalendarClock, Check, Clock3, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { FaqList } from '../components/common/FaqList';
@@ -7,6 +7,7 @@ import { WhatsAppCTA } from '../components/common/WhatsAppCTA';
 import { ConsultationBand, IntroSection, ServicesSection, StorySection } from '../components/home/HomeSections';
 import { KineticTrustRow } from '../components/home/KineticTrustRow';
 import { localizedPath, useLocale } from '../hooks/useLocale';
+import { whatsappHref } from '../lib/constants';
 import { track } from '../services/analytics';
 
 export function Home() {
@@ -41,7 +42,7 @@ export function Home() {
             <WhatsAppCTA label={t('home.hero.primary')} source="home_hero" className="mt-7 rounded-full px-6 [&_svg]:order-2 [&_svg]:rounded-full [&_svg]:bg-white [&_svg]:p-1 [&_svg]:text-brand-blue" />
             {/* Subtle pricing/offers intake link directly beneath the primary CTA. */}
             <a
-              href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER?.trim() || '213783145805'}?text=${encodeURIComponent('Hello A-Step, I would like to receive the latest prices and offers')}`}
+              href={whatsappHref('Hello A-Step, I would like to receive the latest prices and offers')}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`${t('home.hero.pricingNote')} — ${t('common.whatsappLabel')}`}
