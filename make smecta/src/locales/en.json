@@ -34,7 +34,7 @@
     "refresh": "Refresh page"
   },
   "categories": {
-    "algeria": "Algeria", "france": "France", "italy": "Italy", "canada": "Canada", "china": "China", "germany": "Germany", "poland": "Poland", "gulf": "Gulf", "europe": "Europe",
+    "france": "France", "italy": "Italy", "canada": "Canada", "china": "China", "germany": "Germany", "poland": "Poland", "europe": "Europe",
     "applications": "Applications", "careers": "Careers", "scholarships": "Scholarships", "universities": "Universities", "visas": "Visas", "cabinCrew": "Cabin Crew"
   },
   "home": {
@@ -164,6 +164,7 @@
     "updated": "Updated {{date}}",
     "download": "Download guide",
     "empty": "No guides in this category yet — new ones are added regularly.",
+    "suggestedTitle": "You might also like",
     "error": "We could not load the guides. Check your connection and try again.",
     "ctaTitle": "One wrong information can cost your journey abroad, don’t risk it!",
     "freeQuotes": "Free Quotes",
@@ -190,6 +191,7 @@
       "submit": "Download Guide",
       "submitting": "Preparing your download…",
       "success": "Your download has started. Check your device for the PDF file.",
+      "whatsappCta": "Ask about this guide on WhatsApp",
       "error": "We could not prepare the download. Please try again later or contact A-Step.",
       "close": "Close download dialog"
     }

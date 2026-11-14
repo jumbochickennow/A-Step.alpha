@@ -34,7 +34,7 @@
     "refresh": "Actualiser la page"
   },
   "categories": {
-    "algeria": "Algérie", "france": "France", "italy": "Italie", "canada": "Canada", "china": "Chine", "germany": "Allemagne", "poland": "Pologne", "gulf": "Golfe", "europe": "Europe",
+    "france": "France", "italy": "Italie", "canada": "Canada", "china": "Chine", "germany": "Allemagne", "poland": "Pologne", "europe": "Europe",
     "applications": "Candidatures", "careers": "Carrières", "scholarships": "Bourses", "universities": "Universités", "visas": "Visas", "cabinCrew": "Personnel navigant"
   },
   "home": {
@@ -164,6 +164,7 @@
     "updated": "Mis à jour en {{date}}",
     "download": "Télécharger le guide",
     "empty": "Aucun guide dans cette catégorie pour le moment — de nouveaux guides sont ajoutés régulièrement.",
+    "suggestedTitle": "Ces guides pourraient vous intéresser",
     "error": "Impossible de charger les guides. Vérifiez votre connexion et réessayez.",
     "ctaTitle": "Une mauvaise information peut compromettre votre projet à l’étranger, ne prenez pas ce risque !",
     "freeQuotes": "Devis gratuits",
@@ -190,6 +191,7 @@
       "submit": "Télécharger le guide",
       "submitting": "Préparation du téléchargement…",
       "success": "Votre téléchargement a commencé. Vérifiez le fichier PDF sur votre appareil.",
+      "whatsappCta": "Poser une question sur ce guide via WhatsApp",
       "error": "Nous n’avons pas pu préparer le téléchargement. Réessayez plus tard ou contactez A-Step.",
       "close": "Fermer la fenêtre de téléchargement"
     }

@@ -44,15 +44,18 @@ export function Guides() {
         </div>
       </header>
       <section className="container-shell pb-24">
-        <FilterChips
-          label={t('guides.filterLabel')}
-          selected={category}
-          onChange={setCategory}
-          options={[
-            { value: '', label: t('guides.all') },
-            ...CATEGORIES.map((item) => ({ value: item, label: categoryLabel(item, t) })),
-          ]}
-        />
+        {/* Mobile: chips stick just below the fixed 80px navbar; desktop: static. */}
+        <div className="sticky top-20 z-30 -mx-4 bg-bg/95 px-4 py-1 backdrop-blur-sm md:static md:mx-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
+          <FilterChips
+            label={t('guides.filterLabel')}
+            selected={category}
+            onChange={setCategory}
+            options={[
+              { value: '', label: t('guides.all') },
+              ...CATEGORIES.map((item) => ({ value: item, label: categoryLabel(item, t) })),
+            ]}
+          />
+        </div>
         {/* Pricing/offers banner bar: sits directly between the filter chips and the guide cards grid. */}
         <div className="my-8 flex w-full flex-col items-center justify-between gap-3 rounded-2xl border border-border-strong bg-surface-1/60 px-6 py-3.5 text-center backdrop-blur-sm sm:flex-row sm:gap-4 sm:text-start">
           <p className="text-sm font-medium text-ink-muted md:text-base">{t('guides.pricingCta.banner')}</p>
@@ -67,7 +70,15 @@ export function Guides() {
         <p className="sr-only" aria-live="polite">{t('guides.results', { count: filtered.length })}</p>
         <div>
           {query.isLoading ? <CardGridSkeleton /> : query.isError ? <ErrorState message={t('guides.error')} retry={() => void query.refetch()} /> : filtered.length === 0 ? (
-            <EmptyState message={t('guides.empty')} action={<Button variant="ghost" onClick={() => setCategory('')}>{t('common.clearFilter')}</Button>} />
+            <>
+              <EmptyState message={t('guides.empty')} action={<Button variant="ghost" onClick={() => setCategory('')}>{t('common.clearFilter')}</Button>} />
+              {guides.length > 0 ? (
+                <section aria-labelledby="guides-suggested" className="mt-10">
+                  <h2 id="guides-suggested" className="mb-6 text-lg font-bold">{t('guides.suggestedTitle')}</h2>
+                  <div className="grid grid-cols-1 gap-7 md:grid-cols-3">{guides.slice(0, 3).map((guide) => <GuideCard key={guide.id} guide={guide} />)}</div>
+                </section>
+              ) : null}
+            </>
           ) : (
             <div key={category} className="grid grid-cols-1 gap-7 md:grid-cols-2 animate-fade-rise">{filtered.map((guide) => <GuideCard key={guide.id} guide={guide} />)}</div>
           )}
