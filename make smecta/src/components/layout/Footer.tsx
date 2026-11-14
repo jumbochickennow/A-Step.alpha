@@ -141,14 +141,14 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
-                className="inline-grid size-10 place-items-center rounded-full text-white/85 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="relative inline-grid size-10 place-items-center rounded-full text-white/85 before:absolute before:-inset-0.5 before:content-[''] hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 <Instagram size={15} aria-hidden="true" />
               </a>
               <a
                 href="mailto:contact@astepimmigration.space"
                 aria-label="Email A-Step"
-                className="inline-grid size-10 place-items-center rounded-full text-white/85 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="relative inline-grid size-10 place-items-center rounded-full text-white/85 before:absolute before:-inset-0.5 before:content-[''] hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 <Mail size={15} aria-hidden="true" />
               </a>
@@ -157,19 +157,19 @@ export function Footer() {
           <div>
             <h2 className="text-sm font-bold">{t('footer.company')}</h2>
             <div className="mt-4 flex flex-col gap-3 text-xs text-white/75">
-              <Link to={link('/about')} className="hover:text-white">{t('nav.about')}</Link>
-              <Link to={link('/guides')} className="hover:text-white">{t('nav.guides')}</Link>
-              <Link to={link('/opportunities')} className="hover:text-white">{t('nav.opportunities')}</Link>
-              <Link to={link('/contact')} className="hover:text-white">{t('nav.contact')}</Link>
+              <Link to={link('/about')} className="footer-link relative hover:text-white before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('nav.about')}</Link>
+              <Link to={link('/guides')} className="footer-link relative hover:text-white before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('nav.guides')}</Link>
+              <Link to={link('/opportunities')} className="footer-link relative hover:text-white before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('nav.opportunities')}</Link>
+              <Link to={link('/contact')} className="footer-link relative hover:text-white before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('nav.contact')}</Link>
             </div>
           </div>
           <div>
             <h2 className="text-sm font-bold">{t('footer.legal')}</h2>
             <div className="mt-4 flex flex-col gap-3 text-xs text-white/75">
-              <Link to={link('/terms')} className="hover:text-white">{t('footer.terms')}</Link>
-              <Link to={link('/privacy')} className="hover:text-white">{t('footer.privacy')}</Link>
-              <Link to={`${link('/privacy')}#cookies`} className="hover:text-white">{t('footer.cookies')}</Link>
-              <Link to={link('/terms')} className="hover:text-white">{t('footer.license')}</Link>
+              <Link to={link('/terms')} className="footer-link relative hover:text-white before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('footer.terms')}</Link>
+              <Link to={link('/privacy')} className="footer-link relative hover:text-white before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('footer.privacy')}</Link>
+              <Link to={`${link('/privacy')}#cookies`} className="footer-link relative hover:text-white before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('footer.cookies')}</Link>
+              <Link to={link('/terms')} className="footer-link relative hover:text-white before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('footer.license')}</Link>
             </div>
           </div>
         </div>

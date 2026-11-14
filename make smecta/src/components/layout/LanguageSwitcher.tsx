@@ -29,7 +29,8 @@ export function LanguageSwitcher() {
               changeLocale(item as Locale);
             }}
             className={cn(
-              'grid size-9 place-items-center rounded-full transition-colors',
+              // 36px visual, 44px hit area via the ::before overlay.
+              'relative grid size-9 place-items-center rounded-full transition-colors before:absolute before:-inset-1 before:content-[""]',
               active && 'bg-white text-brand-blue',
             )}
           >

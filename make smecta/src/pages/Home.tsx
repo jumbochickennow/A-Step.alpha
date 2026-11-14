@@ -47,7 +47,7 @@ export function Home() {
               rel="noopener noreferrer"
               aria-label={`${t('home.hero.pricingNote')} — ${t('common.whatsappLabel')}`}
               onClick={() => track('whatsapp_click', { source: 'home_hero_pricing_note' })}
-              className="mt-4 inline-flex max-w-full items-center justify-center gap-1.5 rounded-md px-2 py-1 text-center text-xs leading-relaxed text-ink-muted transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 md:text-sm"
+              className="mt-4 inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-md px-2 py-1 text-center text-xs leading-relaxed text-ink-muted transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 md:text-sm"
             >
               {t('home.hero.pricingNote')}
             </a>
@@ -66,7 +66,7 @@ export function Home() {
         <div className="container-shell grid gap-12 lg:grid-cols-[0.65fr_1.35fr]">
           <div>
             <h2 className="max-w-[14ch] text-3xl font-bold leading-tight md:text-4xl">{t('home.faq.title')}</h2>
-            <p className="mt-4 text-sm text-ink-muted">{t('home.faq.prompt')} <Link to={localizedPath('/contact', locale)} className="font-semibold text-brand-blue-text">{t('home.faq.contact')}</Link></p>
+            <p className="mt-4 text-sm text-ink-muted">{t('home.faq.prompt')} <Link to={localizedPath('/contact', locale)} className="relative font-semibold text-brand-blue-text before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('home.faq.contact')}</Link></p>
           </div>
           <FaqList limit={5} design />
         </div>
