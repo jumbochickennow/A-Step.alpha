@@ -94,7 +94,7 @@
   }
 
   a {
-    @apply transition-colors duration-150;
+    transition: color var(--motion-fast) var(--ease-standard), background-color var(--motion-fast) var(--ease-standard);
   }
 
   button,
@@ -159,7 +159,7 @@
   @media (prefers-reduced-motion: no-preference) {
     .filter-results,
     .form-success-enter {
-      animation: feedback-enter 180ms cubic-bezier(0.16, 1, 0.3, 1);
+      animation: feedback-enter var(--motion-fast) var(--ease-out-expo);
     }
   }
 
@@ -189,7 +189,7 @@
   @supports (animation-timeline: view()) {
     @media (prefers-reduced-motion: no-preference) {
       .reveal {
-        animation: scroll-reveal 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        animation: scroll-reveal var(--motion-reveal) var(--ease-out-expo) both;
         animation-timeline: view();
         animation-range: entry 10% cover 32%;
       }
@@ -255,7 +255,7 @@
     border-radius: inherit;
     box-shadow: var(--glow-blue);
     opacity: 0;
-    transition: opacity 220ms ease;
+    transition: opacity var(--motion-base) var(--ease-standard);
     pointer-events: none;
   }
   .glow-edge:hover::before,
@@ -308,20 +308,45 @@
   }
 
   .eyebrow {
-    @apply text-[0.8125rem] font-semibold uppercase tracking-[0.08em] text-brand-blue-text;
+    @apply text-micro font-semibold uppercase tracking-[0.08em] text-brand-blue-text;
   }
 
   .card {
-    @apply rounded-lg border border-border bg-surface-1 shadow-card transition duration-200 ease-out;
+    @apply rounded-lg border border-border bg-surface-1 shadow-card;
+    transition: transform var(--motion-base) var(--ease-standard), border-color var(--motion-base) var(--ease-standard);
+  }
+
+  /*
+   * Hover lift. The hover shadow is pre-painted on a ::before layer and only
+   * its opacity animates (compositor-only) — box-shadow itself never transitions.
+   */
+  .lift {
+    position: relative;
+    isolation: isolate;
+  }
+  .lift::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    box-shadow: var(--shadow-hover);
+    opacity: 0;
+    transition: opacity var(--motion-base) var(--ease-standard);
+    pointer-events: none;
+  }
+  .lift:hover::before,
+  .lift:focus-within::before {
+    opacity: 1;
   }
 
   .card-hover {
-    @apply hover:-translate-y-1 hover:border-border-strong hover:shadow-hover;
+    @apply lift hover:-translate-y-1 hover:border-border-strong;
   }
 
   .field {
     @apply min-h-11 w-full rounded-md border border-border bg-surface-2 px-4 py-3 text-base text-ink placeholder:text-ink-subtle;
-    transition: border-color 180ms ease, box-shadow 180ms ease;
+    transition: border-color var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard);
   }
 
   .field:focus-visible {
@@ -350,7 +375,7 @@
     z-index: -1;
     background: radial-gradient(circle at 50% 50%, rgb(255 255 255 / 0.35), transparent 70%);
     opacity: 0;
-    transition: opacity 260ms ease;
+    transition: opacity var(--motion-slow) var(--ease-standard);
     pointer-events: none;
   }
   .press-sheen:active::after {

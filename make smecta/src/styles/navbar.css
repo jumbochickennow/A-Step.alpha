@@ -1,12 +1,12 @@
-.astep-navbar { background:transparent; transition:background-color 180ms ease-out, box-shadow 180ms ease-out; }
+.astep-navbar { background:transparent; transition:background-color var(--motion-fast) var(--ease-standard); }
 .astep-navbar[data-scrolled='true'] { background:rgb(255 255 255 / 0.97); box-shadow:0 2px 16px rgb(11 18 32 / 0.12); }
 .navbar-inner { width:min(1280px,calc(100% - 40px)); min-height:80px; margin-inline:auto; }
 .astep-navbar nav[aria-label='Primary'] { gap:20px; }
 .navbar-link { color:var(--blue); }
 .navbar-link,.navbar-menu-trigger,.navbar-languages button,.navbar-drawer > button {
-  transition:transform 180ms ease-out, background-color 180ms ease-out, box-shadow 180ms ease-out;
+  transition:transform var(--motion-fast) var(--ease-standard), background-color var(--motion-fast) var(--ease-standard);
 }
-.navbar-link::after { transition:transform 180ms ease-out; }
+.navbar-link::after { transition:transform var(--motion-fast) var(--ease-standard); }
 .navbar-link:focus-visible,.navbar-menu-trigger:focus-visible,.navbar-languages button:focus-visible {
   outline:2px solid var(--blue); outline-offset:4px;
 }
@@ -16,8 +16,8 @@
 .navbar-drawer[role='dialog'] > button { color:var(--blue); }
 .navbar-drawer .navbar-link[aria-current='page'] { background:#0e7be50d; box-shadow:inset 3px 0 var(--coral); }
 [dir='rtl'] .navbar-drawer .navbar-link[aria-current='page'] { box-shadow:inset -3px 0 var(--coral); }
-.navbar-drawer[data-state='open'] { animation:navbar-slide-in 190ms cubic-bezier(.16,1,.3,1); }
-.navbar-overlay[data-state='open'] { animation:navbar-overlay-in 190ms ease-out; }
+.navbar-drawer[data-state='open'] { animation:navbar-slide-in var(--motion-base) var(--ease-out-expo); }
+.navbar-overlay[data-state='open'] { animation:navbar-overlay-in var(--motion-base) var(--ease-standard); }
 .navbar-drawer[data-state='closed'],.navbar-overlay[data-state='closed'] { animation:none; pointer-events:none; visibility:hidden; }
 @keyframes navbar-slide-in { from { opacity:.85; transform:translateX(var(--drawer-entry)); } to { opacity:1; transform:translateX(0); } }
 @keyframes navbar-overlay-in { from { opacity:0; } to { opacity:1; } }

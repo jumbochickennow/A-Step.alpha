@@ -6,11 +6,30 @@
   --border-strong: #3d4a61;
   --text: #ffffff;
   --text-muted: #a8b2c4;
-  --text-subtle: #7a8699;
+  --text-subtle: #8e9bad;
+  /* Muted copy on white/pale surfaces (≥4.5:1 on #fff and #f7f8fc). */
+  --text-muted-light: #5f6b80;
   --blue: #0e7be5;
   --blue-text: #4da3f5;
+  /* Blue for text and filled buttons on light surfaces (white text ≥5.5:1, text on white ≥5:1). */
+  --blue-text-light: #1565c0;
   --coral: #ff5e59;
   --coral-btn: #cc3a35;
+  /* Text-safe coral: white-on-coral and coral-on-white both clear 4.5:1. */
+  --coral-text: #cc3a35;
+  /* Footer surfaces. */
+  --footer-bg: #111722;
+  --footer-card: #1565c0;
+  --footer-card-on-blue: #1a2b4a;
+  /* Motion tokens: every CSS transition/animation maps to one of these. */
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --motion-slow: 300ms;
+  --motion-reveal: 500ms;
+  --ease-standard: ease-out;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Smallest body size: 12px (card meta, pills, eyebrows). */
+  --text-micro: 0.75rem;
   --success: #34d399;
   --danger: #f87171;
   --r-sm: 8px;
