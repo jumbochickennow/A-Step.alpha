@@ -14,6 +14,8 @@ export interface Guide {
   id: string;
   slug: string;
   category: string;
+  /** Lowercase destination key (france, italy, europe, …); null for guides without a destination. */
+  country?: string | null;
   filePath: string | null;
   r2KeyEn?: string | null;
   r2KeyFr?: string | null;

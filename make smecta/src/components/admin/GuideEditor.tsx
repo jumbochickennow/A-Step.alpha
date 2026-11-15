@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../hooks/useToast';
-import { CATEGORIES, categoryLabel } from '../../lib/constants';
+import { CATEGORIES, COUNTRIES, categoryLabel } from '../../lib/constants';
 import { saveAdminGuide, uploadAdminGuidePdf } from '../../services/admin.service';
 import { ApiError } from '../../services/api-client';
 import type { Guide, GuideLanguage, Locale } from '../../types/content';
@@ -27,6 +27,7 @@ export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCan
     id: guide?.id,
     slug: guide?.slug ?? '',
     category: guide?.category ?? 'France',
+    country: guide?.country ?? null,
     filePath: guide?.filePath ?? null,
     r2KeyEn: guide?.r2KeyEn ?? guide?.filePath ?? null,
     r2KeyFr: guide?.r2KeyFr ?? null,
@@ -89,6 +90,7 @@ export function GuideEditor({ guide, onCancel, onSaved }: { guide?: Guide; onCan
       <div className="grid gap-5 md:grid-cols-2">
         <label className="text-sm font-semibold">{t('admin.slug')}<input className="field mt-2" value={value.slug} onChange={(e) => setValue({ ...value, slug: e.target.value })} pattern="[a-z0-9-]+" required /></label>
         <label className="text-sm font-semibold">{t('admin.category')}<select className="field mt-2" value={value.category} onChange={(e) => setValue({ ...value, category: e.target.value })}>{CATEGORIES.map((item) => <option key={item} value={item}>{categoryLabel(item, t)}</option>)}</select></label>
+        <label className="text-sm font-semibold">{t('admin.country')}<select className="field mt-2" value={value.country ?? ''} onChange={(e) => setValue({ ...value, country: e.target.value || null })}><option value="">—</option>{COUNTRIES.map((item) => <option key={item} value={item.toLowerCase()}>{categoryLabel(item, t)}</option>)}</select></label>
         <label className="text-sm font-semibold">{t('admin.sortOrder')}<input type="number" className="field mt-2" value={value.sortOrder} onChange={(e) => setValue({ ...value, sortOrder: Number(e.target.value) })} /></label>
         <label className="text-sm font-semibold">{t('admin.updatedDate')}<input type="date" className="field mt-2" value={value.contentUpdatedAt} onChange={(e) => setValue({ ...value, contentUpdatedAt: e.target.value })} required /></label>
         <label className="text-sm font-semibold">{t('admin.pageCount')}<input type="number" min="1" className="field mt-2" value={value.pageCount} onChange={(e) => setValue({ ...value, pageCount: Number(e.target.value) })} required /></label>

@@ -23,10 +23,10 @@ export async function seedAdminCatalog(env: Env): Promise<void> {
   for (const guide of seedContent.guides) {
     statements.push(env.DB.prepare(
       `INSERT OR IGNORE INTO guides
-        (id, user_id, slug, category, storage_object_path, r2_key_en, r2_key_fr, r2_key_ar,
+        (id, user_id, slug, category, country, storage_object_path, r2_key_en, r2_key_fr, r2_key_ar,
          file_type, page_count, cover_path, published, sort_order, content_updated_at,
          translations, created_at, updated_at)
-       VALUES (?1, ?2, ?3, ?4,
+       VALUES (?1, ?2, ?3, ?4, ?12,
          (SELECT COALESCE(r2_key_en, object_key) FROM guide_assets WHERE slug = ?3),
          (SELECT COALESCE(r2_key_en, object_key) FROM guide_assets WHERE slug = ?3),
          (SELECT r2_key_fr FROM guide_assets WHERE slug = ?3),
@@ -44,6 +44,7 @@ export async function seedAdminCatalog(env: Env): Promise<void> {
       guide.contentUpdatedAt,
       JSON.stringify(guide.translations),
       now,
+      guide.country ?? null,
     ));
   }
 

@@ -36,6 +36,7 @@ const guideSchema = z.object({
   id: resourceRefSchema.optional(),
   slug: z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/),
   category: z.string().trim().min(1).max(80),
+  country: z.string().trim().toLowerCase().min(1).max(40).regex(/^[a-z-]+$/).nullable().optional(),
   filePath: nullableGuidePath,
   r2KeyEn: nullableGuidePath,
   r2KeyFr: nullableGuidePath,
@@ -84,7 +85,7 @@ function opportunityValidationCode(error: z.ZodError): string {
 }
 
 interface GuideRow {
-  id: string; slug: string; category: string; storage_object_path: string | null; file_type: string;
+  id: string; slug: string; category: string; country: string | null; storage_object_path: string | null; file_type: string;
   r2_key_en: string | null; r2_key_fr: string | null; r2_key_ar: string | null;
   page_count: number; cover_path: string | null; published: number; sort_order: number;
   content_updated_at: string; translations: string;
@@ -137,6 +138,7 @@ async function guideFromRow(row: GuideRow, env: Env, identity: AdminIdentity) {
     id: await createResourceRef(row.id, 'guide', identity.id, env.RESOURCE_REF_SECRET),
     slug: row.slug,
     category: row.category,
+    country: row.country,
     filePath: row.storage_object_path,
     r2KeyEn: row.r2_key_en,
     r2KeyFr: row.r2_key_fr,
@@ -173,7 +175,7 @@ async function guides(request: Request, env: Env, identity: AdminIdentity, id?: 
   if (request.method === 'GET' && !id) {
     await seedAdminCatalog(env);
     const { results } = await env.DB.prepare(
-      `SELECT g.id, g.slug, g.category, g.storage_object_path,
+      `SELECT g.id, g.slug, g.category, g.country, g.storage_object_path,
        COALESCE(g.r2_key_en, a.r2_key_en) AS r2_key_en,
        COALESCE(g.r2_key_fr, a.r2_key_fr) AS r2_key_fr,
        COALESCE(g.r2_key_ar, a.r2_key_ar) AS r2_key_ar,
@@ -193,15 +195,15 @@ async function guides(request: Request, env: Env, identity: AdminIdentity, id?: 
     const now = new Date().toISOString();
     await mutate(env.DB.prepare(
       `INSERT INTO guides
-        (id, user_id, slug, category, storage_object_path, r2_key_en, r2_key_fr, r2_key_ar,
+        (id, user_id, slug, category, country, storage_object_path, r2_key_en, r2_key_fr, r2_key_ar,
          file_type, page_count, cover_path, published, sort_order, content_updated_at,
          translations, created_at, updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?16)`,
+       VALUES (?1, ?2, ?3, ?4, ?17, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?16)`,
     ).bind(
       databaseId, identity.id, input.slug, input.category, null,
       null, null, null, input.fileType, input.pageCount,
       input.coverPath, input.published ? 1 : 0, input.sortOrder, input.contentUpdatedAt,
-      JSON.stringify(input.translations), now,
+      JSON.stringify(input.translations), now, input.country ?? null,
     ));
     return json({
       success: true,
@@ -216,12 +218,12 @@ async function guides(request: Request, env: Env, identity: AdminIdentity, id?: 
     await mutate(env.DB.prepare(
       `UPDATE guides SET slug = ?1, category = ?2, file_type = ?3,
        page_count = ?4, cover_path = ?5, published = ?6, sort_order = ?7,
-       content_updated_at = ?8, translations = ?9, updated_at = ?10
+       content_updated_at = ?8, translations = ?9, updated_at = ?10, country = ?12
        WHERE id = ?11`,
     ).bind(
       input.slug, input.category, input.fileType, input.pageCount, input.coverPath,
       input.published ? 1 : 0, input.sortOrder, input.contentUpdatedAt,
-      JSON.stringify(input.translations), new Date().toISOString(), databaseId,
+      JSON.stringify(input.translations), new Date().toISOString(), databaseId, input.country ?? null,
     ));
     return json({ success: true });
   }

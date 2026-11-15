@@ -29,7 +29,7 @@ interface GuideAsset {
 interface Subscriber { id: string }
 
 interface PublicGuideRow {
-  id: string; slug: string; category: string; file_type: string; page_count: number;
+  id: string; slug: string; category: string; country: string | null; file_type: string; page_count: number;
   cover_path: string | null; published: number; sort_order: number;
   content_updated_at: string; translations: string;
   r2_key_en: string | null; r2_key_fr: string | null; r2_key_ar: string | null;
@@ -57,7 +57,7 @@ export async function listGuideAvailability(request: Request, env: Env): Promise
   requireMethod(request, ['GET']);
   await seedAdminCatalog(env);
   const { results } = await env.DB.prepare(
-    `SELECT g.id, g.slug, g.category, g.file_type, g.page_count, g.cover_path,
+    `SELECT g.id, g.slug, g.category, g.country, g.file_type, g.page_count, g.cover_path,
      g.published, g.sort_order, g.content_updated_at, g.translations,
      COALESCE(g.r2_key_en, a.r2_key_en) AS r2_key_en,
      COALESCE(g.r2_key_fr, a.r2_key_fr) AS r2_key_fr,
@@ -70,6 +70,7 @@ export async function listGuideAvailability(request: Request, env: Env): Promise
       id: row.id,
       slug: row.slug,
       category: row.category,
+      country: row.country,
       filePath: null,
       fileType: row.file_type,
       pageCount: row.page_count,

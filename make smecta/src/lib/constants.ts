@@ -1,8 +1,10 @@
 import type { Locale } from '../types/content';
 
 export const LOCALES: Locale[] = ['en', 'fr', 'ar'];
-export const COUNTRIES = ['Algeria', 'France', 'Italy', 'Canada', 'China', 'Germany', 'Poland', 'Gulf'] as const;
+export const COUNTRIES = ['France', 'Italy', 'Canada', 'China', 'Germany', 'Poland', 'Europe'] as const;
 export const TOPICS = ['Scholarships', 'Universities', 'Visas', 'Cabin Crew'] as const;
+/** "Target country" options in the guide download dialog. Separate from the filter chips: Gulf is a Cabin Crew destination. */
+export const LEAD_TARGET_COUNTRIES = ['France', 'Italy', 'Canada', 'China', 'Germany', 'Poland', 'Europe', 'Gulf', 'Other'] as const;
 export const CATEGORIES = [...COUNTRIES, ...TOPICS] as const;
 
 export const SUPPORTED_LOCALES: readonly Locale[] = ['ar', 'en', 'fr'] as const;
@@ -26,13 +28,20 @@ export const localeNames: Record<Locale, string> = {
 };
 
 const categoryKeys: Record<string, string> = {
-  Algeria: 'algeria', France: 'france', Italy: 'italy', Canada: 'canada', China: 'china', Germany: 'germany', Poland: 'poland', Gulf: 'gulf', Europe: 'europe',
+  France: 'france', Italy: 'italy', Canada: 'canada', China: 'china', Germany: 'germany', Poland: 'poland', Europe: 'europe',
   Scholarships: 'scholarships', Universities: 'universities', Visas: 'visas', 'Cabin Crew': 'cabinCrew',
   applications: 'applications', careers: 'careers', scholarships: 'scholarships', universities: 'universities', visas: 'visas',
+  // Lowercase `guide.country` values (D1 column) share the country labels above.
+  france: 'france', italy: 'italy', canada: 'canada', china: 'china', germany: 'germany', poland: 'poland', europe: 'europe',
 };
 
 export function categoryLabel(category: string, translate: (key: string) => string) {
   return categoryKeys[category] ? translate(`categories.${categoryKeys[category]}`) : category;
+}
+
+/** Chip value (as in `CATEGORIES`) for a lowercase `guide.country`, or null when unknown. */
+export function countryChipValue(country: string | null | undefined): (typeof COUNTRIES)[number] | null {
+  return COUNTRIES.find((item) => item.toLowerCase() === country?.trim().toLowerCase()) ?? null;
 }
 
 /**
