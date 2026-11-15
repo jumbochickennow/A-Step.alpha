@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { Check } from 'lucide-react';
@@ -20,6 +20,11 @@ export function Guides() {
   const query = useGuides(locale);
   const [params, setParams] = useSearchParams();
   const category = normalizeGuideFilter(params.get('category'));
+  const chipsRef = useRef<HTMLDivElement>(null);
+  // Deep links (?category=france) land on the filter chips, not the hero.
+  useEffect(() => {
+    if (params.get('category')) chipsRef.current?.scrollIntoView({ block: 'start' });
+  }, []); // mount only: later chip taps must not re-scroll
   const guides = query.data ?? [];
   const filtered = useMemo(() => filterGuides(guides, category), [category, guides]);
   const setCategory = (value: string) => {
@@ -37,7 +42,7 @@ export function Guides() {
           <path d="M-20 150C160 0 310 340 490 165S820 30 980 190s220 15 320-95" fill="none" stroke="currentColor" strokeWidth="1" />
         </svg>
         <div className="container-shell flex min-h-[19rem] flex-col items-center justify-center">
-          <p className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-brand-coral">{t('guides.eyebrow')}</p>
+          <p className="eyebrow text-brand-coral">{t('guides.eyebrow')}</p>
           <h1 className="mx-auto mt-5 max-w-[20ch] text-4xl font-extrabold leading-tight md:text-5xl">{t('guides.title')}</h1>
           <p className="mx-auto mt-5 max-w-[62ch] text-base leading-relaxed text-ink-muted">{t('guides.body')}</p>
           <WhatsAppCTA label={t('home.hero.primary')} source="guides_hero" className="mt-7 rounded-md px-10 py-2 text-xs" />
@@ -45,7 +50,7 @@ export function Guides() {
       </header>
       <section className="container-shell pb-24">
         {/* Mobile: chips stick just below the fixed 80px navbar; desktop: static. */}
-        <div className="sticky top-20 z-30 -mx-4 bg-bg/95 px-4 py-1 backdrop-blur-sm md:static md:mx-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
+        <div ref={chipsRef} className="sticky top-20 z-30 -mx-4 scroll-mt-20 bg-bg/95 px-4 py-1 backdrop-blur-sm md:static md:mx-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
           <FilterChips
             label={t('guides.filterLabel')}
             selected={category}
@@ -56,18 +61,8 @@ export function Guides() {
             ]}
           />
         </div>
-        {/* Pricing/offers banner bar: sits directly between the filter chips and the guide cards grid. */}
-        <div className="my-8 flex w-full flex-col items-center justify-between gap-3 rounded-2xl border border-border-strong bg-surface-1/60 px-6 py-3.5 text-center backdrop-blur-sm sm:flex-row sm:gap-4 sm:text-start">
-          <p className="text-sm font-medium text-ink-muted md:text-base">{t('guides.pricingCta.banner')}</p>
-          <WhatsAppCTA
-            label={t('guides.pricingCta.button')}
-            source="guides_pricing_banner"
-            intent="pricing"
-            variant="primary"
-            className="min-h-11 shrink-0 gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white transition-all hover:translate-y-0 hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.98] active:translate-y-0"
-          />
-        </div>
-        <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 text-sm text-ink-muted">
+        <h2 id="guides-results" className="sr-only">{t('guides.resultsTitle')}</h2>
+        <div className="mb-5 mt-6 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 text-sm text-ink-muted">
           <p aria-live="polite">{query.isSuccess ? t('guides.results', { count: filtered.length }) : query.isLoading ? t('common.loading') : ''}</p>
           <p>{t('guides.nextStep')}</p>
         </div>
@@ -85,6 +80,17 @@ export function Guides() {
           ) : (
             <div key={category} className="filter-results grid grid-cols-1 gap-7 md:grid-cols-2">{filtered.map((guide) => <GuideCard key={guide.id} guide={guide} />)}</div>
           )}
+        </div>
+        {/* Pricing/offers banner: below the results so the deep-linked chips and the first cards stay together. */}
+        <div className="mt-12 flex w-full flex-col items-center justify-between gap-3 rounded-2xl border border-border-strong bg-surface-1/60 px-6 py-3.5 text-center sm:flex-row sm:gap-4 sm:text-start">
+          <p className="text-sm font-medium text-ink-muted md:text-base">{t('guides.pricingCta.banner')}</p>
+          <WhatsAppCTA
+            label={t('guides.pricingCta.button')}
+            source="guides_pricing_banner"
+            intent="pricing"
+            variant="primary"
+            className="min-h-11 shrink-0 gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white hover:translate-y-0 hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.98] active:translate-y-0"
+          />
         </div>
       </section>
       <section className="relative z-20 w-full overflow-x-clip">
