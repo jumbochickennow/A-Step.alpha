@@ -21,7 +21,7 @@
 .price-booking-steps li > span { display:grid; place-items:center; flex:none; width:34px; height:34px; background:#e6f3ff; border-radius:10px; color:var(--price-blue); font-weight:750; }
 .price-booking-steps h2 { font-size:23px; letter-spacing:-.5px; line-height:1.35; margin-bottom:3px; }
 .price-booking-steps p { font-size:15px; color:var(--price-muted); max-width:415px; }
-.price-step-trigger { display:inline-block; color:inherit; font:inherit; text-align:inherit; border:0; padding:0; background:none; cursor:pointer; transition:color .2s ease, transform .2s ease; }
+.price-step-trigger { display:inline-flex; align-items:center; min-height:44px; color:inherit; font:inherit; text-align:inherit; border:0; padding:0; background:none; cursor:pointer; transition:color .2s ease, transform .2s ease; }
 .price-booking-steps li > span { transition:background-color .2s ease, color .2s ease, box-shadow .2s ease, transform .2s ease; }
 .price-step-trigger:hover,.price-step-trigger:focus-visible,.price-booking-step--active .price-step-trigger { color:var(--price-blue); transform:translateY(-2px); }
 .price-booking-steps li:has(.price-step-trigger:hover) > span,.price-booking-steps li:focus-within > span,.price-booking-steps .price-booking-step--active > span { background:var(--price-blue); color:#fff; box-shadow:0 0 15px #0e80e940; transform:translateY(-2px); }

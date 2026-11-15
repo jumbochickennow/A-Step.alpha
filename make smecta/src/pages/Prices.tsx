@@ -74,7 +74,7 @@ export function Prices() {
     <section className="price-intro price-container" aria-labelledby="price-title">
       <h1 id="price-title">{copy.heroTitle}</h1><p className="price-intro-subtitle">{copy.heroSubtitle}</p>
       <div className="price-booking">
-        <a href="#packages" className="price-hero-art" aria-label={copy.scrollOffers}><img src="/assets/prices/consultation-hero.jpg" width="660" height="615" alt="" fetchPriority="high" /></a>
+        <a href="#packages" className="price-hero-art" aria-label={copy.scrollOffers}><img src="/assets/prices/consultation-hero.jpg" width="660" height="615" alt="" {...{ fetchpriority: 'high' }} /></a>
         <ol className="price-booking-steps">{copy.booking.map((step, i) => <li key={step.title} className={activeBookingStep === i ? 'price-booking-step--active' : undefined}><span>{i + 1}</span><div><h2>{i === 0 ? <a className="price-step-trigger" href="#packages" onClick={() => setActiveBookingStep(i)}>{step.title}</a> : <button className="price-step-trigger" type="button" aria-pressed={activeBookingStep === i} onClick={() => setActiveBookingStep(activeBookingStep === i ? null : i)}>{step.title}</button>}</h2><p>{step.body}</p></div></li>)}</ol>
       </div>
     </section>
