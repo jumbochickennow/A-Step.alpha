@@ -7,7 +7,7 @@ import type { LocalizedOpportunity } from '../../types/content';
 import { OpportunityApplyControl } from './OpportunityApplyControl';
 import { OpportunityVisual } from './OpportunityVisual';
 
-export function OpportunityCard({ opportunity, onOpen }: { opportunity: LocalizedOpportunity; onOpen: (trigger: HTMLButtonElement) => void }) {
+export function OpportunityCard({ opportunity, onOpen, priority = false }: { opportunity: LocalizedOpportunity; onOpen: (trigger: HTMLButtonElement) => void; priority?: boolean }) {
   const { t, i18n } = useTranslation();
   const { locale } = useLocale();
   const closingSoon = isClosingSoon(opportunity.deadline);
@@ -18,16 +18,16 @@ export function OpportunityCard({ opportunity, onOpen }: { opportunity: Localize
   });
   const inquireLabel = t('opportunities.askWhatsapp');
   return (
-    <article className="glow-edge relative flex h-full min-w-0 flex-col rounded-xl transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-xl focus-within:ring-2 focus-within:ring-brand-blue-text motion-reduce:transform-none motion-reduce:transition-none">
+    <article className="glow-edge lift relative flex h-full min-w-0 flex-col rounded-xl transition-transform duration-slow ease-out hover:-translate-y-1 focus-within:ring-2 focus-within:ring-brand-blue-text motion-reduce:transform-none motion-reduce:transition-none">
       <button type="button" onClick={(event) => onOpen(event.currentTarget)} aria-label={`${t('opportunities.viewDetails')}: ${opportunity.title}`} aria-haspopup="dialog" className="absolute inset-0 z-10 cursor-pointer rounded-xl focus-visible:outline-none" />
-      <div className="group aspect-[3/2] overflow-hidden rounded-xl border border-transparent transition-colors duration-300 group-hover:border-primary/40"><div className="h-full w-full transition-transform duration-300 ease-out group-hover:scale-105"><OpportunityVisual country={opportunity.country} imagePath={opportunity.imagePath} /></div></div>
+      <div className="group aspect-[3/2] overflow-hidden rounded-xl border border-transparent transition-colors duration-300 group-hover:border-primary/40"><div className="h-full w-full transition-transform duration-300 ease-out group-hover:scale-105"><OpportunityVisual country={opportunity.country} imagePath={opportunity.imagePath} priority={priority} /></div></div>
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {closingSoon ? (
-          <span className="pill-urgent inline-flex items-center rounded-full bg-[rgb(255_94_89/0.15)] px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-brand-coral">
+          <span className="pill-urgent inline-flex items-center rounded-full bg-[rgb(255_94_89/0.15)] px-2.5 py-0.5 text-micro font-bold uppercase tracking-wide text-brand-coral">
             {t('opportunities.closingSoon')}
           </span>
         ) : null}
-        <p className="text-[0.65rem] text-ink-subtle"><bdi>{opportunity.deadline ? formatDate(opportunity.deadline, locale) : t('common.comingSoon')}</bdi></p>
+        <p className="text-micro text-ink-subtle"><bdi>{opportunity.deadline ? formatDate(opportunity.deadline, locale) : t('common.comingSoon')}</bdi></p>
       </div>
       <h2 className="mt-3 text-lg font-bold leading-tight">{opportunity.title}</h2>
       <p className="line-clamp-2 mt-3 text-xs leading-5 text-ink-subtle">{opportunity.description}</p>

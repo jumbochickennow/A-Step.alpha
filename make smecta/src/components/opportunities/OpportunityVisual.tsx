@@ -29,6 +29,7 @@ export function OpportunityVisual({ country, imagePath, priority = false }: { co
         style={{ aspectRatio: `${width} / ${height}` }}
         alt=""
         loading={priority ? 'eager' : 'lazy'}
+        {...(priority ? { fetchpriority: 'high' } : {})}
         decoding="async"
         className="h-full w-full object-cover"
       />

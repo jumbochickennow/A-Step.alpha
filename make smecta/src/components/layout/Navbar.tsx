@@ -1,5 +1,5 @@
 import { Menu } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router-dom';
 import { localizedPath, useLocale } from '../../hooks/useLocale';
@@ -87,10 +87,17 @@ function MobileMenu() {
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const scrolledRef = useRef(false);
 
   useEffect(() => {
     let resumeFrame = 0;
-    const sync = () => setScrolled(window.scrollY > 12);
+    // Only touch React state when the boolean actually flips — scroll fires every frame.
+    const sync = () => {
+      const next = window.scrollY > 12;
+      if (next === scrolledRef.current) return;
+      scrolledRef.current = next;
+      setScrolled(next);
+    };
     const resume = () => {
       if (document.visibilityState === 'visible') {
         sync();

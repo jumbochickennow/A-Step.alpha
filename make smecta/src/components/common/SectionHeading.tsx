@@ -21,7 +21,7 @@ export function SectionHeading({ eyebrow, badge, title, body, subtitle, centered
   return (
     <div className={cn('max-w-[68ch]', centered && 'mx-auto text-center', className)}>
       {badge ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-coral/40 bg-brand-coral/10 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-brand-coral">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-coral/40 bg-brand-coral/10 px-3 py-1 text-micro font-bold uppercase tracking-[0.14em] text-brand-coral">
           <bdi>{badge}</bdi>
         </span>
       ) : null}

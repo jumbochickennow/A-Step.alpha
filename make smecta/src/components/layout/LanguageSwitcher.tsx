@@ -13,7 +13,7 @@ export function LanguageSwitcher() {
     <div
       role="group"
       aria-label={t('nav.language')}
-      className="navbar-languages inline-flex h-11 items-center rounded-full bg-brand-coral p-1 text-xs font-bold text-white shadow-sm"
+      className="navbar-languages inline-flex h-11 items-center rounded-full bg-brand-coral-text p-1 text-xs font-bold text-white shadow-sm"
     >
       {LOCALES.map((item) => {
         const active = locale === item;
@@ -31,7 +31,7 @@ export function LanguageSwitcher() {
             className={cn(
               // 36px visual, 44px hit area via the ::before overlay.
               'relative grid size-9 place-items-center rounded-full transition-colors before:absolute before:-inset-1 before:content-[""]',
-              active && 'bg-white text-brand-blue',
+              active && 'bg-white text-brand-blue-text-light',
             )}
           >
             {localeNames[item]}

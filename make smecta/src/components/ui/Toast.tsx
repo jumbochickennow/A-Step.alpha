@@ -96,8 +96,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       {/* Logical end placement keeps the stack mirrored in RTL; z-[60] sits above dialogs (z-50). */}
+      {/* The live region exists from first render, so screen readers announce toasts inserted later. */}
       <div
-        role="region"
+        role="status"
+        aria-live="polite"
         aria-label="Notifications"
         className="pointer-events-none fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] end-[calc(1rem+env(safe-area-inset-right))] z-[60] flex w-[min(92vw,360px)] flex-col gap-2"
       >
@@ -107,8 +109,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div
               key={toast.id}
               id={`toast-${toast.id}`}
-              role="status"
-              aria-live="polite"
               className={cn('pointer-events-auto flex items-start gap-3 rounded-xl border bg-surface-1 p-4 shadow-modal backdrop-blur-sm', border)}
             >
               <Icon size={20} aria-hidden="true" className={cn('mt-0.5 shrink-0', icon)} />

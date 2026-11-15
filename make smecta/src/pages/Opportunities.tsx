@@ -47,7 +47,7 @@ export function Opportunities() {
         ) : (
           <div className="mx-auto min-w-0 max-w-5xl">
             <div className="grid gap-x-8 gap-y-16 md:grid-cols-2 lg:grid-cols-3">
-              {firstRow.map((item) => <OpportunityCard key={item.id} opportunity={item} onOpen={(trigger) => openDetails(item, trigger)} />)}
+              {firstRow.map((item, index) => <OpportunityCard key={item.id} opportunity={item} priority={index === 0} onOpen={(trigger) => openDetails(item, trigger)} />)}
             </div>
             <div className="mt-24"><FeaturedOpportunity opportunity={featured} onOpen={(trigger) => openDetails(featured, trigger)} /></div>
             {remaining.length ? (

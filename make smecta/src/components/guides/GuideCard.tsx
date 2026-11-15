@@ -20,7 +20,7 @@ export function GuideCard({ guide }: { guide: LocalizedGuide }) {
             // 28px visual pill, 44px hit area via the ::before overlay.
             <Link
               to={localizedPath(`/guides?category=${countryChip}`, locale)}
-              className="relative mb-3 inline-flex min-h-7 items-center rounded-full border border-white/20 px-2.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-white/80 transition-colors hover:border-white/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 before:absolute before:-inset-y-2 before:inset-x-0 before:content-['']"
+              className="relative mb-3 inline-flex min-h-7 items-center rounded-full border border-white/20 px-2.5 text-micro font-semibold uppercase tracking-[0.12em] text-white/80 transition-colors hover:border-white/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 before:absolute before:-inset-y-2 before:inset-x-0 before:content-['']"
             >
               {categoryLabel(countryChip, t)}
             </Link>
@@ -31,7 +31,7 @@ export function GuideCard({ guide }: { guide: LocalizedGuide }) {
       </div>
       <p className="mt-5 text-sm leading-relaxed text-white/65">{guide.description}</p>
       <div className="mt-auto flex items-end justify-between gap-5 pt-7">
-        <div className="text-[0.65rem] uppercase leading-relaxed text-white/60">
+        <div className="text-micro uppercase leading-relaxed text-white/70">
           <span className="block">{fileLabel}{guide.pageCount > 0 ? ` ${guide.pageCount}P` : ''}</span>
           <span className="block"><bdi>{t('guides.updated', { date: formatMonthYear(guide.contentUpdatedAt, locale) })}</bdi></span>
         </div>
