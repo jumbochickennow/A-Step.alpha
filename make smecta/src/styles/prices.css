@@ -183,8 +183,6 @@
 .price-closing-actions { display:flex; justify-content:center; gap:16px; margin-top:28px; }
 .price-closing-actions .price-button { border-radius:var(--r-full); min-width:206px; min-height:56px; }
 .price-closing > strong { display:block; color:var(--price-blue); margin-top:34px; font-size:14px; }
-.prices-footer button[type='submit'] { background:var(--coral-text); }
-.prices-footer button[type='submit']:hover { background:#b53330; }
 @media (hover:hover) and (prefers-reduced-motion:no-preference) {
  .price-tier:hover,.price-tier:focus-within { transform:translateY(-6px); }
  .price-tier:hover::before,.price-tier:focus-within::before { opacity:1; }

@@ -1,9 +1,3 @@
-import { z } from 'zod';
-
-/* ------------------------------------------------------------------ */
-/* Legacy schema layer (still consumed by Footer newsletter signup)    */
-/* ------------------------------------------------------------------ */
-
 const disposableDomains = new Set([
   'mailinator.com',
   'tempmail.com',
@@ -11,23 +5,6 @@ const disposableDomains = new Set([
   'guerrillamail.com',
   'yopmail.com',
 ]);
-const junkLocalParts = new Set(['test', 'asdf', 'aaa', 'fake', 'abc', 'nom']);
-
-export const emailSchema = z
-  .string()
-  .trim()
-  .email()
-  .max(254)
-  .refine((value: string) => !disposableDomains.has(value.toLowerCase().split('@')[1] ?? ''), 'disposable')
-  .refine((value: string) => {
-    const local = value.toLowerCase().split('@')[0] ?? '';
-    return local.length > 1 && !/^\d+$/.test(local) && !junkLocalParts.has(local);
-  }, 'junk');
-
-export const newsletterSchema = z.object({
-  email: emailSchema,
-  consent: z.boolean().refine((value: boolean) => value),
-});
 
 const typoDomains: Record<string, string> = {
   'gmial.com': 'gmail.com',

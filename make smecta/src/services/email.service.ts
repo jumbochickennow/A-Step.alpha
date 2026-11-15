@@ -10,21 +10,11 @@ export interface ContactPayload {
   turnstileToken: string;
 }
 
-export interface NewsletterPayload {
-  email: string;
-  locale: string;
-  turnstileToken: string;
-}
-
 export async function sendContactMessage(payload: ContactPayload): Promise<void> {
   await apiJson<{ success: true; submissionId: string; deliveryStatus: 'pending' }>(
     '/api/v1/contact',
     { method: 'POST', body: JSON.stringify(payload) },
   );
-}
-
-export async function subscribeNewsletter(payload: NewsletterPayload): Promise<void> {
-  await apiJson('/api/v1/newsletter', { method: 'POST', body: JSON.stringify(payload) });
 }
 
 export async function unsubscribeNewsletter(token: string): Promise<void> {

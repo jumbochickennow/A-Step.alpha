@@ -29,9 +29,6 @@
 .resources-calendar { width:100%; height:auto; }
 .resources-page a:focus-visible { outline:3px solid var(--res-blue); outline-offset:5px; }
 .resource-register:active,.resources-prices:active { transform:scale(.97); }
-.resources-footer button[type='submit'] { background:var(--coral-text); }
-.resources-footer button[type='submit']:hover { background:#b53330; }
-.resources-footer input[type='email'] { background:#fff; color:#141821; }
 .resources-empty { display:grid; grid-template-columns:1.35fr 1fr; align-items:center; gap:70px; min-height:480px; padding-bottom:100px; }
 .resources-empty h1 { color:var(--res-blue); font:800 clamp(32px,3.6vw,52px)/1.2 var(--font-brand); margin:0 0 25px; }
 .resources-empty p { font-size:18px; line-height:1.6; color:#444; margin:0 0 30px; }
@@ -39,7 +36,6 @@
 .resources-empty-actions { display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; }
 .resources-empty-actions a { font-size:18px; }
 .resources-loading { min-height:480px; color:var(--res-blue); }
-body:has(.resources-empty) .resources-footer > .container-shell > div:first-child { background:var(--coral-text); }
 .resource-card:not(.resource-card--featured):has(.resource-logo) { flex-direction:column-reverse; gap:24px; }
 .resource-card:not(.resource-card--featured) .resource-logo { width:min(240px,100%); }
 @media (max-width:768px) {
