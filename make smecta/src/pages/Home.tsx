@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
-import { BadgeCheck, CalendarClock, Check, Clock3, ShieldCheck } from 'lucide-react';
+import { ArrowRight, BadgeCheck, CalendarClock, Check, Clock3, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { FaqList } from '../components/common/FaqList';
 import { Seo } from '../components/common/Seo';
 import { buttonStyles } from '../components/common/Button';
-import { WhatsAppCTA } from '../components/common/WhatsAppCTA';
 import { ConsultationBand, IntroSection, ServicesSection, StorySection } from '../components/home/HomeSections';
 import { KineticTrustRow } from '../components/home/KineticTrustRow';
 import { localizedPath, useLocale } from '../hooks/useLocale';
+import { track } from '../services/analytics';
 
 export function Home() {
   const { t } = useTranslation();
@@ -43,8 +43,18 @@ export function Home() {
             <Link to={localizedPath('/guides', locale)} className="relative inline-flex min-h-11 items-center gap-1.5 rounded-full px-1 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue-text"><Check size={15} strokeWidth={3} aria-hidden="true" />{t('home.hero.freeGuides')}</Link>
             <span className="inline-flex min-h-11 items-center gap-1.5"><Check size={15} strokeWidth={3} aria-hidden="true" />{t('home.hero.consultationServices')}</span>
           </div>
-          <WhatsAppCTA label={t('home.hero.primary')} source="home_hero" className="mt-7 rounded-full px-6 [&_svg]:order-2 [&_svg]:rounded-full [&_svg]:bg-white [&_svg]:p-1 [&_svg]:text-brand-blue" />
-          <Link to={localizedPath('/guides', locale)} className={buttonStyles('outline', 'mt-3 rounded-full border-white/25 px-6 text-white hover:border-white/60 hover:text-white')}>{t('home.hero.secondary')}</Link>
+          {/* One centred row while both labels fit; otherwise the row wraps and each button grows to full width (equal, never lopsided). DOM order = reading order, so in RTL the primary sits on the right. */}
+          <div className="mt-7 flex max-w-full flex-wrap justify-center gap-3">
+            <Link
+              to={localizedPath('/consultation', locale)}
+              onClick={() => track('hero_consultation_click', { locale })}
+              className={buttonStyles('primary', 'grow basis-auto whitespace-nowrap rounded-full px-6')}
+            >
+              {t('home.hero.primary')}
+              <ArrowRight size={18} aria-hidden="true" className="rtl:-scale-x-100" />
+            </Link>
+            <Link to={localizedPath('/guides', locale)} className={buttonStyles('outline', 'grow basis-auto whitespace-nowrap rounded-full border-white/25 px-6 text-white hover:border-white/60 hover:text-white')}>{t('home.hero.secondary')}</Link>
+          </div>
 
           <KineticTrustRow items={trust} />
         </div>
