@@ -34,7 +34,7 @@ describe('resource administration and expiry', () => {
   await create(input({published:false}));
   const list = () => listPublishedOpportunities(request('resources'),env,'resources');
   let response = await list();
-  expect(response.headers.get('Cache-Control')).toBe('no-store');
+  expect(response.headers.get('Cache-Control')).toBe('public, max-age=0, s-maxage=60');
   expect((await response.json<{items:unknown[]}>()).items).toHaveLength(1);
   const admin = await adminApi(request('admin/resources'),env,identity);
   expect((await admin.json<{items:unknown[]}>()).items).toHaveLength(3);

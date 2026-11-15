@@ -1,5 +1,6 @@
 import type { Env, ExecutionContextLike } from './env';
 import { attachRequestId, errorResponse, HttpError, json } from './http';
+import { enhanceHtml } from './html-enhance';
 import { downloadGrant } from './routes/download-grant';
 import { opportunityImage } from './routes/opportunity-image';
 import { enforceUploadBoundary } from './security/upload-defense';
@@ -75,8 +76,9 @@ export default {
         throw new HttpError(404, 'not_found');
       }
       const asset = await env.ASSETS.fetch(request);
-      const response = new Response(asset.body, asset);
+      let response = new Response(asset.body, asset);
       if (response.headers.get('Content-Type')?.includes('text/html')) {
+        response = await enhanceHtml(response, request, env);
         response.headers.set(
           'Cache-Control',
           'public, max-age=0, must-revalidate',

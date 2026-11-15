@@ -4,7 +4,6 @@ import { HttpError, json, readJson, requireIdempotencyKey, requireMethod } from 
 import { createBlindIndex } from './security/blind-index';
 import { encryptPii } from './security/encryption';
 import { verifyTurnstile } from './security/turnstile';
-import { seedAdminCatalog } from './catalog-seed';
 import { galleryForOpportunities } from './opportunity-gallery';
 import {
   contactInputSchema,
@@ -53,9 +52,11 @@ function enqueue(ctx: ExecutionContextLike, env: Env, eventId: string): void {
   ctx.waitUntil(env.EVENT_QUEUE.send({ outboxId: eventId }));
 }
 
+/** Public catalogs are safe to share at the edge for a minute; browsers still revalidate. */
+const CATALOG_CACHE = { 'Cache-Control': 'public, max-age=0, s-maxage=60' } as const;
+
 export async function listGuideAvailability(request: Request, env: Env): Promise<Response> {
   requireMethod(request, ['GET']);
-  await seedAdminCatalog(env);
   const { results } = await env.DB.prepare(
     `SELECT g.id, g.slug, g.category, g.country, g.file_type, g.page_count, g.cover_path,
      g.published, g.sort_order, g.content_updated_at, g.translations,
@@ -85,12 +86,11 @@ export async function listGuideAvailability(request: Request, env: Env): Promise
         ar: Boolean(row.r2_key_ar),
       },
     })),
-  });
+  }, 200, CATALOG_CACHE);
 }
 
 export async function listPublishedOpportunities(request: Request, env: Env, table: 'opportunities' | 'resources' = 'opportunities'): Promise<Response> {
   requireMethod(request, ['GET']);
-  if (table === 'opportunities') await seedAdminCatalog(env);
   const { results } = await env.DB.prepare(
     `SELECT id, slug, country, categories, image_path, apply_url, opens_at, deadline,
      featured, published, translations FROM ${table}
@@ -113,7 +113,7 @@ export async function listPublishedOpportunities(request: Request, env: Env, tab
     featured: row.featured === 1,
     published: row.published === 1,
     translations: catalogJson(row.translations),
-  })) });
+  })) }, 200, CATALOG_CACHE);
 }
 
 async function storedResponse<T>(env: Env, key: string, action: string, now: number): Promise<T | null> {

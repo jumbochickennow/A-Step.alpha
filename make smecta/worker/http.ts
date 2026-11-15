@@ -15,7 +15,8 @@ const API_HEADERS = {
 
 export function json(data: unknown, status = 200, extraHeaders?: HeadersInit): Response {
   const headers = new Headers(API_HEADERS);
-  if (extraHeaders) new Headers(extraHeaders).forEach((value, key) => headers.append(key, value));
+  // Explicit headers override the defaults (e.g. a public catalog's Cache-Control replaces no-store).
+  if (extraHeaders) new Headers(extraHeaders).forEach((value, key) => headers.set(key, value));
   return new Response(JSON.stringify(data), { status, headers });
 }
 

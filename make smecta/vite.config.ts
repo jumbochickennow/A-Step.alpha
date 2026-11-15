@@ -58,6 +58,8 @@ export default defineConfig(({ command, mode }) => {
   },
   build: {
     outDir: isAdmin ? 'dist-admin' : 'dist',
+    // Public build: route → chunk map read by the Worker to emit route-level <link rel="modulepreload">.
+    manifest: isAdmin ? false : 'route-manifest.json',
     target: 'es2020',
     cssCodeSplit: true,
     sourcemap: false,
@@ -86,6 +88,10 @@ export default defineConfig(({ command, mode }) => {
             }
             if (id.includes('lucide-react') || id.includes('@radix-ui')) {
               return 'vendor-ui';
+            }
+            // Form validation only loads with the forms (Contact, guide dialog, footer submit).
+            if (/[\\/]node_modules[\\/](zod|react-hook-form|@hookform)[\\/]/.test(id)) {
+              return 'vendor-forms';
             }
             return 'vendor-libs';
           }
