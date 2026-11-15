@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { FaqList } from '../components/common/FaqList';
 import { Seo } from '../components/common/Seo';
+import { buttonStyles } from '../components/common/Button';
 import { WhatsAppCTA } from '../components/common/WhatsAppCTA';
 import { ConsultationBand, IntroSection, ServicesSection, StorySection } from '../components/home/HomeSections';
 import { KineticTrustRow } from '../components/home/KineticTrustRow';
@@ -39,10 +40,11 @@ export function Home() {
           <p className="min-h-5 text-xs text-ink-muted">{t('home.hero.eyebrow')}</p>
           <h1 className="mt-5 flex min-h-[8.75rem] max-w-[17ch] items-center justify-center text-4xl font-extrabold leading-[1.08] tracking-[-0.025em] md:min-h-[7rem] md:text-5xl">{t('home.hero.title')}</h1>
           <div className="mt-6 flex min-h-12 flex-wrap items-center justify-center gap-x-8 gap-y-2 text-xs font-medium text-brand-blue-text">
-            <span className="inline-flex items-center gap-1.5"><Check size={15} strokeWidth={3} />{t('home.hero.freeGuides')}</span>
-            <span className="inline-flex items-center gap-1.5"><Check size={15} strokeWidth={3} />{t('home.hero.consultationServices')}</span>
+            <Link to={localizedPath('/guides', locale)} className="relative inline-flex min-h-11 items-center gap-1.5 rounded-full px-1 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue-text"><Check size={15} strokeWidth={3} aria-hidden="true" />{t('home.hero.freeGuides')}</Link>
+            <span className="inline-flex min-h-11 items-center gap-1.5"><Check size={15} strokeWidth={3} aria-hidden="true" />{t('home.hero.consultationServices')}</span>
           </div>
           <WhatsAppCTA label={t('home.hero.primary')} source="home_hero" className="mt-7 rounded-full px-6 [&_svg]:order-2 [&_svg]:rounded-full [&_svg]:bg-white [&_svg]:p-1 [&_svg]:text-brand-blue" />
+          <Link to={localizedPath('/guides', locale)} className={buttonStyles('outline', 'mt-3 rounded-full border-white/25 px-6 text-white hover:border-white/60 hover:text-white')}>{t('home.hero.secondary')}</Link>
 
           <KineticTrustRow items={trust} />
         </div>

@@ -18,7 +18,7 @@ export function KineticTrustRow({ items }: KineticTrustRowProps) {
       {items.map(([Icon, label], index) => (
         <li
           key={label}
-          className="flex min-w-0 items-center gap-3 text-start text-[0.7rem] text-ink-muted animate-fade-rise motion-reduce:animate-none md:justify-center md:px-3 md:[&:not(:first-child)]:border-s md:[&:not(:first-child)]:border-white/10"
+          className="flex min-w-0 items-center gap-3 text-start text-micro text-ink-muted animate-fade-rise motion-reduce:animate-none md:justify-center md:px-3 md:[&:not(:first-child)]:border-s md:[&:not(:first-child)]:border-white/10"
           style={{ animationDelay: `${index * 80}ms` } as CSSProperties}
         >
           <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[rgb(34_77_199/0.35)] text-brand-blue-text" aria-hidden="true">

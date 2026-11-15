@@ -25,8 +25,9 @@ export function IntroSection() {
         <Link to={localizedPath('/guides', locale)} className={buttonStyles('primary', 'mt-8 rounded-full px-6')}>{t('home.intro.cta')}</Link>
       </div>
       <div className="relative mx-auto w-full min-w-0 max-w-[440px]">
-        <div className="absolute inset-12 rounded-[40%] bg-[rgb(14_123_229/0.12)] blur-3xl" />
-        <img src="/assets/home/traveller.webp" width="743" height="955" alt={t('home.hero.visualAlt')} loading="lazy" decoding="async" className="relative mx-auto aspect-[743/955] h-auto w-full" />
+        {/* Soft glow as a radial gradient: no filter: blur() layer to rasterize on scroll. */}
+        <div className="absolute inset-0 bg-[radial-gradient(closest-side,rgb(14_123_229/0.16),transparent)]" aria-hidden="true" />
+        <img src="/assets/home/traveller.webp" srcSet="/assets/home/traveller-480.webp 480w, /assets/home/traveller.webp 743w" sizes="(min-width: 1024px) 440px, min(100vw - 40px, 440px)" width="743" height="955" alt={t('home.hero.visualAlt')} loading="lazy" decoding="async" className="relative mx-auto aspect-[743/955] h-auto w-full" />
       </div>
     </section>
   );
@@ -43,7 +44,7 @@ export function StorySection() {
     >
       <div className="container-shell min-w-0">
         <header className="mx-auto min-h-[14rem] max-w-4xl text-center">
-          <p className="eyebrow text-brand-coral">{t('home.aboutFeatures.eyebrow')}</p>
+          <p className="eyebrow text-brand-coral-text">{t('home.aboutFeatures.eyebrow')}</p>
           <h2 className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-3xl font-extrabold leading-tight tracking-[-0.02em] text-slate-900 md:text-4xl">
             <span>{t('home.aboutFeatures.headingPrefix')}</span>
             <img src="/assets/logo/logo-blue.webp" width="640" height="216" alt={t('home.aboutFeatures.brandName')} decoding="async" className="aspect-[640/216] h-auto w-[min(42vw,156px)] object-contain" />
@@ -51,19 +52,19 @@ export function StorySection() {
           <p className="mx-auto mt-7 max-w-[78ch] text-sm leading-7 text-slate-600 md:text-base md:leading-8">{t('home.aboutFeatures.intro')}</p>
         </header>
 
-        <div className="mx-auto mt-14 grid max-w-5xl gap-x-14 gap-y-10 md:grid-cols-2 md:gap-y-14" role="list">
+        <ul className="mx-auto mt-14 grid max-w-5xl list-none gap-x-14 gap-y-10 p-0 md:grid-cols-2 md:gap-y-14">
           {features.map((feature) => (
-            <article key={feature} role="listitem" className="group flex min-w-0 items-start gap-5 rounded-2xl p-2 transition duration-200 ease-out hover:-translate-y-1 hover:bg-white hover:shadow-[0_12px_28px_rgb(15_23_42/0.08)] motion-reduce:transform-none motion-reduce:transition-none">
+            <li key={feature} className="group lift flex min-w-0 items-start gap-5 rounded-2xl p-2 transition-[transform,background-color] duration-base ease-out hover:-translate-y-1 hover:bg-white motion-reduce:transform-none motion-reduce:transition-none [&.lift::before]:shadow-[0_12px_28px_rgb(15_23_42/0.08)]">
               <span className="grid size-16 shrink-0 place-items-center" aria-hidden="true">
-                <img src={`/assets/home/features/${feature}.png`} width="79" height="79" alt="" loading="lazy" decoding="async" className="aspect-square size-full object-contain transition duration-200 ease-out group-hover:scale-105 group-hover:-translate-y-0.5 motion-reduce:transform-none motion-reduce:transition-none" />
+                <img src={`/assets/home/features/${feature}.png`} width="79" height="79" alt="" loading="lazy" decoding="async" className="aspect-square size-full object-contain transition-transform duration-base ease-out group-hover:scale-105 group-hover:-translate-y-0.5 motion-reduce:transform-none motion-reduce:transition-none" />
               </span>
               <div className="min-w-0 pt-1">
                 <h3 className="text-base font-bold leading-snug text-slate-900">{t(`home.aboutFeatures.features.${feature}.title`)}</h3>
                 <p className="mt-3 text-sm leading-7 text-slate-600">{t(`home.aboutFeatures.features.${feature}.body`)}</p>
               </div>
-            </article>
+            </li>
           ))}
-        </div>
+        </ul>
 
         <div className="mx-auto mt-16 grid max-w-5xl min-w-0 items-center gap-8 border-t border-slate-200 pt-12 md:grid-cols-[minmax(0,1fr)_auto] md:pt-14">
           <div className="min-w-0">
