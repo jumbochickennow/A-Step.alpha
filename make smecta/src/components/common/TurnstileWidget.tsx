@@ -70,6 +70,11 @@ export function isTurnstileEnabled(): boolean {
   return Boolean(resolveSiteKey());
 }
 
+/** Height the rendered widget will occupy, reserved before mount so nothing shifts. */
+export function turnstileReservedClass(size: TurnstileWidgetProps['size'] = 'normal'): string {
+  return size === 'compact' ? 'min-h-[120px]' : 'min-h-[65px]';
+}
+
 export function TurnstileWidget({ onVerify, onError, onExpire, theme = 'auto', size = 'normal', action, className }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | undefined>(undefined);
@@ -110,6 +115,7 @@ export function TurnstileWidget({ onVerify, onError, onExpire, theme = 'auto', s
     <div
       ref={containerRef}
       className={cn('min-w-0', size === 'compact' ? 'min-h-[120px]' : 'min-h-[65px]', className)}
+      role="group"
       aria-label="Cloudflare Turnstile verification"
     />
   );

@@ -15,7 +15,7 @@ import type { GuideLanguage, LocalizedGuide } from '../../types/content';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../common/Button';
 import { WhatsAppCTA } from '../common/WhatsAppCTA';
-import { TurnstileWidget, isTurnstileEnabled } from '../common/TurnstileWidget';
+import { TurnstileWidget, isTurnstileEnabled, turnstileReservedClass } from '../common/TurnstileWidget';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger, useEscapeToClose } from '../ui/Dialog';
 
 const EMPTY_FORM: GuideDownloadFormInputs = {
@@ -53,6 +53,7 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
   const [open, setOpen] = useState(false);
   const renderedAt = useRef(Date.now());
   const lastSubmitAt = useRef(0);
+  const turnstileErrorRef = useRef<HTMLParagraphElement>(null);
   const [values, setValues] = useState<GuideDownloadFormInputs>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof GuideDownloadFormInputs, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,6 +68,9 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
   const preferredLanguage = availableLanguages[locale]
     ? locale
     : GUIDE_LANGUAGES.find(({ value }) => availableLanguages[value])?.value ?? 'en';
+  // With a single available language the select is noise: it is preset and hidden.
+  const languageChoices = GUIDE_LANGUAGES.filter(({ value }) => availableLanguages[value]).length;
+  const awaitingVerification = turnstileEnabled && !turnstileToken;
 
   // DialogContent owns the body lock; Escape dismisses this controlled dialog.
   useEscapeToClose(open, () => setOpen(false));
@@ -133,9 +137,10 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
       return;
     }
 
-    // Require a fresh Turnstile token before accepting the lead.
+    // Require a fresh Turnstile token before accepting the lead (the button is disabled until then; this guards expiry races).
     if (turnstileEnabled && !turnstileToken) {
       setTurnstileError(true);
+      requestAnimationFrame(() => turnstileErrorRef.current?.focus());
       return;
     }
     setTurnstileError(false);
@@ -240,8 +245,8 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
             />
             <p id={`email-error-${guide.id}`} className={`mt-1 min-h-4 text-xs ${errors.email ? 'text-red-500' : 'text-brand-blue-text'}`}>{errors.email ?? (suggestion ? t('forms.didYouMean', { email: suggestion }) : '')}</p>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
+          <div className={`grid grid-cols-1 gap-4 ${languageChoices > 1 ? 'sm:grid-cols-2' : ''}`}>
+            <div hidden={languageChoices <= 1}>
               <label htmlFor={`guideLanguage-${guide.id}`} className="mb-2 block text-sm font-semibold">{t('guides.modal.guideLanguage')}</label>
               <select
                 id={`guideLanguage-${guide.id}`}
@@ -258,7 +263,7 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
               </select>
             </div>
             <div>
-              <label htmlFor={`targetCountry-${guide.id}`} className="mb-2 block text-sm font-semibold">{t('guides.modal.country')}</label>
+              <label htmlFor={`targetCountry-${guide.id}`} className="mb-2 block text-sm font-semibold">{t('guides.modal.country')} <span className="font-normal text-ink-muted">({t('guides.modal.optional')})</span></label>
               <select
                 id={`targetCountry-${guide.id}`}
                 className="field"
@@ -287,24 +292,27 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
           </div>
           {turnstileEnabled ? (
             <div>
-              <TurnstileWidget
-                action="lead_download"
-                onVerify={(token) => {
-                  setTurnstileToken(token);
-                  setTurnstileError(false);
-                }}
-                onExpire={() => setTurnstileToken('')}
-                onError={() => setTurnstileToken('')}
-                size="compact"
-              />
-              <p className="mt-1 min-h-4 text-xs text-red-500">{turnstileError ? t('forms.turnstileRequired') : ''}</p>
+              {/* Mounted as soon as the dialog opens; the final height is reserved so the form never shifts. */}
+              <div className={turnstileReservedClass('compact')}>
+                <TurnstileWidget
+                  action="lead_download"
+                  onVerify={(token) => {
+                    setTurnstileToken(token);
+                    setTurnstileError(false);
+                  }}
+                  onExpire={() => setTurnstileToken('')}
+                  onError={() => setTurnstileToken('')}
+                  size="compact"
+                />
+              </div>
+              <p ref={turnstileErrorRef} tabIndex={-1} role={turnstileError ? 'alert' : undefined} className="mt-1 min-h-4 text-xs text-red-500 focus-visible:outline-none">{turnstileError ? t('forms.turnstileRequired') : ''}</p>
             </div>
           ) : null}
-          <Button type="submit" disabled={isSubmitting} className="w-full rounded-xl bg-blue-600 py-3.5 font-semibold text-white shadow-md transition hover:bg-blue-700">
-            {isSubmitting ? (
+          <Button type="submit" disabled={isSubmitting || awaitingVerification} className="w-full rounded-xl bg-blue-600 py-3.5 font-semibold text-white shadow-md transition hover:bg-blue-700">
+            {isSubmitting || awaitingVerification ? (
               <>
                 <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                {t('guides.modal.submitting')}
+                {isSubmitting ? t('guides.modal.submitting') : t('guides.modal.verifying')}
               </>
             ) : (
               <>

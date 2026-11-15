@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'r
 import { useTranslation } from 'react-i18next';
 import { Button } from '../components/common/Button';
 import { Seo } from '../components/common/Seo';
-import { TurnstileWidget, isTurnstileEnabled } from '../components/common/TurnstileWidget';
+import { TurnstileWidget, isTurnstileEnabled, turnstileReservedClass } from '../components/common/TurnstileWidget';
 import { useLocale } from '../hooks/useLocale';
 import { useToast } from '../hooks/useToast';
 import { categoryLabel, TOPICS } from '../lib/constants';
@@ -44,6 +44,9 @@ export function Contact() {
   const [turnstileToken, setTurnstileToken] = useState('');
   const [turnstileError, setTurnstileError] = useState(false);
   const [challengeVersion, setChallengeVersion] = useState(0);
+  // Turnstile mounts only after the visitor focuses or types in the email field.
+  const [turnstileEngaged, setTurnstileEngaged] = useState(false);
+  const turnstileErrorRef = useRef<HTMLParagraphElement>(null);
   const turnstileEnabled = isTurnstileEnabled();
   const invalidFields = FIELD_ORDER.filter((field) => errors[field]);
 
@@ -105,7 +108,9 @@ export function Contact() {
 
     // Require a fresh Turnstile token before accepting the submission.
     if (turnstileEnabled && !turnstileToken) {
+      setTurnstileEngaged(true);
       setTurnstileError(true);
+      requestAnimationFrame(() => turnstileErrorRef.current?.focus());
       return;
     }
     setTurnstileError(false);
@@ -215,7 +220,8 @@ export function Contact() {
                   autoComplete="email"
                   maxLength={254}
                   value={values.email}
-                  onChange={update('email')}
+                  onChange={(event) => { update('email')(event); setTurnstileEngaged(true); }}
+                  onFocus={() => setTurnstileEngaged(true)}
                   onBlur={revalidateOnBlur}
                   aria-invalid={Boolean(errors.email)}
                   aria-describedby={describedBy('email')}
@@ -284,20 +290,24 @@ export function Contact() {
             </div>
             {turnstileEnabled ? (
               <div className="mt-5">
-                <TurnstileWidget
-                  key={challengeVersion}
-                  action="contact"
-                  onVerify={(token) => {
-                    setTurnstileToken(token);
-                    setTurnstileError(false);
-                  }}
-                  onExpire={() => setTurnstileToken('')}
-                  onError={() => {
-                    setTurnstileToken('');
-                    setTurnstileError(true);
-                  }}
-                />
-                <p className="mt-1 min-h-4 text-xs text-red-500">{turnstileError ? t('forms.turnstileRequired') : ''}</p>
+                <div className={turnstileReservedClass('normal')}>
+                  {turnstileEngaged ? (
+                    <TurnstileWidget
+                      key={challengeVersion}
+                      action="contact"
+                      onVerify={(token) => {
+                        setTurnstileToken(token);
+                        setTurnstileError(false);
+                      }}
+                      onExpire={() => setTurnstileToken('')}
+                      onError={() => {
+                        setTurnstileToken('');
+                        setTurnstileError(true);
+                      }}
+                    />
+                  ) : null}
+                </div>
+                <p ref={turnstileErrorRef} tabIndex={-1} role={turnstileError ? 'alert' : undefined} className="mt-1 min-h-4 text-xs text-red-700 focus-visible:outline-none">{turnstileError ? t('forms.turnstileRequired') : ''}</p>
               </div>
             ) : null}
             <Button type="submit" disabled={isSubmitting} className="mt-8 w-full">{isSubmitting ? t('contact.sending') : t('contact.send')}</Button>
