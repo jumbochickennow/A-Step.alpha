@@ -101,7 +101,7 @@
 .price-guide .price-mark { margin-top:3px; }
 .price-guides-note { text-align:center; font-size:14px; font-weight:700; margin-top:29px; }
 .price-cv { min-height:900px; padding:42px 0 110px; border-block:1px solid var(--price-line); }
-.price-fictional { width:fit-content; margin:19px auto 37px; padding:6px 31px; border:1px solid #ffb7b9; background:#ff5a5d14; color:var(--coral-text); border-radius:var(--r-full); font-weight:700; font-size:var(--text-micro); text-align:center; }
+.price-fictional { width:fit-content; margin:19px auto 37px; padding:6px 31px; border:1px solid #ffb7b9; background:#fff; color:var(--coral-text); border-radius:var(--r-full); font-weight:700; font-size:var(--text-micro); text-align:center; }
 .price-cv-labels { display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-bottom:14px; font-size:var(--text-micro); font-weight:700; }
 .price-cv-labels span { display:flex; align-items:center; gap:17px; color:var(--coral-text); }
 .price-cv-labels span::after { content:''; height:1px; background:var(--price-line); flex:1; }
@@ -145,6 +145,7 @@
 .price-coverage-action .price-button { padding-inline:26px; }
 .price-coverage-action p { color:#94a0b2; font-size:var(--text-micro); }
 .price-promises { background:#0b1320; color:#fff; min-height:720px; padding:102px 0 63px; }
+.price-promises .price-eyebrow { color:var(--price-coral-accent); }
 .price-promises h2 { font-size:48px; letter-spacing:-1.3px; }
 .price-promise-intro { font-size:23px; font-weight:700; line-height:1.5; max-width:780px; margin-top:25px; }
 .price-promise-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:19px; margin-top:41px; }

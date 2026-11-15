@@ -130,7 +130,7 @@ export function ConsultationBand() {
             {t('home.cta.body')}
           </p>
 
-          <div className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-xs text-brand-blue-text">
+          <div className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-xs text-brand-blue-text-light">
             <span className="inline-flex items-center gap-1">
               <Check size={13} />
               {t('home.hero.freeGuides')}

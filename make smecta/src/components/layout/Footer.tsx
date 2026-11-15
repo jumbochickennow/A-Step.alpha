@@ -137,7 +137,7 @@ export function Footer() {
         <div className="grid gap-10 py-8 md:grid-cols-[1.5fr_0.55fr_0.45fr] md:py-10">
           <div>
             <Brand light />
-            <p className="mt-5 max-w-[52ch] text-xs leading-relaxed text-white/80">{t('footer.body')}</p>
+            <p className="mt-5 max-w-[52ch] text-xs leading-relaxed text-white/90">{t('footer.body')}</p>
             <div className="mt-5 flex items-center gap-4 text-white" aria-label="Social media">
               <a
                 href="https://www.instagram.com/astep.immigrarion?igsi=ODNrbDFydmU5Nnhm"
@@ -159,7 +159,7 @@ export function Footer() {
           </div>
           <div>
             <h2 className="text-sm font-bold">{t('footer.company')}</h2>
-            <div className="mt-4 flex flex-col gap-3 text-xs text-white/80">
+            <div className="mt-4 flex flex-col gap-3 text-xs text-white/90">
               <Link to={link('/guides')} className="relative hover:text-white before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('nav.guides')}</Link>
               <Link to={link('/opportunities')} className="relative hover:text-white before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('nav.opportunities')}</Link>
               <Link to={link('/contact')} className="relative hover:text-white before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('nav.contact')}</Link>
@@ -167,7 +167,7 @@ export function Footer() {
           </div>
           <div>
             <h2 className="text-sm font-bold">{t('footer.legal')}</h2>
-            <div className="mt-4 flex flex-col gap-3 text-xs text-white/80">
+            <div className="mt-4 flex flex-col gap-3 text-xs text-white/90">
               <Link to={link('/terms')} className="relative hover:text-white before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('footer.terms')}</Link>
               <Link to={link('/privacy')} className="relative hover:text-white before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('footer.privacy')}</Link>
               <Link to={`${link('/privacy')}#cookies`} className="relative hover:text-white before:absolute before:-inset-y-3.5 before:inset-x-0 before:content-['']">{t('footer.cookies')}</Link>
@@ -176,7 +176,7 @@ export function Footer() {
           </div>
         </div>
       </div>
-      <div className={cn('border-t py-5 text-center text-xs text-white/75', blue ? 'border-white/20' : 'border-white/10')}>
+      <div className={cn('border-t py-5 text-center text-xs text-white/85', blue ? 'border-white/20' : 'border-white/10')}>
         {t('footer.rights', { year: new Date().getFullYear() })}
       </div>
     </footer>
