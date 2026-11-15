@@ -3,7 +3,7 @@ import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { localizedPath, useLocale } from '../../hooks/useLocale';
-import { COUNTRIES, categoryLabel } from '../../lib/constants';
+import { LEAD_TARGET_COUNTRIES, categoryLabel } from '../../lib/constants';
 import {
   suggestEmail,
   validateGuideDownloadForm,
@@ -14,6 +14,7 @@ import { submitGuideLead } from '../../services/leads.service';
 import type { GuideLanguage, LocalizedGuide } from '../../types/content';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../common/Button';
+import { WhatsAppCTA } from '../common/WhatsAppCTA';
 import { TurnstileWidget, isTurnstileEnabled } from '../common/TurnstileWidget';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger, useEscapeToClose } from '../ui/Dialog';
 
@@ -55,7 +56,7 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
   const [values, setValues] = useState<GuideDownloadFormInputs>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof GuideDownloadFormInputs, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'error' | 'success'>('idle');
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
@@ -154,9 +155,8 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
       track('guide_download_success', { guide: guide.slug });
       triggerBrowserDownload(downloadUrl, result.data.guideLanguage);
       toast.success(t('forms.downloadStarted'));
-      setOpen(false);
-      resetForm();
-      renderedAt.current = Date.now();
+      // Keep the dialog open: the success panel offers the WhatsApp follow-up for this guide.
+      setStatus('success');
     } catch {
       setStatus('error');
     } finally {
@@ -188,6 +188,13 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
           {t('guides.modal.intro', { guide: guide.title })}
         </DialogDescription>
 
+        {status === 'success' ? (
+          <div className="mt-8 space-y-5" role="status">
+            <p className="rounded-md border border-brand-blue/30 bg-brand-blue/10 p-3 text-sm leading-relaxed">{t('guides.modal.success')}</p>
+            <WhatsAppCTA label={t('guides.modal.whatsappCta')} source="guide_download_success" inquiryType="guide" inquiryTitle={guide.title} className="w-full" />
+            <Button type="button" variant="ghost" className="w-full" onClick={() => setOpen(false)}>{t('guides.modal.close')}</Button>
+          </div>
+        ) : (
         <form className="mt-8 space-y-5" onSubmit={submit} noValidate>
           <div className="opacity-0 absolute -z-50 h-0 w-0 pointer-events-none select-none" aria-hidden="true">
             <label htmlFor={`hp-company-${guide.id}`}>Company</label>
@@ -262,8 +269,10 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
                 aria-describedby={errors.targetCountry ? `targetCountry-error-${guide.id}` : undefined}
               >
                 <option value="">—</option>
-                {COUNTRIES.map((country) => (
-                  <option key={country} value={country}>{categoryLabel(country, t)}</option>
+                {LEAD_TARGET_COUNTRIES.map((country) => (
+                  <option key={country} value={country}>
+                    {country === 'Gulf' ? t('guides.modal.countryGulf') : country === 'Other' ? t('guides.modal.countryOther') : categoryLabel(country, t)}
+                  </option>
                 ))}
               </select>
               <p id={`targetCountry-error-${guide.id}`} className="mt-1 min-h-4 text-xs text-red-500">{errors.targetCountry ?? ''}</p>
@@ -305,6 +314,7 @@ export function GuideDownloadDialog({ guide, triggerClassName }: { guide: Locali
             )}
           </Button>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );
